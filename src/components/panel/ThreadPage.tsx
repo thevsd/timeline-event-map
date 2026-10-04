@@ -1,4 +1,5 @@
 import type { Thread } from '../../data/threads';
+import { Prose } from '../Prose';
 import { EventLinks, FilterToggle, Section, type OpenPage } from './parts';
 
 interface ThreadPageProps {
@@ -18,7 +19,9 @@ export function ThreadPage({ thread, filtered, onFilter, onOpen }: ThreadPagePro
         <span className="tag">{thread.events.length} events</span>
       </div>
       <h2 id="ptitle">{thread.name}</h2>
-      <p className="lede">{thread.summary}</p>
+      <p className="lede">
+        <Prose text={thread.summary} />
+      </p>
       <FilterToggle active={filtered} label="Follow this thread on the timeline" onToggle={() => onFilter(filtered ? null : thread.id)} />
       <Section title="In order">
         <EventLinks ids={thread.events} onOpen={onOpen} numbered />

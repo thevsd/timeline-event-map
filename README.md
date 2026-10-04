@@ -10,6 +10,9 @@ A timeline event map webapp, specifically made for Modern Villainesss's intricat
 - **Real history:** a lane above the cards marks the real-world events the novel preserves, alters, prevents or moves, each tied to the scene that answers it.
 - **Corporate map:** who owns, funds or pressures whom, stepped through in story order.
 - **Characters:** the cast in groups, with a portrait where one exists and a male or female placeholder otherwise; each card opens that person's page.
+- **Search:** one box for events, people, threads, companies, real history and the glossary (`Ctrl+K` or `/`). Every word must match; accents and case are ignored, a word found nowhere as typed is matched against near misses, and titles outrank body text. The last row narrows the timeline to the matching events.
+- **Glossary:** terms of Japanese finance and politics are underlined in the side panel; hover for the definition, click for the page listing where the term comes up.
+- **Reading progress:** `Read up to` hides everything from later volumes: events, characters, threads, map steps, real-history entries and the sentences that give later volumes away. The setting is kept in the browser and is never part of a link.
 - **Links:** the address bar always holds a link to the current view, selection and filters (`Copy link`).
 
 ## Development
@@ -36,16 +39,18 @@ src/
     people.ts    character profiles
     realHistory.ts  real-world events for the history lane
     corporate.ts    nodes and edges of the corporate map
+    glossary.ts  terms and definitions
     index.ts     loads, sorts and cross-references all of the above
-    validate.ts  checks ids and references (runs in `npm run dev`; problems go to the browser console)
+    world.ts     the data as a reader at a given volume may see it; components read from this
+    validate.ts  checks ids, references and spoiler markers (runs in `npm run dev`; problems go to the browser console)
   art/         pictogram illustrations, and the lookup for real images
   assets/events/  optional real images, one per event
   assets/characters/  character portraits (kept out of git, see below)
   assets/placeholders/  male.svg and female.svg, shown for characters without a portrait
   engine/      the timeline itself: zoom model, card layout, canvas drawing, input (no framework)
-  components/  React shell: toolbar, filters, side panel and its pages, hover preview, corporate map, character list
+  components/  React shell: toolbar, search box, filters, side panel and its pages, hover preview, corporate map, character list
   hooks/       useTimeline: mounts the engine inside React
-  lib/         dates, URL state, corporate-map state
+  lib/         dates, URL state, corporate-map state, text matching, search, glossary matching, spoiler markers
   styles/      app.css (colour tokens, light and dark themes)
 ```
 
@@ -56,10 +61,22 @@ Everything below is checked while `npm run dev` is running; mistakes are listed 
 - **Event:** append a record to the matching file in `src/data/events/`. Field reference: `src/data/types.ts`.
 - **Image for an event:** put a file named after the event id in `src/assets/events/`, e.g. `kaitaku.webp`. See the README in that folder for sizes.
 - **Thread:** add an entry to `src/data/threads.ts` with the ids of its events; order does not matter.
-- **Person:** add a profile to `src/data/people.ts`. The name must match the spelling used in the events' `people` lists; `sex` picks the placeholder.
+- **Person:** add a profile to `src/data/people.ts`. The name must match the spelling used in the events' `people` lists; `sex` picks the placeholder; `intro` is the volume they first appear in.
 - **Portrait:** put a file named after the character in `src/assets/characters/`, e.g. `keikain-runa.webp`. See the README in that folder. The current portraits are cropped from the published books, so the folder's images are listed in `.gitignore` and stay on this computer.
 - **Real-history entry:** add a record to `src/data/realHistory.ts` and list the events that answer it in `counterparts`.
 - **Corporate map:** add nodes and edges to `src/data/corporate.ts`. `since` and `until` are event ids, so the map's steps follow the timeline.
+- **Glossary term:** add an entry to `src/data/glossary.ts`. List other spellings in `aliases`; a term the novel invents takes the `volume` that introduces it.
+
+### Spoiler markers
+
+Reading progress hides whole events by their `volume`. Where a text that belongs to an earlier volume mentions something from a later one, mark it: everything after `{v3}`, up to the next marker, is shown only to a reader who has reached Volume 3, and `{v1}` returns to text anyone may see.
+
+```
+bio: 'Died by apparent suicide.{v2} Volume 2 reveals who pushed him to it.'
+role: 'Duke; uncle{v2}, guardian{v3} and then adoptive father'
+```
+
+Markers work in the long text fields: an event's `what`, `reveals`, `realWorld` and `readings`; a person's `role` and `bio`; a thread's `summary`; a real-history entry's `novel`; a company's `note`; a term's `definition`. Titles, briefs and dates cannot carry them, so keep those safe for the volume they belong to.
 
 ## Links
 
@@ -69,10 +86,10 @@ State is kept in the URL hash, for example `#z=2.3&d=1997-11-17&e=kaitaku&thread
 |---|---|
 | `z`, `d` | zoom (pixels per day) and the date at the centre |
 | `e` | selected event id |
-| `p` | side-panel page: `person:Name`, `thread:id`, `real:id`, `co:id` |
-| `cat`, `q`, `who`, `thread` | filters: categories, search text, person, thread |
+| `p` | side-panel page: `person:Name`, `thread:id`, `real:id`, `co:id`, `term:id` |
+| `cat`, `q`, `who`, `thread` | filters: categories, text, person, thread |
 | `lane=0` | real-history lane hidden |
 | `view=map`, `step` | corporate map and its step |
 | `view=cast` | Characters tab |
 
-A bare `#kaitaku` still opens that event.
+A bare `#kaitaku` still opens that event. A link to something beyond the viewer's reading progress opens without it.

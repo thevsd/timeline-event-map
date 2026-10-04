@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
-import { EVENT_BY_ID } from '../../data';
+import { useWorld } from '../../context';
 import type { PanelPage } from '../../types';
 import { CategoryGlyph } from '../CategoryGlyph';
+import { Prose } from '../Prose';
 
 /** Opens another page from inside the panel. */
 export type OpenPage = (page: PanelPage) => void;
@@ -19,15 +20,17 @@ export function BulletList({ items }: { items: string[] }) {
   return (
     <ul>
       {items.map((text) => (
-        <li key={text}>{text}</li>
+        <li key={text}>
+          <Prose text={text} />
+        </li>
       ))}
     </ul>
   );
 }
 
-/** A row that opens a timeline event. `prefix` is shown before the title, e.g. a step number. */
+/** A row that opens a timeline event. `prefix` is shown before the title, e.g. a step number. Renders nothing for an event the reader has not reached. */
 export function EventLink({ id, onOpen, prefix, note }: { id: string; onOpen: OpenPage; prefix?: ReactNode; note?: string }) {
-  const event = EVENT_BY_ID.get(id);
+  const event = useWorld().eventById.get(id);
   if (!event) return null;
   return (
     <button type="button" className={`link cat-${event.category}`} data-go={id} onClick={() => onOpen({ kind: 'event', id })}>

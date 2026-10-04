@@ -189,11 +189,12 @@ export class Timeline {
 
   /* ── Public API ── */
 
-  /** Apply new filters: categories, search text, person, thread. */
+  /** Apply new filters: reading progress, categories, search text, person, thread. */
   setFilter(filter: EventFilter): void {
     this.filter = filter;
     this.filterVersion++;
     for (const item of this.items) item.visible = matchesFilter(item.ev, filter);
+    for (const real of this.reals) this.guardReal(real);
     this.markRelated();
     this.requestDraw();
   }
@@ -402,7 +403,15 @@ export class Timeline {
     el.setAttribute('aria-label', `Real history: ${ev.title}, ${ev.when}`);
     el.innerHTML = `<span class="rh-l">${escapeHtml(ev.title)}</span><i class="rh-m" aria-hidden="true"></i>`;
     this.els.lane.appendChild(el);
-    return { ev, el, labelWidth: 0, sx: 0, off: false };
+    const real: RealItem = { ev, el, labelWidth: 0, sx: 0, off: false, hidden: false };
+    this.guardReal(real);
+    return real;
+  }
+
+  /** Hide a real-history entry whose counterparts all lie beyond the reader's progress. */
+  private guardReal(real: RealItem): void {
+    real.hidden = real.ev.volume > this.filter.maxVolume;
+    real.el.hidden = real.hidden;
   }
 
   /** Dim every card that is not the selection or tied to it. */
@@ -565,6 +574,7 @@ export class Timeline {
     const taken: [number, number][] = [];
     const ordered = [...this.reals].sort((a, b) => Number(b.ev.major === true) - Number(a.ev.major === true));
     for (const real of ordered) {
+      if (real.hidden) continue;
       const from = (real.ev.day - DOMAIN_START) * this.ppd - 8;
       const to = from + real.labelWidth + 16;
       const free = taken.every(([a, b]) => to <= a || from >= b);
@@ -700,7 +710,7 @@ export class Timeline {
       if (focusReal) for (const to of boxes(focusReal.ev.counterparts)) realTies.push({ x: focusReal.sx, to });
       if (shown) {
         for (const real of this.reals) {
-          if (real !== focusReal && real.ev.counterparts.includes(shown.ev.id)) {
+          if (real !== focusReal && !real.hidden && real.ev.counterparts.includes(shown.ev.id)) {
             realTies.push({ x: real.sx, to: this.boxOf(shown) });
           }
         }

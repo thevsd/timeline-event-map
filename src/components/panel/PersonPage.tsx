@@ -1,7 +1,8 @@
-import { PERSON_BY_NAME, eventsOf } from '../../data';
+import { useWorld } from '../../context';
 import { PERSON_GROUP_LABEL } from '../../data/people';
 import { characterImage } from '../../art/characterImages';
 import { Portrait } from '../Portrait';
+import { Prose } from '../Prose';
 import { EventLinks, FilterToggle, Section, type OpenPage } from './parts';
 
 interface PersonPageProps {
@@ -14,8 +15,9 @@ interface PersonPageProps {
 
 /** A character: who they are and every event they take part in. */
 export function PersonPage({ name, filtered, onFilter, onOpen }: PersonPageProps) {
-  const person = PERSON_BY_NAME.get(name);
-  const events = eventsOf(name);
+  const world = useWorld();
+  const person = world.personByName.get(name);
+  const events = world.eventsOf(name);
   return (
     <div className="pbody page">
       <div className="tags">
@@ -32,7 +34,11 @@ export function PersonPage({ name, filtered, onFilter, onOpen }: PersonPageProps
           {person?.art && characterImage(name) && <div className="artnote">Portrait: {person.art}</div>}
         </div>
       </div>
-      {person && <p className="lede">{person.bio}</p>}
+      {person && (
+        <p className="lede">
+          <Prose text={person.bio} />
+        </p>
+      )}
       {person?.real && (
         <Section title="Real-world counterpart">
           <p>{person.real}</p>

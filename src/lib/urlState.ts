@@ -36,6 +36,7 @@ const PAGE_PREFIX: Record<Exclude<PanelPage['kind'], 'event'>, string> = {
   thread: 'thread',
   real: 'real',
   company: 'co',
+  term: 'term',
 };
 
 function pageToString(page: PanelPage): string | null {
@@ -52,6 +53,7 @@ function pageFromString(text: string | null): PanelPage | null {
     case 'thread': return { kind: 'thread', id: value };
     case 'real': return { kind: 'real', id: value };
     case 'co': return { kind: 'company', id: value };
+    case 'term': return { kind: 'term', id: value };
     default: return null;
   }
 }

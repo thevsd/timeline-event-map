@@ -17,7 +17,7 @@ export const backstory: EventRecord[] = [
     brief: "The Allies lose the Normandy landings and Germany fights on. Japan’s surrender is negotiated, so the peerage and the zaibatsu survive.",
     what: [
       "The Allies lose at Normandy; Germany keeps fighting.",
-      "Japan surrenders on negotiated terms, then declares war on the Axis (Vol. 3 adds this), preserving many national interests.",
+      "Japan surrenders on negotiated terms{v3}, then declares war on the Axis (Vol. 3 adds this){v1}, preserving many national interests.",
       "The peerage is never abolished, the zaibatsu are never dissolved, and the Privy Council survives with its power suspended.",
       "Nobles keep ‘impunity to arrest’ and a form of diplomatic immunity, which the glossary credits to Runa’s grandfather.",
     ],
@@ -128,11 +128,11 @@ export const backstory: EventRecord[] = [
       "Tachibana tells Runa this history himself.",
     ],
     reveals: [
-      "Vol. 2 Ch. 7: it was Tachibana who pushed Otsumaro to suicide. Runa does not know.",
+      "{v2}Vol. 2 Ch. 7: it was Tachibana who pushed Otsumaro to suicide. Runa does not know.",
     ],
     realWorld: "Altered. The glossary names the real 1987 Toshiba Machine/Kongsberg affair, in which milling machines sold to the USSR made submarine propellers quieter.",
     readings: [
-      { confidence: "speculative", text: "Tachibana’s guilt gives him a permanent motive to manage what Runa learns, which makes him an unreliable source for everything told about her father." },
+      { confidence: "speculative", text: "{v2}Tachibana’s guilt gives him a permanent motive to manage what Runa learns, which makes him an unreliable source for everything told about her father." },
     ],
     people: ["Keikain Otsumaro", "Tachibana Ryuuji", "Katou Kazuhiro"],
     links: ["tachibanahome", "birth"],
@@ -178,7 +178,7 @@ export const backstory: EventRecord[] = [
       "At the Sakata graves she lays white lilies and cries, wondering whether the tears are hers or ‘the real Keikain Runa’s’.",
     ],
     reveals: [
-      "Tachibana noticed her at two or three because the books she read were always reshelved correctly (Vol. 2 Ch. 7).",
+      "{v2}Tachibana noticed her at two or three because the books she read were always reshelved correctly (Vol. 2 Ch. 7).",
     ],
     realWorld: "Story event. Tsar Alexander III is real; the Romanov descent is invented.",
     readings: [

@@ -45,6 +45,10 @@ export interface EventRecord {
   marquee?: boolean;
   /** One or two sentences for cards and the hover preview. */
   brief: string;
+  /**
+   * The long text fields below may carry spoiler markers (see lib/spoilers.ts) where a line
+   * draws on a later volume. Titles, briefs and dates may not: the timeline draws them as they are.
+   */
   what?: string[];
   reveals?: string[];
   realWorld?: string;
@@ -61,15 +65,15 @@ export interface TimelineEvent extends EventRecord {
   endDay: number | null;
   people: string[];
   links: string[];
-  /** Lower-cased text the search box matches against. */
-  searchText: string;
 }
 
 /** Active filters. An event must pass all of them. */
 export interface EventFilter {
   categories: ReadonlySet<CategoryId>;
-  /** Lower-cased search text; empty for none. */
-  query: string;
+  /** Reading progress: events from later volumes are hidden. */
+  maxVolume: number;
+  /** Ids of the events matching the text filter (see lib/search.ts); null when no text is set. */
+  textMatches: ReadonlySet<string> | null;
   /** Only events this person takes part in. */
   person: string | null;
   /** Only events on this thread (a thread id). */
@@ -82,4 +86,6 @@ export interface RealEvent extends RealEventRecord {
   /** Date as displayed, e.g. "17 Nov 1997" or "Jun 1997". */
   when: string;
   counterparts: string[];
+  /** Volume of its earliest counterpart; the entry is hidden from readers who are not there yet. */
+  volume: number;
 }

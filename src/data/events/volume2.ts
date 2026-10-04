@@ -210,7 +210,7 @@ export const volume2: EventRecord[] = [
     realWorld: "Story event on real procedure: an unsworn reference witness takes no oath, unlike a sworn Diet summons with perjury liability.",
     readings: [
       { confidence: "strong", text: "The testimony buys time and the Tokyo election ends the scandal, as Nakamaro predicts." },
-      { confidence: "strong", text: "The guardianship plants the seed of Vol. 3’s control crisis." },
+      { confidence: "strong", text: "{v3}The guardianship plants the seed of Vol. 3’s control crisis." },
     ],
     people: ["Keikain Nakamaro", "Keikain Kiyomaro"],
     links: ["engagement", "darklink", "adoption"],
@@ -321,7 +321,7 @@ export const volume2: EventRecord[] = [
     ],
     readings: [
       { confidence: "strong", text: "The book builds a protagonist who is insulated from her operation’s worst parts, not innocent of them." },
-      { confidence: "plausible", text: "The Toyohara girls are set up as a moral reckoning. Five volumes in, it has not come." },
+      { confidence: "plausible", text: "The Toyohara girls are set up as a moral reckoning.{v5} Five volumes in, it has not come." },
     ],
     people: ["Tachibana Ryuuji", "Ichijou Susumu", "Toudou Nagayoshi", "Katsura Naoyuki"],
     links: ["protection", "erika", "tower"],

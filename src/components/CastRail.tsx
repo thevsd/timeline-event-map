@@ -1,8 +1,10 @@
+import { useWorld } from '../context';
 import { PEOPLE } from '../data';
 import { PERSON_GROUP_LABEL, type PersonGroup } from '../data/people';
 import { groupAnchor } from './CharacterList';
 
 const GROUPS = Object.keys(PERSON_GROUP_LABEL) as PersonGroup[];
+const PEOPLE_COUNT = PEOPLE.length;
 
 interface CastRailProps {
   query: string;
@@ -11,6 +13,8 @@ interface CastRailProps {
 
 /** Controls for the Characters tab: jump to a group, and search by name or role. */
 export function CastRail({ query, onQuery }: CastRailProps) {
+  const world = useWorld();
+  const hidden = PEOPLE_COUNT - world.people.length;
   return (
     <div className="rail">
       <span className="label">Jump to</span>
@@ -36,7 +40,10 @@ export function CastRail({ query, onQuery }: CastRailProps) {
         value={query}
         onChange={(e) => onQuery(e.target.value)}
       />
-      <span className="count">{PEOPLE.length} characters</span>
+      <span className="count">
+        {world.people.length} characters
+        {hidden > 0 && <em title="Raise ‘Read up to’ in the toolbar to show them"> · {hidden} not met yet</em>}
+      </span>
     </div>
   );
 }

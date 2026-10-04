@@ -1,5 +1,5 @@
 import { CATEGORIES } from '../data/categories';
-import { EVENTS, PEOPLE, THREADS } from '../data';
+import { useWorld } from '../context';
 import { PERSON_GROUP_LABEL, type PersonGroup } from '../data/people';
 import type { CategoryId } from '../data/types';
 import type { JumpTarget } from '../engine/types';
@@ -15,16 +15,7 @@ const JUMPS: { label: string; target: JumpTarget }[] = [
   { label: 'The crash, 2008', target: 'crash' },
 ];
 
-/** Events per category; the data is static, so count once. */
-const CATEGORY_COUNT = Object.fromEntries(
-  CATEGORIES.map((c) => [c.id, EVENTS.filter((e) => e.category === c.id).length]),
-) as Record<CategoryId, number>;
-
-/** People grouped for the picker, in the order the groups are declared. */
-const PEOPLE_BY_GROUP = (Object.keys(PERSON_GROUP_LABEL) as PersonGroup[]).map((group) => ({
-  group,
-  names: PEOPLE.filter((p) => p.group === group).map((p) => p.name),
-}));
+const GROUPS = Object.keys(PERSON_GROUP_LABEL) as PersonGroup[];
 
 interface FilterRailProps {
   enabled: ReadonlySet<CategoryId>;
@@ -35,6 +26,9 @@ interface FilterRailProps {
   onThread(id: string | null): void;
   person: string | null;
   onPerson(name: string | null): void;
+  /** Text the timeline is narrowed to, from the search box; empty for none. */
+  query: string;
+  onClearQuery(): void;
   /** Whether the real-history lane is shown. */
   lane: boolean;
   onLane(visible: boolean): void;
@@ -44,13 +38,16 @@ interface FilterRailProps {
 
 /** Jump buttons, category toggles (which double as the colour legend), focus pickers and the event count. */
 export function FilterRail(props: FilterRailProps) {
-  const { enabled, onToggle, onJump, thread, onThread, person, onPerson, lane, onLane, visibleCount } = props;
-  const total = EVENTS.length;
+  const { enabled, onToggle, onJump, thread, onThread, person, onPerson, query, onClearQuery, lane, onLane, visibleCount } = props;
+  const world = useWorld();
+  const total = world.events.length;
+  // Volumes the reader has not reached have nothing to jump to.
+  const jumps = JUMPS.filter((j) => typeof j.target !== 'number' || j.target <= world.max);
   return (
     <div className="rail">
       <span className="label">Jump to</span>
       <div className="scroller" role="group" aria-label="Jump to a volume">
-        {JUMPS.map((j) => (
+        {jumps.map((j) => (
           <button key={j.target} id={`jump-${j.target}`} type="button" className="chip jump" onClick={() => onJump(j.target)}>
             {j.label}
           </button>
@@ -66,7 +63,7 @@ export function FilterRail(props: FilterRailProps) {
           onChange={(e) => onThread(e.target.value || null)}
         >
           <option value="">All threads</option>
-          {THREADS.map((t) => (
+          {world.threads.map((t) => (
             <option key={t.id} value={t.id}>
               {t.name}
             </option>
@@ -80,16 +77,28 @@ export function FilterRail(props: FilterRailProps) {
           onChange={(e) => onPerson(e.target.value || null)}
         >
           <option value="">Everyone</option>
-          {PEOPLE_BY_GROUP.map(({ group, names }) => (
-            <optgroup key={group} label={PERSON_GROUP_LABEL[group]}>
-              {names.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </optgroup>
-          ))}
+          {GROUPS.map((group) => {
+            const members = world.people.filter((p) => p.group === group);
+            if (!members.length) return null;
+            return (
+              <optgroup key={group} label={PERSON_GROUP_LABEL[group]}>
+                {members.map((p) => (
+                  <option key={p.name} value={p.name}>
+                    {p.name}
+                  </option>
+                ))}
+              </optgroup>
+            );
+          })}
         </select>
+        {query && (
+          <button id="qchip" type="button" className="chip qchip" title="Stop narrowing the timeline to this text" onClick={onClearQuery}>
+            Text: “{query}”
+            <span className="x" aria-hidden="true">
+              ×
+            </span>
+          </button>
+        )}
         <button
           id="lane-toggle"
           type="button"
@@ -116,12 +125,13 @@ export function FilterRail(props: FilterRailProps) {
           >
             <CategoryGlyph category={c.id} />
             {c.name}
-            <span className="n">{CATEGORY_COUNT[c.id]}</span>
+            <span className="n">{world.events.filter((e) => e.category === c.id).length}</span>
           </button>
         ))}
       </div>
       <span className="count" id="count">
         {visibleCount === total ? `${total} events` : `${visibleCount} of ${total} events`}
+        {world.hiddenEvents > 0 && <em title="Raise ‘Read up to’ in the toolbar to show them"> · {world.hiddenEvents} later ones hidden</em>}
       </span>
     </div>
   );

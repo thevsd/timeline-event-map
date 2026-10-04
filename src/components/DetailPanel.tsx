@@ -1,10 +1,11 @@
 import { useEffect, useRef } from 'react';
-import { CORP_NODE_BY_ID, EVENT_BY_ID, REAL_BY_ID, THREAD_BY_ID } from '../data';
+import { useWorld } from '../context';
 import type { PanelPage } from '../types';
 import { CompanyPage } from './panel/CompanyPage';
 import { EventPage } from './panel/EventPage';
 import { PersonPage } from './panel/PersonPage';
 import { RealPage } from './panel/RealPage';
+import { TermPage } from './panel/TermPage';
 import { ThreadPage } from './panel/ThreadPage';
 import type { OpenPage } from './panel/parts';
 
@@ -37,13 +38,15 @@ const PAGE_LABEL: Record<PanelPage['kind'], string> = {
   thread: 'Thread',
   real: 'Real history',
   company: 'Corporate map',
+  term: 'Glossary',
 };
 
 const pageKey = (page: PanelPage) => `${page.kind}:${page.kind === 'person' ? page.name : page.id}`;
 
 /**
  * Side panel that slides in from the right. It shows one page at a time (an event, a person,
- * a thread, a real-history entry or a company); pages link to each other and the header steps back.
+ * a thread, a real-history entry, a company or a glossary term); pages link to each other and the
+ * header steps back.
  */
 export function DetailPanel(props: DetailPanelProps) {
   const { page, canGoBack, position, total, onBack, onClose, onStep, onOpen } = props;
@@ -98,26 +101,31 @@ export function DetailPanel(props: DetailPanelProps) {
   );
 }
 
-/** The page body for whichever kind is showing. Unknown ids render nothing. */
+/** The page body for whichever kind is showing. Ids that are unknown, or beyond the reader's progress, render nothing. */
 function Page({ shown, person, thread, mapStep, onOpen, onFilterPerson, onFilterThread }: DetailPanelProps & { shown: PanelPage }) {
+  const world = useWorld();
   switch (shown.kind) {
     case 'event': {
-      const event = EVENT_BY_ID.get(shown.id);
+      const event = world.eventById.get(shown.id);
       return event ? <EventPage event={event} onOpen={onOpen} /> : null;
     }
     case 'person':
       return <PersonPage name={shown.name} filtered={person === shown.name} onFilter={onFilterPerson} onOpen={onOpen} />;
     case 'thread': {
-      const found = THREAD_BY_ID.get(shown.id);
+      const found = world.threadById.get(shown.id);
       return found ? <ThreadPage thread={found} filtered={thread === found.id} onFilter={onFilterThread} onOpen={onOpen} /> : null;
     }
     case 'real': {
-      const real = REAL_BY_ID.get(shown.id);
+      const real = world.realById.get(shown.id);
       return real ? <RealPage real={real} onOpen={onOpen} /> : null;
     }
     case 'company': {
-      const node = CORP_NODE_BY_ID.get(shown.id);
+      const node = world.nodeById.get(shown.id);
       return node ? <CompanyPage node={node} step={mapStep} onOpen={onOpen} /> : null;
+    }
+    case 'term': {
+      const term = world.termById.get(shown.id);
+      return term ? <TermPage term={term} onOpen={onOpen} /> : null;
     }
   }
 }

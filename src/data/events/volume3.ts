@@ -189,7 +189,7 @@ export const volume3: EventRecord[] = [
       "Angela: ‘we have to think of these diversion attacks as collateral damage.’",
       "Runa knows what that means and says nothing about hijacked planes.",
     ],
-    realWorld: "Fictional. Vol. 5 adds that the detonator was being built in Akihabara.",
+    realWorld: "Fictional.{v5} Vol. 5 adds that the detonator was being built in Akihabara.",
     readings: [
       { confidence: "strong", text: "Intervention redistributes risk; it does not remove it." },
     ],

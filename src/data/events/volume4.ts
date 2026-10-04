@@ -232,7 +232,7 @@ export const volume4: EventRecord[] = [
     realWorld: "Story event. The afterword: ‘would you really make a child still in elementary school sign an order for murder?’ Koizumi is deliberately not written as a villain.",
     readings: [
       { confidence: "strong", text: "The objection is not that she is a child or wrong. It is that she is unaccountable, and the text gives her no rebuttal." },
-      { confidence: "strong", text: "Vol. 5 reframes the defeat as a rescue." },
+      { confidence: "strong", text: "{v5}Vol. 5 reframes the defeat as a rescue." },
     ],
     people: ["Koizumi Souichirou", "Keikain Runa"],
     links: ["ledgers", "sept11", "lockedroom", "treasury", "downfall"],

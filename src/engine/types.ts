@@ -52,6 +52,8 @@ export interface RealItem {
   /** Screen x of its date. */
   sx: number;
   off: boolean;
+  /** Held back by the reading-progress guard. */
+  hidden: boolean;
 }
 
 /** A rectangle in card-viewport coordinates. */

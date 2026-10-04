@@ -16,8 +16,6 @@ export interface MapEdge extends Omit<CorpEdge, 'kind'> {
   kind: CorpEdgeKind | 'merged';
 }
 
-export const LAST_STEP = CORP_STEPS.length;
-
 /** The event a step applies; null for step 0. */
 export function stepEvent(step: number): TimelineEvent | null {
   return step > 0 ? (EVENT_BY_ID.get(CORP_STEPS[step - 1]) ?? null) : null;

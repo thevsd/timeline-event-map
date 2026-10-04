@@ -14,6 +14,7 @@ export interface CorpNode {
   /** Grid position: column (see CORP_COLUMNS) and row. */
   col: number;
   row: number;
+  /** May carry spoiler markers (see lib/spoilers.ts). */
   note: string;
   /** Real-world counterpart, where the novel has one. */
   real?: string;
@@ -72,7 +73,7 @@ export const corpNodes: CorpNode[] = [
   // Runa
   {
     id: 'runa', name: 'Keikain Runa', kind: 'person', col: 0, row: 1,
-    note: 'Real owner of the Moonlight Fund. She acts through Tachibana and Ichijou and holds no office in any company on this map: the proxy control Koizumi later calls unaccountable.',
+    note: 'Real owner of the Moonlight Fund. She acts through Tachibana and Ichijou and holds no office in any company on this map{v4}: the proxy control Koizumi later calls unaccountable{v1}.',
     history: [
       ['ledgers', 'Mortgages the estate for ¥500m.'],
       ['testimony', 'The Duke is announced as her guardian.'],
@@ -82,7 +83,7 @@ export const corpNodes: CorpNode[] = [
   },
   {
     id: 'moonlight', name: 'Moonlight Fund', kind: 'fund', col: 0, row: 3, since: 'moonlight',
-    note: 'Runa’s offshore vehicle, run through Tachibana and Ichijou. About ¥50bn by 1997, over ¥1 trillion in Volume 2, and an underground treasury of more than ¥10 trillion by Volume 5.',
+    note: 'Runa’s offshore vehicle, run through Tachibana and Ichijou. About ¥50bn by 1997.{v2} Over ¥1 trillion in Volume 2.{v5} An underground treasury of more than ¥10 trillion by Volume 5.',
     history: [
       ['moonlight', 'Turns ¥500m into about ¥50bn.'],
       ['kaitaku', 'Bids for Hokkaido Kaitaku Bank through a ‘California-based’ front.'],
@@ -120,7 +121,7 @@ export const corpNodes: CorpNode[] = [
   {
     id: 'sankai', name: 'Sankai Securities', kind: 'company', col: 1, row: 5, since: 'sankai',
     real: 'Sanyo Securities, which failed in November 1997',
-    note: 'The first rung of the ladder: the smallest failing broker, bought for the Bank of Japan special loan that comes with it. By Volume 5 the group’s broker is called Keika Securities.',
+    note: 'The first rung of the ladder: the smallest failing broker, bought for the Bank of Japan special loan that comes with it.{v5} By Volume 5 the group’s broker is called Keika Securities.',
     history: [
       ['sankai', 'Bought under the Keika Rules.'],
       ['ichiyama', 'Absorbs the larger Ichiyama in a reverse merger.'],
@@ -135,7 +136,7 @@ export const corpNodes: CorpNode[] = [
   // Keika finance
   {
     id: 'holdings', name: 'Keika Holdings', kind: 'company', col: 2, row: 0, since: 'kidnap',
-    note: 'Presented as Japan’s first new-style bank holding company. Ichijou leads it. The wider group also includes Kyomei Bank, a regional lender built from parts of LPCB and Nihon Credit.',
+    note: 'Presented as Japan’s first new-style bank holding company. {v2} Ichijou leads it.{v3} The wider group also includes Kyomei Bank, a regional lender built from parts of LPCB and Nihon Credit.',
     history: [
       ['kidnap', 'Announced at the launch party.'],
       ['sougou', 'Ichijou is confirmed as its head.'],
@@ -177,7 +178,7 @@ export const corpNodes: CorpNode[] = [
   },
   {
     id: 'akamatsu', name: 'Akamatsu Corporation', kind: 'company', col: 3, row: 2, since: 'akamatsu',
-    note: 'The trading house under Toudou: ‘the blood vessels and nervous system’ between Hokkaido producers, the bank and retail. It trades Russian crude, which is what Iwazaki wants.',
+    note: 'The trading house under Toudou: ‘the blood vessels and nervous system’ between Hokkaido producers, the bank and retail. It trades Russian crude{v3}, which is what Iwazaki wants{v1}.',
     history: [
       ['akamatsu', 'Formed from Matsuno Trading, Akamaru and Keika Corp.'],
       ['shikoku', 'Buys Dog Express for ¥140bn.'],
@@ -218,7 +219,7 @@ export const corpNodes: CorpNode[] = [
   // Property, rail, transport
   {
     id: 'fehotels', name: 'Far Eastern Hotels', kind: 'company', col: 4, row: 0,
-    note: 'Carved out of the Far Eastern Group before its property arm files. Keika Hotels appears among the group’s companies later.',
+    note: 'Carved out of the Far Eastern Group before its property arm files.{v3} Keika Hotels appears among the group’s companies later.',
     history: [['fareastern', 'Bought by the Fund for ¥30bn.']],
   },
   {
@@ -255,14 +256,14 @@ export const corpNodes: CorpNode[] = [
   },
   {
     id: 'shinjuku', name: 'Shinjuku Shinkansen', kind: 'project', col: 4, row: 7, since: 'tvinterview',
-    note: 'About ¥2tn, paid as a lump sum. That payment is part of why the Fund is short of yen when the Furukawa bid comes.',
+    note: 'About ¥2tn, paid as a lump sum.{v4} That payment is part of why the Fund is short of yen when the Furukawa bid comes.',
   },
 
   // Technology and culture
   {
     id: 'browser', name: 'The browser company', kind: 'company', col: 5, row: 0, since: 'browser',
     real: 'Yahoo! Japan',
-    note: 'The Japanese arm of the US browser company. It lists at ¥2m a share and reaches ¥167.9m by February 2000.',
+    note: 'The Japanese arm of the US browser company. It lists at ¥2m a share{v2} and reaches ¥167.9m by February 2000{v1}.',
   },
   {
     id: 'opera', name: 'Keika Opera Company', kind: 'company', col: 5, row: 1, since: 'queennight',
@@ -298,7 +299,7 @@ export const corpNodes: CorpNode[] = [
   // Original Keika Group
   {
     id: 'duke', name: 'The Keikain ducal house', kind: 'person', col: 6, row: 0,
-    note: 'Duke Kiyomaro heads the Keika Group. Her father’s Far Eastern Group was absorbed into it after his scandal. The Duke sells the original companies to Iwazaki because the house cannot staff a group that size.',
+    note: 'Duke Kiyomaro heads the Keika Group. Her father’s Far Eastern Group was absorbed into it after his scandal.{v3} The Duke sells the original companies to Iwazaki because the house cannot staff a group that size.',
     history: [
       ['testimony', 'Kiyomaro is announced as Runa’s guardian.'],
       ['iwazakirefuse', 'The Choufuu Council meets as Iwazaki moves in.'],
@@ -308,7 +309,7 @@ export const corpNodes: CorpNode[] = [
   },
   {
     id: 'keikapharma', name: 'Keika Pharmaceuticals', kind: 'company', col: 6, row: 1, until: 'adoption', into: 'keikaiwazaki',
-    note: 'The original group’s lead company, and the door Iwazaki comes through.',
+    note: 'The original group’s lead company{v2}, and the door Iwazaki comes through{v1}.',
     history: [['iwazakirefuse', 'Iwazaki Pharma proposes a merger: in effect, a takeover of the Keika Group.']],
   },
   {
@@ -318,7 +319,7 @@ export const corpNodes: CorpNode[] = [
   },
   {
     id: 'keikaothers', name: 'Keika Chemicals and others', kind: 'company', col: 6, row: 3, until: 'adoption', into: 'iwazakihonsha',
-    note: 'Keika Chemicals, Keika Storage and Keika Maritime Insurance: the rest of the original companies, absorbed by Iwazaki.',
+    note: 'Keika Chemicals, Keika Storage and Keika Maritime Insurance: the rest of the original companies{v3}, absorbed by Iwazaki{v1}.',
   },
   {
     id: 'keikacorp', name: 'Keika Corp', kind: 'company', col: 6, row: 4, until: 'akamatsu', into: 'akamatsu',
@@ -335,12 +336,12 @@ export const corpNodes: CorpNode[] = [
   {
     id: 'iwazakibank', name: 'Imperial Iwazaki Bank', kind: 'outside', col: 7, row: 1,
     real: 'Bank of Tokyo-Mitsubishi (probable)',
-    note: 'One of the zaibatsu’s three pillars. Its president, Iwazaki Yashirou, asks Runa to bring her companies and join.',
+    note: 'One of the zaibatsu’s three pillars.{v2} Its president, Iwazaki Yashirou, asks Runa to bring her companies and join.',
     history: [['iwazakirefuse', 'Runa refuses: ‘There is still much I have left to do.’']],
   },
   {
     id: 'iwazakicorp', name: 'Iwazaki Corporation', kind: 'outside', col: 7, row: 2,
-    note: 'The trading pillar. It instigates the moves against the Moonlight Fund, with a hidden third party whispering to it.',
+    note: 'The trading pillar.{v3} It instigates the moves against the Moonlight Fund, with a hidden third party whispering to it.',
   },
   {
     id: 'iwazakiheavy', name: 'Iwazaki Heavy Industries', kind: 'outside', col: 7, row: 3,
@@ -349,11 +350,11 @@ export const corpNodes: CorpNode[] = [
   {
     id: 'iwazakimotors', name: 'Iwazaki Motors', kind: 'outside', col: 7, row: 4,
     real: 'Mitsubishi Motors',
-    note: 'A secret recall surfaces. The government wants to break it out of the zaibatsu and merge it with Teia Motor.',
+    note: 'The zaibatsu’s carmaker.{v3} A secret recall surfaces. The government wants to break it out of the zaibatsu and merge it with Teia Motor.',
   },
   {
     id: 'iwazakipharma', name: 'Iwazaki Pharma', kind: 'outside', col: 7, row: 5, until: 'adoption', into: 'keikaiwazaki',
-    note: 'Proposes the merger with Keika Pharmaceuticals.',
+    note: 'The zaibatsu’s drug maker.{v2} Proposes the merger with Keika Pharmaceuticals.',
   },
   {
     id: 'futaki', name: 'Futaki Bank', kind: 'outside', col: 7, row: 6,

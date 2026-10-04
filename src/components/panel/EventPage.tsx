@@ -1,9 +1,11 @@
-import { CRASH_EVENT_ID, realEventsOf, threadsOf } from '../../data';
+import { useWorld } from '../../context';
+import { CRASH_EVENT_ID } from '../../data';
 import { BASIS_LABEL, CATEGORY_BY_ID, CONFIDENCE_LABEL, HISTORY_LABEL } from '../../data/categories';
 import type { TimelineEvent } from '../../data/types';
 import { CRASH_DAY } from '../../lib/time';
 import { CategoryGlyph } from '../CategoryGlyph';
 import { Illustration } from '../Illustration';
+import { Prose } from '../Prose';
 import { BulletList, EventLinks, Section, type OpenPage } from './parts';
 
 /** Countdown to the 2008 frame scene. Backstory events have no date, so no countdown. */
@@ -27,8 +29,9 @@ function Countdown({ event }: { event: TimelineEvent }) {
 
 /** Everything recorded about one event. */
 export function EventPage({ event, onOpen }: { event: TimelineEvent; onOpen: OpenPage }) {
-  const threads = threadsOf(event.id);
-  const real = realEventsOf(event.id);
+  const world = useWorld();
+  const threads = world.threadsOf(event.id);
+  const real = world.realOf(event.id);
   return (
     <div className={`cat-${event.category}`}>
       <div className="hero">
@@ -51,7 +54,9 @@ export function EventPage({ event, onOpen }: { event: TimelineEvent; onOpen: Ope
           {event.when}
           <small>{BASIS_LABEL[event.basis]}</small>
         </div>
-        <p className="lede">{event.brief}</p>
+        <p className="lede">
+          <Prose text={event.brief} />
+        </p>
         <Countdown event={event} />
 
         {event.what?.length ? (
@@ -68,7 +73,11 @@ export function EventPage({ event, onOpen }: { event: TimelineEvent; onOpen: Ope
 
         {(event.realWorld || real.length > 0) && (
           <Section title="Real-world history">
-            {event.realWorld && <p>{event.realWorld}</p>}
+            {event.realWorld && (
+              <p>
+                <Prose text={event.realWorld} />
+              </p>
+            )}
             {real.length > 0 && (
               <div className="chips">
                 {real.map((r) => (
@@ -88,7 +97,7 @@ export function EventPage({ event, onOpen }: { event: TimelineEvent; onOpen: Ope
               {event.readings.map((r) => (
                 <div key={r.text}>
                   <span className={`conf ${CONFIDENCE_LABEL[r.confidence].className}`}>{CONFIDENCE_LABEL[r.confidence].label}</span>
-                  {r.text}
+                  <Prose text={r.text} />
                 </div>
               ))}
             </div>

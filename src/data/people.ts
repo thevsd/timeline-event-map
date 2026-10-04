@@ -15,8 +15,11 @@ export interface Person {
   /** Picks the placeholder shown when the character has no portrait. */
   sex: 'm' | 'f';
   group: PersonGroup;
-  /** One line: who they are to the story. */
+  /** Volume in which they first appear; the reading-progress guard hides them until then. */
+  intro: number;
+  /** One line: who they are to the story. May carry spoiler markers (see lib/spoilers.ts). */
   role: string;
+  /** May carry spoiler markers. */
   bio: string;
   /** Real-world counterpart, where the novel has one. */
   real?: string;
@@ -32,6 +35,7 @@ export const people: Person[] = [
   // The Keikain family
   {
     name: 'Keikain Runa',
+    intro: 1,
     sex: 'f',
     group: 'family',
     role: 'Protagonist; real owner of the Moonlight Fund',
@@ -40,6 +44,7 @@ export const people: Person[] = [
   },
   {
     name: 'Keikain Hikomaro',
+    intro: 1,
     sex: 'm',
     group: 'family',
     role: 'Grandfather; fixer (dead before the story)',
@@ -47,13 +52,15 @@ export const people: Person[] = [
   },
   {
     name: 'Keikain Otsumaro',
+    intro: 1,
     sex: 'm',
     group: 'family',
     role: 'Father; founder of the Far Eastern Group (dead before the story)',
-    bio: 'Hikomaro’s illegitimate son. His group was a front for Eastern technology theft and was caught in a CoCom violation. Died by apparent suicide; Volume 2 reveals Tachibana pushed him to it.',
+    bio: 'Hikomaro’s illegitimate son. His group was a front for Eastern technology theft and was caught in a CoCom violation. Died by apparent suicide.{v2} Volume 2 reveals that Tachibana pushed him to it.',
   },
   {
     name: 'Natasha Romanova',
+    intro: 1,
     sex: 'f',
     group: 'family',
     role: 'Mother (dead shortly after Runa’s birth)',
@@ -61,54 +68,61 @@ export const people: Person[] = [
   },
   {
     name: 'Keikain Kiyomaro',
+    intro: 1,
     sex: 'm',
     group: 'family',
-    role: 'Duke; uncle, guardian and then adoptive father',
-    bio: 'Head of the Keika Group. Sold the original Keika companies to Iwazaki because the house could not staff them. Volume 3 shows him sincere: ‘I don’t want to be the kind of terrible father who steals his child’s belongings.’',
+    role: 'Duke; uncle{v2}, guardian{v3} and then adoptive father',
+    bio: 'Head of the Keika Group, and the uncle who arranges Runa’s engagement to the Teia heir.{v2} Announced as her guardian.{v3} Adopts her. Sold the original Keika companies to Iwazaki because the house could not staff them. Volume 3 shows him sincere: ‘I don’t want to be the kind of terrible father who steals his child’s belongings.’',
   },
   {
     name: 'Keikain Nakamaro',
+    intro: 1,
     sex: 'm',
     group: 'family',
     role: 'Cousin; the Duke’s heir',
-    bio: 'Promised Runa’s dying mother to protect her. Testifies to the House of Councilors in her place, survives 11 September 2001 in New York, and becomes a Keika Holdings director.',
+    bio: 'Promised Runa’s dying mother to protect her.{v2} Testifies to the House of Councilors in her place.{v3} Survives 11 September 2001 in New York.{v4} Becomes a Keika Holdings director.',
     art: 'Vol. 4, the executive office (KEI)',
   },
   {
     name: 'Asagiri Sakurako',
+    intro: 2,
     sex: 'f',
     group: 'family',
     role: 'Nakamaro’s fiancée',
-    bio: 'Granddaughter of Iwazaki Yashirou. Hands Runa an envelope from him at the adoption dinner; its contents are still unknown.',
+    bio: 'Granddaughter of Iwazaki Yashirou.{v3} Hands Runa an envelope from him at the adoption dinner; its contents are still unknown.',
   },
 
   // Inner circle
   {
     name: 'Tachibana Ryuuji',
+    intro: 1,
     sex: 'm',
     group: 'circle',
     role: 'Butler; guardian of record',
-    bio: 'Born in Karafuto, ex-underworld, once Hikomaro’s bodyguard. Noticed Runa’s precocity because her books were always reshelved correctly. Builds a private intelligence service behind her back, runs Keika Railway, and drove her father to suicide: a secret she does not know.',
+    bio: 'The household’s butler, who tells Runa her father’s history himself and fronts the Moonlight Fund for her.{v2} Born in Karafuto, ex-underworld, once Hikomaro’s bodyguard. Noticed Runa’s precocity because her books were always reshelved correctly. Builds a private intelligence service behind her back, runs Keika Railway, and drove her father to suicide: a secret she does not know.',
     art: CAST_V4,
   },
   {
     name: 'Tachibana Yuka',
+    intro: 1,
     sex: 'f',
     group: 'circle',
     role: 'Tachibana’s granddaughter; Runa’s maid',
-    bio: 'The maid in the 2008 frame scene, trained as Runa’s protector. Brings the sandwiches the morning after 9/11.',
+    bio: 'The maid in the 2008 frame scene.{v2} Trained as Runa’s protector.{v3} Brings the sandwiches the morning after 9/11.',
     art: 'Vol. 2, her introduction (KEI)',
   },
   {
     name: 'Ichijou Susumu',
+    intro: 1,
     sex: 'm',
     group: 'circle',
-    role: 'Banker; head of Keika Holdings',
-    bio: 'The Far Eastern Bank branch manager Runa blackmails and recruits at about five. Co-runs the Moonlight Fund, is kept ‘pure’ by the other adults, and is drawn onto Koizumi’s economic council. ‘I’m the second guy she scouted.’',
+    role: 'Banker{v2}; head of Keika Holdings',
+    bio: 'The Far Eastern Bank branch manager Runa blackmails and recruits at about five. Co-runs the Moonlight Fund.{v2} Kept ‘pure’ by the other adults, and drawn onto Koizumi’s economic council.{v4} ‘I’m the second guy she scouted.’',
     art: CAST_V4,
   },
   {
     name: 'Ichijou Erika',
+    intro: 3,
     sex: 'f',
     group: 'circle',
     role: 'Ichijou’s daughter; Runa’s secretary-maid',
@@ -117,29 +131,33 @@ export const people: Person[] = [
   },
   {
     name: 'Toudou Nagayoshi',
+    intro: 1,
     sex: 'm',
     group: 'circle',
     role: 'Resources advisor; managing director of Akamatsu',
-    bio: 'A resources man with a Manchurian past and a Lucky Strikes box. Co-designs the plan to recruit the Toyohara girls.',
+    bio: 'A resources man with a Manchurian past and a Lucky Strikes box.{v2} Co-designs the plan to recruit the Toyohara girls.',
     art: CAST_V4,
   },
   {
     name: 'Okazaki Yuuichi',
+    intro: 3,
     sex: 'm',
     group: 'circle',
     role: 'Akamatsu resources man',
-    bio: 'Works out that Runa has foreknowledge and asks only for ‘a front row seat’. Runs the WCI operation and the Gulf logistics, and names what broke her on 20 March 2003.',
+    bio: 'Works out that Runa has foreknowledge and asks only for ‘a front row seat’.{v4} Runs the WCI operation and the Gulf logistics.{v5} Names what broke her on 20 March 2003.',
     art: CAST_V4,
   },
   {
     name: 'Katsura Naoyuki',
+    intro: 1,
     sex: 'm',
     group: 'circle',
-    role: 'Banker; keeper of the hidden trust account',
-    bio: 'Worked at Hokkaido Kaitaku Bank and begged Runa to save it. Moves to private banking at Keika Bank and holds her secret Keika Trust Bank account in Sapporo.',
+    role: 'Banker{v2}; keeper of the hidden trust account',
+    bio: 'Worked at Hokkaido Kaitaku Bank and begged Runa to save it. Moves to private banking at Keika Bank.{v2} Holds her secret Keika Trust Bank account in Sapporo.',
   },
   {
     name: 'Tokitou Aki',
+    intro: 1,
     sex: 'f',
     group: 'circle',
     role: 'Maid',
@@ -148,6 +166,7 @@ export const people: Person[] = [
   },
   {
     name: 'Saitou Keiko',
+    intro: 1,
     sex: 'f',
     group: 'circle',
     role: 'Head maid',
@@ -156,6 +175,7 @@ export const people: Person[] = [
   },
   {
     name: 'Katsura Naomi',
+    intro: 1,
     sex: 'f',
     group: 'circle',
     role: 'Maid; Naoyuki’s mother',
@@ -163,47 +183,53 @@ export const people: Person[] = [
   },
   {
     name: 'Angela Sullivan',
+    intro: 1,
     sex: 'f',
     group: 'circle',
-    role: 'CIA analyst, then Runa’s secretary',
-    bio: 'Author of the Sullivan Report. Tachibana buys her away from the CIA. By Volumes 4 and 5 she is the frontrunner to lead the Keika Group; her loyalty is real but conditional.',
+    role: 'CIA analyst{v2}, then Runa’s secretary',
+    bio: 'Visits Runa posing as a fund manager, to warn her off the Keika Bank auction.{v2} Author of the Sullivan Report. Tachibana buys her away from the CIA.{v4} By Volumes 4 and 5 she is the frontrunner to lead the Keika Group; her loyalty is real but conditional.',
     art: CAST_V4,
   },
 
   // Classmates and the game cast
   {
     name: 'Teia Eiichi',
+    intro: 1,
     sex: 'm',
     group: 'school',
     role: 'Heir to Teia Motor; fiancé',
-    bio: 'In the game he casts the deciding vote against Runa. Here he proposes over breakfast as strategy, tells her it is okay to cry, and co-founds TIG Systems.',
+    bio: 'Runa’s fiancé in the 2008 frame scene, and the heir her uncle picks for her.{v2} Proposes over breakfast as strategy.{v3} Tells her it is okay to cry, and co-founds TIG Systems.{v4} In the game he casts the deciding vote against her.',
     art: CAST_V4,
   },
   {
     name: 'Izumikawa Yuujirou',
+    intro: 1,
     sex: 'm',
     group: 'school',
     role: 'Youngest son of Izumikawa Tatsunosuke',
-    bio: 'A love interest in the game. Handles finance and sales at TIG Systems and is heading for prefectural politics.',
+    bio: 'A love interest in the game.{v3} Handles finance and sales at TIG Systems and is heading for prefectural politics.',
     art: CAST_V4,
   },
   {
     name: 'Gotou Mitsuya',
+    intro: 1,
     sex: 'm',
     group: 'school',
     role: 'Son of a Finance Ministry budget analyst',
-    bio: 'The engineer of the Quartet. Tells Runa she is ‘growing up far faster than us’.',
+    bio: 'The engineer of the Quartet.{v2} Tells Runa she is ‘growing up far faster than us’.',
     art: CAST_V4,
   },
   {
     name: 'Takanashi Mizuho',
+    intro: 1,
     sex: 'f',
     group: 'school',
     role: 'The game’s heroine',
-    bio: 'Enters the academy on a scholarship at high school and fronts the reform that topples the game’s Runa. Absent from the present-day story through Volume 5.',
+    bio: 'Appears in the 2008 frame scene.{v2} Enters the academy on a scholarship at high school.{v4} Fronts the reform that topples the game’s Runa.{v5} Absent from the present-day story through Volume 5.',
   },
   {
     name: 'Kasugano Asuka',
+    intro: 1,
     sex: 'f',
     group: 'school',
     role: 'Friend since kindergarten',
@@ -212,6 +238,7 @@ export const people: Person[] = [
   },
   {
     name: 'Kaihouin Hotaru',
+    intro: 1,
     sex: 'f',
     group: 'school',
     role: 'Friend since kindergarten',
@@ -220,21 +247,24 @@ export const people: Person[] = [
   },
   {
     name: 'Amane Mio',
+    intro: 1,
     sex: 'f',
     group: 'school',
-    role: 'Friend; later head of an independent faction',
-    bio: 'Daughter of a struggling trader rescued through antique dolls. She never existed in the game.',
+    role: 'Friend{v5}; later head of an independent faction',
+    bio: 'Daughter of a struggling trader rescued through antique dolls.{v5} She never existed in the game.',
     art: 'Vol. 2, the flower-viewing party (KEI)',
   },
   {
     name: 'Shisuka Lydia',
+    intro: 1,
     sex: 'f',
     group: 'school',
     role: 'Classmate, called ‘Vasilisa’',
-    bio: 'Daughter of the Northern secret-police chief whose defection made reunification possible: honoured by Japan, hated in Karafuto. She never existed in the game.',
+    bio: 'Daughter of the Northern secret-police chief whose defection made reunification possible: honoured by Japan, hated in Karafuto.{v5} She never existed in the game.',
   },
   {
     name: 'Kushunnai Nanami',
+    intro: 5,
     sex: 'f',
     group: 'school',
     role: 'Leader of Runa’s junior-high faction',
@@ -242,6 +272,7 @@ export const people: Person[] = [
   },
   {
     name: 'Nozuki Misaki',
+    intro: 5,
     sex: 'f',
     group: 'school',
     role: 'Advisor to the faction',
@@ -249,6 +280,7 @@ export const people: Person[] = [
   },
   {
     name: 'Kanna Mizuki',
+    intro: 5,
     sex: 'f',
     group: 'school',
     role: 'Fortune teller',
@@ -259,24 +291,27 @@ export const people: Person[] = [
   // Politicians
   {
     name: 'Fuchigami Keiichi',
+    intro: 1,
     sex: 'm',
     group: 'politics',
-    role: 'Prime Minister, 1998 to 2000',
-    bio: 'Warned by Runa, he survives his stroke and retires. Tells her he used her, and warns her off her grandfather’s path.',
+    role: 'Prime Minister from 1998{v2} to 2000',
+    bio: 'Takes office after the 1998 upper-house defeat.{v2} Warned by Runa, he survives his stroke and retires. Tells her he used her, and warns her off her grandfather’s path.',
     real: 'Obuchi Keizō',
     art: 'Vol. 2, the hospital scene (KEI)',
   },
   {
     name: 'Izumikawa Tatsunosuke',
+    intro: 1,
     sex: 'm',
     group: 'politics',
-    role: 'Finance Minister, party vice president, caretaker Prime Minister',
-    bio: 'Runa’s main political ally and Yuujirou’s father. Resigns over the Finance Ministry scandal, returns through her scribbled note, and serves a six-month caretaker premiership on her advice.',
+    role: 'Finance Minister, party vice president{v2}, caretaker Prime Minister',
+    bio: 'Runa’s main political ally and Yuujirou’s father. Resigns over the Finance Ministry scandal, and returns through her scribbled note.{v2} Serves a six-month caretaker premiership on her advice.',
     real: 'A composite; his 1998 resignation is Mitsuzuka Hiroshi’s',
     art: CAST_V1,
   },
   {
     name: 'Izumikawa Taichirou',
+    intro: 1,
     sex: 'm',
     group: 'politics',
     role: 'Councilor; Tatsunosuke’s son',
@@ -284,31 +319,35 @@ export const people: Person[] = [
   },
   {
     name: 'Katou Kazuhiro',
+    intro: 1,
     sex: 'm',
     group: 'politics',
     role: 'Party heavyweight',
-    bio: 'Complicit in the cover-up that destroyed Runa’s father; his later help reads as atonement. His mistake ‘was in thinking she was a mere prop’.',
+    bio: 'Complicit in the cover-up that destroyed Runa’s father; his later help reads as atonement.{v2} His mistake ‘was in thinking she was a mere prop’.',
     real: 'Katō Kōichi',
   },
   {
     name: 'Koizumi Souichirou',
+    intro: 1,
     sex: 'm',
     group: 'politics',
-    role: 'Prime Minister from 2001',
-    bio: 'Structural antagonist, the man who catches her on 9/11 and the man who tells her ‘you simply aren’t qualified’. The author does not write him as a villain.',
+    role: 'Party rival{v2}; Prime Minister from 2001',
+    bio: 'Loses the 1998 party vote and learns who pulled the strings: ‘that Little Queen’.{v2} Wins the leadership in 2001 against the candidate Runa backs.{v3} The man who catches her on 9/11.{v4} The man who tells her ‘you simply aren’t qualified’: the structural antagonist, though the author does not write him as a villain.',
     real: 'Koizumi Jun’ichirō',
     art: CAST_V4,
   },
   {
     name: 'Takenaga Nobutame',
+    intro: 2,
     sex: 'm',
     group: 'politics',
     role: 'Economist; Koizumi’s reform minister',
-    bio: 'Makes the televised case against cross-shareholdings and drives the ‘big-boned’ policies.',
+    bio: 'Makes the televised case against cross-shareholdings.{v3} Drives the ‘big-boned’ policies.',
     real: 'Takenaka Heizō',
   },
   {
     name: 'Iwasawa Makoto',
+    intro: 2,
     sex: 'm',
     group: 'politics',
     role: 'Governor of Tokyo',
@@ -319,13 +358,15 @@ export const people: Person[] = [
   // Intelligence and security
   {
     name: 'Maefuji Shouichi',
+    intro: 1,
     sex: 'm',
     group: 'intelligence',
-    role: 'Public Safety Bureau inspector, later director',
+    role: 'Public Safety Bureau inspector{v3}, later director',
     bio: 'Leads the raid that frees Runa in 1998. In the game he is the officer who arrests her.',
   },
   {
     name: 'Anisha Egorova',
+    intro: 3,
     sex: 'f',
     group: 'intelligence',
     role: 'Former Eastern intelligence ‘observer’',
@@ -333,13 +374,15 @@ export const people: Person[] = [
   },
   {
     name: 'Eva Charon',
+    intro: 3,
     sex: 'f',
     group: 'intelligence',
     role: 'CIA',
-    bio: 'Part of the US Embassy’s view of the Keika Group in Volume 5.',
+    bio: 'A CIA officer in Runa’s orbit.{v5} Part of the US Embassy’s view of the Keika Group in Volume 5.',
   },
   {
     name: 'Yulia Molotova',
+    intro: 5,
     sex: 'f',
     group: 'intelligence',
     role: 'Intelligence staff',
@@ -347,6 +390,7 @@ export const people: Person[] = [
   },
   {
     name: 'Nakajima Atsushi',
+    intro: 3,
     sex: 'm',
     group: 'intelligence',
     role: 'Security chief',
@@ -354,6 +398,7 @@ export const people: Person[] = [
   },
   {
     name: 'Kitagumo Ryouko',
+    intro: 3,
     sex: 'f',
     group: 'intelligence',
     role: 'Maid; bodyguard',
@@ -363,6 +408,7 @@ export const people: Person[] = [
   // Others
   {
     name: 'Iwazaki Yashirou',
+    intro: 2,
     sex: 'm',
     group: 'other',
     role: 'President of Imperial Iwazaki Bank',
@@ -370,6 +416,7 @@ export const people: Person[] = [
   },
   {
     name: 'Teia Shuuichi',
+    intro: 1,
     sex: 'm',
     group: 'other',
     role: 'Head of the Teia Group',
@@ -377,6 +424,7 @@ export const people: Person[] = [
   },
   {
     name: 'Takamiya Haruka',
+    intro: 1,
     sex: 'f',
     group: 'other',
     role: 'Librarian at the Imperial Gakushuukan Academy',
@@ -384,10 +432,11 @@ export const people: Person[] = [
   },
   {
     name: 'Professor Kanbe',
+    intro: 3,
     sex: 'm',
     group: 'other',
     role: 'Economics professor',
-    bio: 'Kanbe Souji, professor of economics at a private university and Erika’s seminar teacher. His Volume 4 lecture presents neoliberalism fairly.',
+    bio: 'Kanbe Souji, professor of economics at a private university and Erika’s seminar teacher.{v4} His Volume 4 lecture presents neoliberalism fairly.',
     art: CAST_V4,
   },
 ];

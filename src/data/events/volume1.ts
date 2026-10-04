@@ -69,7 +69,7 @@ export const volume1: EventRecord[] = [
     ],
     realWorld: "Story event, placed by the yen’s real 1995 high near ¥80 to the dollar, which is her entry point.",
     readings: [
-      { confidence: "strong", text: "Proxy control starts here as a clever workaround for a minor. Vol. 4’s Koizumi names it as the defect that makes her power illegitimate." },
+      { confidence: "strong", text: "Proxy control starts here as a clever workaround for a minor.{v4} Vol. 4’s Koizumi names it as the defect that makes her power illegitimate." },
     ],
     people: ["Keikain Runa", "Ichijou Susumu", "Tachibana Ryuuji"],
     links: ["moonlight", "qualified"],
@@ -380,7 +380,7 @@ export const volume1: EventRecord[] = [
     brief: "The newly listed ‘browser company’ opens at ¥2m a share. Runa steps into the garden and says: ‘I made it.’",
     what: [
       "The Japanese arm of the US browser company lists and opens at ¥2m a share.",
-      "By February 2000 it reaches ¥167.9m a share.",
+      "{v2}By February 2000 it reaches ¥167.9m a share.",
       "Ichijou becomes a corporate officer and Naoyuki moves to private banking.",
     ],
     realWorld: "Altered. It closely tracks Yahoo! Japan, which listed in November 1997 and in January 2000 became the first Japanese stock above ¥100m a share.",
@@ -436,7 +436,7 @@ export const volume1: EventRecord[] = [
     ],
     realWorld: "Altered. DK Bank is Dai-Ichi Kangyo Bank, which the ministry really barred from new lending for five months in 1997 over the Koike sōkaiya scandal.",
     readings: [
-      { confidence: "plausible", text: "Politicians later use the nickname. Izumikawa calls her ‘Your Little Majesty’ and ‘small kingmaker’." },
+      { confidence: "plausible", text: "{v2}Politicians later use the nickname. Izumikawa calls her ‘Your Little Majesty’ and ‘small kingmaker’." },
     ],
     people: ["Keikain Runa"],
     links: ["akamatsu", "sougou", "governor"],
@@ -592,7 +592,7 @@ export const volume1: EventRecord[] = [
     readings: [
       { confidence: "strong", text: "Bright surface, irredeemable content: the scene states the novel’s own aesthetic." },
       { confidence: "strong", text: "At eight she sings the arranged fiancée’s aria to the man she expects to lose. In the opera, Micaëla fails." },
-      { confidence: "strong", text: "Later volumes show the Carmen triangle is a misreading. The ruin is financial." },
+      { confidence: "strong", text: "{v4}Later volumes show the Carmen triangle is a misreading. The ruin is financial." },
     ],
     people: ["Teia Eiichi", "Tachibana Ryuuji"],
     links: ["queennight", "dream", "downfall"],
@@ -793,7 +793,7 @@ export const volume1: EventRecord[] = [
     realWorld: "Real. Russia defaulted on 17 August 1998.",
     readings: [
       { confidence: "strong", text: "The payoff of her option depends on her silence." },
-      { confidence: "strong", text: "Her 1998 silence, from which she profits, and her 2003 refusal to short subprime are the same character at two points in her arc." },
+      { confidence: "strong", text: "{v5}Her 1998 silence, from which she profits, and her 2003 refusal to short subprime are the same character at two points in her arc." },
     ],
     people: ["Keikain Runa", "Maefuji Shouichi"],
     links: ["kidnap", "auction", "subprimerefusal"],
@@ -842,7 +842,7 @@ export const volume1: EventRecord[] = [
     what: [
       "The fund’s bailout involves ‘government guidance just like that given out by the Ministry of Finance’.",
       "The glossary: ‘The failure to learn from this disaster is what led to the situation with Lehman Brothers.’",
-      "In Vol. 2, Angela is exhausted from ‘cleaning up after that collapsed Wall Street fund’.",
+      "{v2}In Vol. 2, Angela is exhausted from ‘cleaning up after that collapsed Wall Street fund’.",
     ],
     realWorld: "Real. This is LTCM: on 23 September 1998 fourteen firms put up $3.625bn for 90% of the fund in a Fed-brokered deal with no Fed money.",
     readings: [
@@ -899,7 +899,7 @@ export const volume1: EventRecord[] = [
     realWorld: "Real. The glossary: ‘The date that the Lehman Brothers go bankrupt in the real world.’",
     readings: [
       { confidence: "strong", text: "‘Before the Crash’ in the title is a literal countdown. Everything else rewinds and moves toward this night." },
-      { confidence: "strong", text: "The series’ central open question: does the downfall still happen once noble privilege is abolished?" },
+      { confidence: "strong", text: "{v4}The series’ central open question: does the downfall still happen once noble privilege is abolished?" },
     ],
     people: ["Keikain Runa", "Teia Eiichi", "Takanashi Mizuho", "Tachibana Yuka"],
     links: ["birth", "ltcm", "subprime", "downfall"],

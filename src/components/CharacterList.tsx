@@ -1,18 +1,18 @@
 import { useEffect, useRef } from 'react';
-import { PEOPLE, eventsOf } from '../data';
+import { useWorld } from '../context';
 import { PERSON_GROUP_LABEL, type PersonGroup } from '../data/people';
+import { matchesAll, planQuery, prepare } from '../lib/text';
 import { Portrait } from './Portrait';
 
 const GROUPS = Object.keys(PERSON_GROUP_LABEL) as PersonGroup[];
 
-/** Events per character; the data is static, so count once. */
-const EVENT_COUNT = new Map(PEOPLE.map((p) => [p.name, eventsOf(p.name).length]));
+const eventCount = (count: number) => `${count} event${count === 1 ? '' : 's'}`;
 
 /** Anchor id of a group's section, shared with the rail's jump chips. */
 export const groupAnchor = (group: PersonGroup) => `cast-${group}`;
 
 interface CharacterListProps {
-  /** Lower-cased search text; empty shows everyone. */
+  /** Search text; empty shows everyone. */
   query: string;
   /** Character whose page is open in the side panel. */
   selected: string | null;
@@ -21,6 +21,7 @@ interface CharacterListProps {
 
 /** The cast, grouped as in the context file. Each card opens that character's page. */
 export function CharacterList({ query, selected, onSelect }: CharacterListProps) {
+  const world = useWorld();
   const stage = useRef<HTMLElement>(null);
 
   // Keep the selected card in view, for example when a link opens straight onto a character.
@@ -28,9 +29,9 @@ export function CharacterList({ query, selected, onSelect }: CharacterListProps)
     stage.current?.querySelector('.castcard.is-sel')?.scrollIntoView({ block: 'nearest' });
   }, [selected]);
 
-  const matches = PEOPLE.filter(
-    (p) => !query || `${p.name} ${p.role} ${p.real ?? ''}`.toLowerCase().includes(query),
-  );
+  const texts = world.people.map((p) => prepare(`${p.name} ${p.role} ${p.real ?? ''}`));
+  const tokens = planQuery(query, texts);
+  const matches = world.people.filter((_, i) => matchesAll(tokens, texts[i]));
   return (
     <section id="cast" className="caststage" aria-label="Characters" ref={stage}>
       {GROUPS.map((group) => {
@@ -54,9 +55,7 @@ export function CharacterList({ query, selected, onSelect }: CharacterListProps)
                   <Portrait name={p.name} person={p} />
                   <span className="cname">{p.name}</span>
                   <span className="crole">{p.role}</span>
-                  <span className="ccount">
-                    {EVENT_COUNT.get(p.name)} event{EVENT_COUNT.get(p.name) === 1 ? '' : 's'}
-                  </span>
+                  <span className="ccount">{eventCount(world.eventsOf(p.name).length)}</span>
                 </button>
               ))}
             </div>

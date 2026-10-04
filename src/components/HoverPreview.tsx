@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react';
+import type { Term } from '../data/glossary';
 import { TREATMENT_LABEL } from '../data/realHistory';
 import type { RealEvent, TimelineEvent } from '../data/types';
 import { Illustration } from './Illustration';
@@ -6,14 +7,15 @@ import { Illustration } from './Illustration';
 /** What is being hovered, and the screen rectangle to attach the preview to. */
 export type Preview =
   | { kind: 'event'; event: TimelineEvent; rect: DOMRect }
-  | { kind: 'real'; real: RealEvent; rect: DOMRect };
+  | { kind: 'real'; real: RealEvent; rect: DOMRect }
+  | { kind: 'term'; term: Term; rect: DOMRect };
 
 const WIDTH = 280; // matches .pop in app.css
 const MARGIN = 8;
 
 /**
- * Floating preview shown while the pointer rests on a card that has no illustration,
- * or on a real-history entry. Sits below its target when there is room, otherwise above it.
+ * Floating preview shown while the pointer rests on a card that has no illustration, on a
+ * real-history entry, or on a glossary term. Sits below its target when there is room, otherwise above it.
  */
 export function HoverPreview({ preview }: { preview: Preview | null }) {
   const element = useRef<HTMLDivElement>(null);
@@ -39,6 +41,21 @@ export function HoverPreview({ preview }: { preview: Preview | null }) {
 
   if (!shown) return null;
   const on = preview ? ' on' : '';
+
+  if (shown.kind === 'term') {
+    const { term } = shown;
+    return (
+      <div ref={element} className={`pop termpop${on}`} style={position} aria-hidden="true">
+        <div className="pb">
+          <div className="kicker">Glossary</div>
+          <h3>{term.term}</h3>
+          {term.origin && <div className="when">{term.origin}</div>}
+          <p>{term.definition}</p>
+          <div className="cta">Click the term for where it comes up</div>
+        </div>
+      </div>
+    );
+  }
 
   if (shown.kind === 'real') {
     const { real } = shown;

@@ -138,6 +138,33 @@ button { font: inherit; color: inherit; }
   background: var(--surface); color: var(--ink); padding: 0 11px; font: inherit; font-size: 13px;
 }
 .search::placeholder { color: var(--ink-3); }
+
+/* Search box and its results. The list hangs below the box and sits above the stage and the panel. */
+.searchbox { position: relative; }
+.results {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 60; width: min(460px, 92vw); max-height: min(70vh, 560px);
+  overflow-y: auto; overscroll-behavior: contain; padding: 5px; background: var(--surface);
+  border: 1px solid var(--line-strong); border-radius: 14px; box-shadow: var(--shadow-lift);
+}
+.results.right { left: auto; right: 0; }
+.result { display: flex; gap: 10px; align-items: baseline; padding: 7px 9px; border-radius: 9px; cursor: pointer; }
+.result.is-active { background: var(--surface-2); box-shadow: inset 2px 0 0 var(--accent); }
+.rkind {
+  flex: none; width: 76px; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3);
+}
+.result.k-event .rkind { color: var(--accent); }
+.rbody { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.rtitle { font-size: 13.5px; font-weight: 600; line-height: 18px; color: var(--ink); }
+.rsub { font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-3); }
+.rsnip { margin-top: 2px; font-size: 12px; line-height: 16px; color: var(--ink-2); }
+.results mark { background: var(--accent-soft); color: inherit; border-radius: 3px; padding: 0 1px; }
+.rfilter { margin-top: 4px; border-top: 1px solid var(--line); border-radius: 0 0 9px 9px; font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
+.rfilter.is-active { color: var(--ink); }
+.rmore, .rnone { padding: 7px 9px; font-size: 12px; color: var(--ink-3); }
+
+/* Reading progress: a labelled select; tinted while something is being held back. */
+.progress { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
+.progress .pick { height: 32px; border-radius: 9px; }
 .textbtn {
   height: 32px; padding: 0 12px; border-radius: 9px; border: 1px solid var(--line); background: var(--surface);
   font-size: 12.5px; font-weight: 600; color: var(--ink-2); cursor: pointer; white-space: nowrap;
@@ -170,6 +197,10 @@ button { font: inherit; color: inherit; }
 }
 .pick:hover { border-color: var(--line-strong); }
 .pick.on { border-color: var(--accent); background: var(--accent-soft); }
+/* The text the timeline is narrowed to; clicking it clears the filter. */
+.qchip { padding: 0 9px 0 11px; border-color: var(--accent); background: var(--accent-soft); max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+.qchip .x { color: var(--ink-2); font-size: 15px; line-height: 1; }
+.rail .count em { font-style: normal; color: var(--ink-3); }
 
 /* Corporate-map step controls, shown in the rail's place in map view. */
 .stepper { display: flex; gap: 4px; flex: none; }
@@ -426,6 +457,12 @@ button { font: inherit; color: inherit; }
   transition: border-color 0.2s;
 }
 .pill:hover { border-color: var(--line-strong); }
+/* A glossary term in running text: dotted underline, definition on hover, its page on click. */
+.term {
+  text-decoration: underline dotted color-mix(in oklab, var(--accent) 75%, transparent); text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px; border-radius: 3px; cursor: help; transition: background 0.15s;
+}
+.term:hover, .term:focus-visible { background: var(--accent-soft); text-decoration-style: solid; }
 .thread-pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex: none; }
 .rh-pill:hover { border-color: var(--t); }
 .toggle {
@@ -591,6 +628,11 @@ i.ek-finance, span.ek-finance, i.ek-family, span.ek-family { border-top-style: d
   .brand p { display: none; }
   .brand h1 { font-size: 17px; }
   .search { width: 130px; }
+  /* The results span the toolbar instead of hanging from a narrow box. */
+  .bar { position: relative; }
+  .searchbox { position: static; }
+  .results, .results.right { left: 0; right: 0; top: 100%; width: auto; }
+  .progress span { display: none; }
   .rail .count, .rail .label { display: none; }
   .rail { gap: 6px; }
   .rail .scroller { flex: 1 1 100%; }

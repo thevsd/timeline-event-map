@@ -1,8 +1,10 @@
 import { unmatchedPortraits } from '../art/characterImages';
 import { unmatchedImages } from '../art/eventImages';
+import { reveal, revealAll } from '../lib/spoilers';
 import { MONTHS_SHORT, dateOf, toDay } from '../lib/time';
 import { corpEdges, corpNodes, type CorpNode } from './corporate';
 import { backstory } from './events/backstory';
+import { glossary, type Term } from './glossary';
 import { volume1 } from './events/volume1';
 import { volume2 } from './events/volume2';
 import { volume3 } from './events/volume3';
@@ -18,7 +20,7 @@ const records: EventRecord[] = [...backstory, ...volume1, ...volume2, ...volume3
 
 // Surface data mistakes while developing; production builds skip the check.
 if (import.meta.env.DEV) {
-  const problems = validateData(records, threads, people, realHistory, corpNodes, corpEdges);
+  const problems = validateData(records, threads, people, realHistory, corpNodes, corpEdges, glossary);
   for (const name of unmatchedImages(new Set(records.map((r) => r.id)))) {
     problems.push(`assets/events/${name}: no event with this id`);
   }
@@ -39,9 +41,6 @@ function normalise(r: EventRecord): TimelineEvent {
     people,
     // Drop links to unknown ids so the panel never renders a dead link.
     links: (r.links ?? []).filter((id) => knownIds.has(id) && id !== r.id),
-    searchText: [r.title, r.brief, people.join(' '), r.when, `vol. ${r.volume}`, (r.what ?? []).join(' ')]
-      .join(' ')
-      .toLowerCase(),
   };
 }
 
@@ -101,11 +100,13 @@ function displayDate(day: number, monthOnly: boolean): string {
 export const REAL_EVENTS: readonly RealEvent[] = realHistory
   .map((r) => {
     const day = toDay(r.date);
+    const counterparts = (r.counterparts ?? []).filter((id) => knownIds.has(id));
     return {
       ...r,
       day,
       when: displayDate(day, r.precision === 'month'),
-      counterparts: (r.counterparts ?? []).filter((id) => knownIds.has(id)),
+      counterparts,
+      volume: counterparts.length ? Math.min(...counterparts.map((id) => EVENT_BY_ID.get(id)!.volume)) : 1,
     };
   })
   .sort((a, b) => a.day - b.day);
@@ -129,13 +130,42 @@ export const CORP_STEPS: readonly string[] = inStoryOrder([
   ].filter((id): id is string => id != null)),
 ]);
 
+// The reading-progress guard cuts the map's steps at the reader's volume, which needs them to be a prefix.
+if (import.meta.env.DEV) {
+  const volumes = CORP_STEPS.map((id) => EVENT_BY_ID.get(id)!.volume);
+  if (volumes.some((volume, i) => i > 0 && volume < volumes[i - 1])) {
+    console.error('Data problems:\n  corporate map: steps go back a volume, so reading progress cannot cut them cleanly');
+  }
+}
+
+/* ── Glossary ── */
+
+export const TERMS: readonly Term[] = glossary;
+
 /* ── Filtering ── */
+
+/** Everything about an event that the search box looks through, as a reader at `max` sees it. */
+export function eventSearchText(ev: TimelineEvent, max: number) {
+  return {
+    title: ev.title,
+    /** Names and labels: people, date, volume and chapter. */
+    keys: [...ev.people, ev.when, `Vol. ${ev.volume}`, ev.chapter].join(' · '),
+    brief: ev.brief,
+    body: [
+      ...revealAll(ev.what, max),
+      ...revealAll(ev.reveals, max),
+      reveal(ev.realWorld ?? '', max),
+      ...revealAll(ev.readings?.map((r) => r.text), max),
+    ].filter(Boolean).join(' '),
+  };
+}
 
 /** Whether an event passes every active filter. */
 export function matchesFilter(ev: TimelineEvent, filter: EventFilter): boolean {
   return (
+    ev.volume <= filter.maxVolume &&
     filter.categories.has(ev.category) &&
-    (!filter.query || ev.searchText.includes(filter.query)) &&
+    (!filter.textMatches || filter.textMatches.has(ev.id)) &&
     (!filter.person || ev.people.includes(filter.person)) &&
     (!filter.thread || (THREAD_EVENT_SETS.get(filter.thread)?.has(ev.id) ?? false))
   );

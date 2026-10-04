@@ -23,10 +23,10 @@ export interface RealEventRecord {
   title: string;
   /** What really happened. */
   real: string;
-  /** What the novel does with it. */
+  /** What the novel does with it. May carry spoiler markers (see lib/spoilers.ts). */
   novel: string;
   treatment: Treatment;
-  /** Ids of the timeline events that answer it. */
+  /** Ids of the timeline events that answer it. The entry is shown once the earliest of them has been read. */
   counterparts?: string[];
   /** Shown with a label before its neighbours when space is short. */
   major?: boolean;
@@ -80,7 +80,7 @@ export const realHistory: RealEventRecord[] = [
     precision: 'month',
     title: 'The Jusen settlement',
     real: 'The Diet approves ¥685bn of public money to wind up the housing-loan companies. The backlash makes public funds for banks politically untouchable.',
-    novel: 'The gap Runa’s private money fills. Volume 4’s banker says the ministry ‘must have seen this as a godsend’.',
+    novel: 'The gap Runa’s private money fills.{v4} Volume 4’s banker says the ministry ‘must have seen this as a godsend’.',
     treatment: 'preserved',
     counterparts: ['keikabank', 'memoir'],
   },
@@ -370,7 +370,7 @@ export const realHistory: RealEventRecord[] = [
     date: '2003-03-20',
     title: 'The Iraq War begins',
     real: 'The US-led invasion starts.',
-    novel: 'Kept. Runa has already given up her part in the Gulf logistics.',
+    novel: 'Kept.{v5} Runa has already given up her part in the Gulf logistics.',
     treatment: 'preserved',
     counterparts: ['treasury', 'saudi'],
     major: true,
@@ -380,7 +380,7 @@ export const realHistory: RealEventRecord[] = [
     date: '2003-05-17',
     title: 'Resona is rescued',
     real: 'The government injects about ¥2tn into Resona.',
-    novel: 'The same merged bank appears as Honami Bank in Volume 5’s news excerpts. The rescue itself falls after the mapped volumes.',
+    novel: 'One of the megabank mergers the novel keeps under changed names.{v5} The merged bank appears as Honami Bank in Volume 5’s news excerpts. The rescue itself falls after the mapped volumes.',
     treatment: 'ahead',
     counterparts: ['megabanks', 'layoffs'],
   },
@@ -398,7 +398,7 @@ export const realHistory: RealEventRecord[] = [
     date: '2007-08-09',
     title: 'The subprime crisis surfaces',
     real: 'BNP Paribas freezes three funds it can no longer value.',
-    novel: 'Still ahead. Volume 4 ends on ‘there are these things called subprime loans’, and in Volume 5 Runa refuses to short them.',
+    novel: 'Still ahead. Volume 4 ends on ‘there are these things called subprime loans’.{v5} In Volume 5 Runa refuses to short them.',
     treatment: 'ahead',
     counterparts: ['subprime', 'subprimerefusal'],
   },

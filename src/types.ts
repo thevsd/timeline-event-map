@@ -9,7 +9,8 @@ export type PanelPage =
   | { kind: 'person'; name: string }
   | { kind: 'thread'; id: string }
   | { kind: 'real'; id: string }
-  | { kind: 'company'; id: string };
+  | { kind: 'company'; id: string }
+  | { kind: 'term'; id: string };
 
 /** How a page is opened: replacing the whole stack, on top of it, or in place of the current page. */
 export type OpenMode = 'reset' | 'push' | 'replace';

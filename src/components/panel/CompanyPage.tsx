@@ -1,6 +1,8 @@
 import { CORP_NODE_BY_ID, EVENT_ORDER } from '../../data';
+import { useWorld } from '../../context';
 import { CORP_COLUMNS, CORP_EDGE_LABEL, type CorpKind, type CorpNode } from '../../data/corporate';
 import { edgesAt, endingOf, nodeStatus, stepOrder } from '../../lib/corporate';
+import { Prose } from '../Prose';
 import { EventLink, Section, type OpenPage } from './parts';
 
 const KIND_LABEL: Record<CorpKind, string> = {
@@ -14,6 +16,7 @@ const KIND_LABEL: Record<CorpKind, string> = {
 
 /** An entry on the corporate map: what it is, its ties at the current step, and its history. */
 export function CompanyPage({ node, step, onOpen }: { node: CorpNode; step: number; onOpen: OpenPage }) {
+  const world = useWorld();
   const order = stepOrder(step);
   const status = nodeStatus(node, order);
   const ties = edgesAt(order).filter((e) => e.from === node.id || e.to === node.id);
@@ -21,7 +24,10 @@ export function CompanyPage({ node, step, onOpen }: { node: CorpNode; step: numb
   // Appearance and ending are history too, when the data ties them to an event.
   const history: [string, string][] = [...(node.history ?? [])];
   if (node.since && !history.some(([id]) => id === node.since)) history.unshift([node.since, 'Enters the story.']);
-  if (node.until && !history.some(([id]) => id === node.until)) history.push([node.until, `${endingOf(node)}.`]);
+  // An ending the reader has not reached stays out of the list.
+  if (node.until && world.eventById.has(node.until) && !history.some(([id]) => id === node.until)) {
+    history.push([node.until, `${endingOf(node)}.`]);
+  }
   history.sort((a, b) => (EVENT_ORDER.get(a[0]) ?? 0) - (EVENT_ORDER.get(b[0]) ?? 0));
 
   return (
@@ -34,7 +40,9 @@ export function CompanyPage({ node, step, onOpen }: { node: CorpNode; step: numb
         </span>
       </div>
       <h2 id="ptitle">{node.name}</h2>
-      <p className="lede">{node.note}</p>
+      <p className="lede">
+        <Prose text={node.note} />
+      </p>
       {node.real && (
         <Section title="Real-world counterpart">
           <p>{node.real}</p>

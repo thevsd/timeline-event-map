@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { ZoomLevel } from '../engine/config';
-import type { View } from '../types';
+import { LAST_VOLUME } from '../lib/spoilers';
+import type { PanelPage, View } from '../types';
+import { SearchBox } from './SearchBox';
 
 const LEVELS: { id: ZoomLevel; label: string }[] = [
   { id: 'quarters', label: 'Quarters' },
@@ -8,6 +10,8 @@ const LEVELS: { id: ZoomLevel; label: string }[] = [
   { id: 'weeks', label: 'Weeks' },
   { id: 'days', label: 'Days' },
 ];
+
+const VOLUMES = Array.from({ length: LAST_VOLUME }, (_, i) => i + 1);
 
 const VIEWS: { id: View; label: string }[] = [
   { id: 'timeline', label: 'Timeline' },
@@ -18,8 +22,13 @@ const VIEWS: { id: View; label: string }[] = [
 interface ToolbarProps {
   view: View;
   onView(view: View): void;
-  search: string;
-  onSearch(text: string): void;
+  /** Open the page of a search result. */
+  onPick(page: PanelPage): void;
+  /** Narrow the timeline to the events matching a search text. */
+  onFilterText(query: string): void;
+  /** Reading progress: the last volume the reader has finished. */
+  progress: number;
+  onProgress(volume: number): void;
   /** Tick level currently shown on the axis. */
   level: ZoomLevel;
   onLevel(level: ZoomLevel): void;
@@ -29,8 +38,9 @@ interface ToolbarProps {
   onCopyLink(): Promise<boolean>;
 }
 
-/** Title, view switch, search box, zoom controls and the share button. */
-export function Toolbar({ view, onView, search, onSearch, level, onLevel, onZoom, onCopyLink }: ToolbarProps) {
+/** Title, view switch, search box, reading progress, zoom controls and the share button. */
+export function Toolbar(props: ToolbarProps) {
+  const { view, onView, onPick, onFilterText, progress, onProgress, level, onLevel, onZoom, onCopyLink } = props;
   // Outcome of the last copy, shown on the button for a moment.
   const [copied, setCopied] = useState<boolean | null>(null);
   useEffect(() => {
@@ -57,34 +67,40 @@ export function Toolbar({ view, onView, search, onSearch, level, onLevel, onZoom
         ))}
       </div>
 
+      <SearchBox onPick={onPick} onFilter={onFilterText} />
+
+      <label className="progress" title="Hide everything from the volumes you have not read yet">
+        <span>Read up to</span>
+        <select
+          id="progress"
+          className={`pick${progress < LAST_VOLUME ? ' on' : ''}`}
+          value={progress}
+          onChange={(e) => onProgress(Number(e.target.value))}
+        >
+          {VOLUMES.map((volume) => (
+            <option key={volume} value={volume}>
+              {volume === LAST_VOLUME ? `Vol. ${volume} (everything)` : `Vol. ${volume}`}
+            </option>
+          ))}
+        </select>
+      </label>
+
       {view === 'timeline' && (
-        <>
-          <input
-            id="search"
-            className="search"
-            type="search"
-            placeholder="Search events or people"
-            aria-label="Search events or people"
-            autoComplete="off"
-            value={search}
-            onChange={(e) => onSearch(e.target.value)}
-          />
-          <div className="zoom">
-            <button className="iconbtn" type="button" aria-label="Zoom out" title="Zoom out" onClick={() => onZoom(1 / 1.7)}>
-              −
-            </button>
-            <div className="seg" id="scale" role="group" aria-label="Time scale">
-              {LEVELS.map((l) => (
-                <button key={l.id} type="button" data-level={l.id} aria-pressed={level === l.id} onClick={() => onLevel(l.id)}>
-                  {l.label}
-                </button>
-              ))}
-            </div>
-            <button className="iconbtn" type="button" aria-label="Zoom in" title="Zoom in" onClick={() => onZoom(1.7)}>
-              +
-            </button>
+        <div className="zoom">
+          <button className="iconbtn" type="button" aria-label="Zoom out" title="Zoom out" onClick={() => onZoom(1 / 1.7)}>
+            −
+          </button>
+          <div className="seg" id="scale" role="group" aria-label="Time scale">
+            {LEVELS.map((l) => (
+              <button key={l.id} type="button" data-level={l.id} aria-pressed={level === l.id} onClick={() => onLevel(l.id)}>
+                {l.label}
+              </button>
+            ))}
           </div>
-        </>
+          <button className="iconbtn" type="button" aria-label="Zoom in" title="Zoom in" onClick={() => onZoom(1.7)}>
+            +
+          </button>
+        </div>
       )}
 
       <button

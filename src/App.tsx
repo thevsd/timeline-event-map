@@ -518,7 +518,9 @@ export default function App() {
 
           {/* Glossary terms are live only inside the panel; elsewhere text stays plain. */}
           <TermContext.Provider value={termActions}>
+            {/* Keyed by how it is laid out: a fresh element takes its place at once, where a kept one would animate from the other layout's width. */}
             <DetailPanel
+              key={view === 'cast' ? 'float' : 'push'}
               page={page}
               canGoBack={stack.length > 1}
               position={position}

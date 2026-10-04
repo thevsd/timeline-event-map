@@ -62,6 +62,14 @@ type Drag = { kind: 'pan'; x: number; y: number; x0: number } | { kind: 'pinch';
 const HTML_ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
 const escapeHtml = (s: string) => s.replace(/[&<>"]/g, (ch) => HTML_ESCAPES[ch]);
 
+/** Set a canvas's pixel size, leaving it alone when it already fits: assigning a size clears the canvas. */
+function fitCanvas(canvas: HTMLCanvasElement, width: number, height: number): void {
+  const w = Math.round(width);
+  const h = Math.round(height);
+  if (canvas.width !== w) canvas.width = w;
+  if (canvas.height !== h) canvas.height = h;
+}
+
 /** Pause after the view stops moving before the host is told about it. */
 const VIEW_REPORT_DELAY = 220;
 
@@ -492,11 +500,12 @@ export class Timeline {
   }
 
   /**
-   * Re-pack the cards. Depends only on zoom, stage size and filters, so panning never re-runs it.
+   * Re-pack the cards. Depends only on zoom, stage height, card sizes and filters, so neither panning
+   * nor a change of width (the side panel sliding in) re-runs it.
    * Changes are applied to the DOM only where they differ, to keep CSS transitions smooth.
    */
   private layout(): void {
-    const key = [this.ppd.toFixed(4), this.width, this.height, this.filterVersion, this.tiers.s.w, this.laneVisible].join('|');
+    const key = [this.ppd.toFixed(4), this.height, this.filterVersion, this.tiers.s.w, this.laneVisible].join('|');
     if (key === this.layoutKey) return;
     this.layoutKey = key;
 
@@ -1117,16 +1126,13 @@ export class Timeline {
     this.width = Math.max(200, rect.width);
     this.height = Math.max(200, rect.height);
     this.dpr = Math.min(2.5, window.devicePixelRatio || 1);
-    axisCanvas.width = Math.round(this.width * this.dpr);
-    axisCanvas.height = Math.round(this.height * this.dpr);
-    linkCanvas.width = axisCanvas.width;
-    linkCanvas.height = Math.round((this.height - AXIS_HEIGHT - this.laneHeight) * this.dpr);
+    fitCanvas(axisCanvas, this.width * this.dpr, this.height * this.dpr);
+    fitCanvas(linkCanvas, this.width * this.dpr, (this.height - AXIS_HEIGHT - this.laneHeight) * this.dpr);
 
     const strip = overview.getBoundingClientRect();
     this.overviewWidth = Math.max(100, strip.width);
     this.overviewHeight = Math.max(30, strip.height);
-    overviewCanvas.width = Math.round(this.overviewWidth * this.dpr);
-    overviewCanvas.height = Math.round(this.overviewHeight * this.dpr);
+    fitCanvas(overviewCanvas, this.overviewWidth * this.dpr, this.overviewHeight * this.dpr);
 
     const compact = this.width < COMPACT_WIDTH;
     stage.classList.toggle('compact', compact);
@@ -1140,7 +1146,9 @@ export class Timeline {
   private observeEnvironment(): void {
     const resize = new ResizeObserver(() => {
       this.measure();
-      this.requestDraw();
+      // Resizing a canvas clears it, and observers run after the frame's animation callbacks. Draw now:
+      // a deferred draw would leave the cleared canvas on screen for every frame of a panel animation.
+      this.draw();
     });
     resize.observe(this.els.stage);
     this.observers.push(resize);

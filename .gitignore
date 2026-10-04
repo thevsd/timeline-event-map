@@ -17,5 +17,6 @@ bin-release/
 # should NOT be excluded as they contain compiler settings and other important
 # information for Eclipse / Flash Builder.
 
-# Local preview builds (the published copy lives in Output/)
+# Dependencies and local builds (the published copy lives in Output/)
+node_modules/
 dist/

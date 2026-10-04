@@ -1,4 +1,5 @@
 import type { MotifName } from '../art/motifs';
+import type { RealEventRecord } from './realHistory';
 
 export type CategoryId = 'finance' | 'politics' | 'deals' | 'world' | 'personal' | 'shadow';
 
@@ -64,8 +65,21 @@ export interface TimelineEvent extends EventRecord {
   searchText: string;
 }
 
-/** Active filters: enabled categories and the lower-cased search text. */
+/** Active filters. An event must pass all of them. */
 export interface EventFilter {
   categories: ReadonlySet<CategoryId>;
+  /** Lower-cased search text; empty for none. */
   query: string;
+  /** Only events this person takes part in. */
+  person: string | null;
+  /** Only events on this thread (a thread id). */
+  thread: string | null;
+}
+
+/** A real-world event after normalisation. */
+export interface RealEvent extends RealEventRecord {
+  day: number;
+  /** Date as displayed, e.g. "17 Nov 1997" or "Jun 1997". */
+  when: string;
+  counterparts: string[];
 }

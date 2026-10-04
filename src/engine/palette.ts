@@ -9,7 +9,10 @@ export interface Palette {
   line: string;
   lineStrong: string;
   stage: string;
+  surface: string;
   accent: string;
+  /** Colour of real-history marks. */
+  real: string;
   hatch: string;
   fontMono: string;
   fontBody: string;
@@ -28,7 +31,9 @@ export function readPalette(): Palette {
     line: token('--line'),
     lineStrong: token('--line-strong'),
     stage: token('--stage'),
+    surface: token('--surface'),
     accent: token('--accent'),
+    real: token('--real'),
     hatch: token('--hatch'),
     fontMono: token('--font-mono'),
     fontBody: token('--font-body'),

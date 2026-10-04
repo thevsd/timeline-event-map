@@ -1,19 +1,19 @@
 import { useLayoutEffect, useRef, useState } from 'react';
-import type { TimelineEvent } from '../data/types';
+import { TREATMENT_LABEL } from '../data/realHistory';
+import type { RealEvent, TimelineEvent } from '../data/types';
 import { Illustration } from './Illustration';
 
-export interface Preview {
-  event: TimelineEvent;
-  /** Screen rectangle of the card being hovered. */
-  rect: DOMRect;
-}
+/** What is being hovered, and the screen rectangle to attach the preview to. */
+export type Preview =
+  | { kind: 'event'; event: TimelineEvent; rect: DOMRect }
+  | { kind: 'real'; real: RealEvent; rect: DOMRect };
 
 const WIDTH = 280; // matches .pop in app.css
 const MARGIN = 8;
 
 /**
- * Floating preview shown while the pointer rests on a card that has no illustration.
- * Sits below the card when there is room, otherwise above it.
+ * Floating preview shown while the pointer rests on a card that has no illustration,
+ * or on a real-history entry. Sits below its target when there is room, otherwise above it.
  */
 export function HoverPreview({ preview }: { preview: Preview | null }) {
   const element = useRef<HTMLDivElement>(null);
@@ -38,9 +38,29 @@ export function HoverPreview({ preview }: { preview: Preview | null }) {
   }, [preview]);
 
   if (!shown) return null;
+  const on = preview ? ' on' : '';
+
+  if (shown.kind === 'real') {
+    const { real } = shown;
+    return (
+      <div ref={element} className={`pop${on}`} style={position} aria-hidden="true">
+        <div className="pb">
+          <div className={`kicker rh-tag t-${real.treatment}`}>
+            <i className="rh-m" />
+            Real history · {TREATMENT_LABEL[real.treatment]}
+          </div>
+          <h3>{real.title}</h3>
+          <div className="when">{real.when}</div>
+          <p>{real.real}</p>
+          <div className="cta">Click for how the novel treats it</div>
+        </div>
+      </div>
+    );
+  }
+
   const { event } = shown;
   return (
-    <div ref={element} className={`pop cat-${event.category}${preview ? ' on' : ''}`} style={position} aria-hidden="true">
+    <div ref={element} className={`pop cat-${event.category}${on}`} style={position} aria-hidden="true">
       <div className="ph">
         <Illustration event={event} />
       </div>

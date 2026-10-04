@@ -1,27 +1,33 @@
+import { eventImage } from '../art/eventImages';
 import { illustrationSvg } from '../art/illustration';
 import { CATEGORY_BY_ID } from '../data/categories';
 import { matchesFilter } from '../data';
-import type { EventFilter, TimelineEvent } from '../data/types';
+import type { EventFilter, RealEvent, TimelineEvent } from '../data/types';
 import { CRASH_DAY, DOMAIN_END, DOMAIN_START, toDay } from '../lib/time';
 import {
-  AXIS_HEIGHT, BACKSTORY_PAD, BACKSTORY_STEP, BOTTOM_PAD, CARDS_TOP, COMPACT_WIDTH, LEVEL_PPD, PPD_MAX, PPD_MIN,
-  TIERS, TIERS_COMPACT, clamp, levelOf, type TierSizes, type ZoomLevel,
+  AXIS_HEIGHT, BACKSTORY_PAD, BACKSTORY_STEP, BADGE, BOTTOM_PAD, CARDS_PAD, COMPACT_WIDTH, LANE_HEIGHT, LEVEL_PPD,
+  PPD_MAX, PPD_MIN, TIERS, TIERS_COMPACT, clamp, levelOf, type TierSizes, type ZoomLevel,
 } from './config';
 import { drawAxis } from './drawAxis';
+import { drawLinks } from './drawLinks';
 import { drawOverview, overviewScale } from './drawOverview';
-import { packCards } from './layout';
-import { readPalette, type Palette } from './palette';
-import type { Frame, Item, JumpTarget, TimelineCallbacks } from './types';
+import { packCards, type Packing } from './layout';
+import { readPalette, setFont, type Palette } from './palette';
+import type { Badge, Box, Frame, Item, JumpTarget, RealItem, Reveal, TimelineCallbacks, ViewState } from './types';
 
 /** DOM nodes the engine draws into. The host creates them; the engine owns their contents. */
 export interface TimelineElements {
   stage: HTMLElement;
   /**
    * Container for the event cards. Its parent must be the card viewport: an element inside
-   * the stage that clips its contents, so scrolled cards never cover the axis header.
+   * the stage that clips its contents to the area below the axis header and the lane.
    */
   world: HTMLElement;
+  /** Row between the axis header and the cards that holds the real-history entries. */
+  lane: HTMLElement;
   axisCanvas: HTMLCanvasElement;
+  /** Overlay inside the card viewport, above the cards, for connection lines. */
+  linkCanvas: HTMLCanvasElement;
   overview: HTMLElement;
   overviewCanvas: HTMLCanvasElement;
 }
@@ -51,28 +57,36 @@ interface ZoomTarget extends Anchor {
   screenX: number;
 }
 
-type Drag =
-  | { kind: 'pan'; x: number; y: number; x0: number; scrollY: number }
-  | { kind: 'pinch'; distance: number; ppd: number };
+type Drag = { kind: 'pan'; x: number; y: number; x0: number } | { kind: 'pinch'; distance: number; ppd: number };
 
 const HTML_ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
 const escapeHtml = (s: string) => s.replace(/[&<>"]/g, (ch) => HTML_ESCAPES[ch]);
 
+/** Pause after the view stops moving before the host is told about it. */
+const VIEW_REPORT_DELAY = 220;
+
 /**
  * The timeline engine: a zoomable time axis with event cards packed beneath it.
  *
- * Framework-free. A canvas draws the axis, gridlines, markers and the overview strip; DOM buttons
- * are the cards, so they keep real text, focus and CSS transitions. The view is two numbers:
- * `ppd` (pixels per day) and `x0` (screen x of the start of the axis).
+ * Framework-free. Canvases draw the axis, gridlines, markers, connection lines and the overview
+ * strip; DOM buttons are the cards, badges and real-history entries, so they keep real text,
+ * focus and CSS transitions. The view is two numbers: `ppd` (pixels per day) and `x0` (screen x
+ * of the start of the axis).
  *
  * The host passes data and state in through the public methods and listens through callbacks.
  */
 export class Timeline {
   private readonly items: Item[];
   private readonly byId = new Map<string, Item>();
+  /** Ids of the events that link to each event: the reverse of `links`. */
+  private readonly linkedFrom = new Map<string, string[]>();
+  private readonly reals: RealItem[];
+  private readonly realById = new Map<string, RealItem>();
+  private badges: Badge[] = [];
   /** Pixel width of the backstory zone. */
   private readonly backstoryWidth: number;
   private readonly ctx: CanvasRenderingContext2D;
+  private readonly linkCtx: CanvasRenderingContext2D;
   private readonly overviewCtx: CanvasRenderingContext2D;
   /** Aborting this removes every listener the engine added. */
   private readonly listeners = new AbortController();
@@ -82,7 +96,6 @@ export class Timeline {
   // View
   private ppd = 2.1;
   private x0 = 0;
-  private scrollY = 0;
   private ppdMin = PPD_MIN;
   private width = 800;
   private height = 500;
@@ -95,14 +108,19 @@ export class Timeline {
   // State set by the host
   private filter: EventFilter;
   private selectedId: string | null = null;
+  private selectedRealId: string | null = null;
+  private laneVisible = true;
+  /** Event ids of the active thread, in story order; drawn as a path. */
+  private threadPath: readonly string[] | null = null;
 
   // Derived
   private hoveredId: string | null = null;
+  private hoveredRealId: string | null = null;
   private layoutKey = '';
   private filterVersion = 0;
   private level: ZoomLevel | null = null;
-  private overflowing = false;
-  private scrolled = false;
+  /** View last reported to the host, as a comparable string. */
+  private viewKey = '';
 
   // Motion
   private frameRequest = 0;
@@ -120,53 +138,68 @@ export class Timeline {
   private overviewDragging = false;
   private previewTimer = 0;
   private revealTimer = 0;
+  private viewTimer = 0;
 
   constructor(
     private readonly els: TimelineElements,
     events: readonly TimelineEvent[],
+    realEvents: readonly RealEvent[],
     filter: EventFilter,
     private readonly callbacks: TimelineCallbacks,
   ) {
     this.ctx = els.axisCanvas.getContext('2d')!;
+    this.linkCtx = els.linkCanvas.getContext('2d')!;
     this.overviewCtx = els.overviewCanvas.getContext('2d')!;
     this.filter = filter;
     this.palette = readPalette();
 
     this.items = events.map((ev) => this.createItem(ev));
-    for (const item of this.items) this.byId.set(item.ev.id, item);
+    for (const item of this.items) {
+      this.byId.set(item.ev.id, item);
+      for (const id of item.ev.links) {
+        const sources = this.linkedFrom.get(id) ?? [];
+        sources.push(item.ev.id);
+        this.linkedFrom.set(id, sources);
+      }
+    }
+    this.reals = realEvents.map((ev) => this.createRealItem(ev));
+    for (const real of this.reals) this.realById.set(real.ev.id, real);
     const backstoryCount = events.filter((ev) => ev.backstoryOrder != null).length;
     this.backstoryWidth = BACKSTORY_PAD * 2 + BACKSTORY_STEP * backstoryCount;
 
-    // The stylesheet positions the card viewport from this, so the header height has one source.
+    // The stylesheet positions the lane and the card viewport from these, so each height has one source.
     els.stage.style.setProperty('--axis-h', `${AXIS_HEIGHT}px`);
+    els.stage.style.setProperty('--lane-h', `${LANE_HEIGHT}px`);
+    els.world.style.transform = `translate3d(0,${CARDS_PAD}px,0)`;
 
     this.bindStage();
     this.bindCards();
+    this.bindLane();
     this.bindOverview();
     this.observeEnvironment();
 
     // Opening view: months, starting in spring 1997.
     this.measure();
+    this.measureLaneLabels();
     this.ppd = clamp(this.width < COMPACT_WIDTH ? 1.6 : 2.3, this.ppdMin, PPD_MAX);
     this.x0 = 40 - (toDay('1997-03-01') - DOMAIN_START) * this.ppd;
     this.draw();
+    this.viewKey = this.currentViewKey();
   }
 
   /* ── Public API ── */
 
-  /** Apply new category toggles and search text. */
+  /** Apply new filters: categories, search text, person, thread. */
   setFilter(filter: EventFilter): void {
     this.filter = filter;
     this.filterVersion++;
     for (const item of this.items) item.visible = matchesFilter(item.ev, filter);
+    this.markRelated();
     this.requestDraw();
   }
 
-  /**
-   * Mark an event as selected and bring its card into view; null clears the selection.
-   * @param center Move the card to the middle even if it is already on screen.
-   */
-  setSelected(id: string | null, center = false): void {
+  /** Mark an event as selected and, depending on `reveal`, bring its card into view; null clears. */
+  setSelected(id: string | null, reveal: Reveal = 'ifNeeded'): void {
     const hadSelection = this.selectedId !== null;
     if (this.selectedId) this.byId.get(this.selectedId)?.card.classList.remove('is-sel');
     this.selectedId = id;
@@ -176,10 +209,46 @@ export class Timeline {
     const item = id ? this.byId.get(id) : undefined;
     if (item) {
       item.card.classList.add('is-sel');
-      // On first selection the host's detail panel is still opening; wait for the stage to settle.
-      if (hadSelection || this.reducedMotion) this.reveal(item, center);
-      else this.revealTimer = window.setTimeout(() => this.reveal(item, center), 420);
+      if (reveal !== 'none') {
+        const center = reveal === 'center';
+        // On first selection the host's detail panel is still opening; wait for the stage to settle.
+        if (hadSelection || this.reducedMotion) this.reveal(item, center);
+        else this.revealTimer = window.setTimeout(() => this.reveal(item, center), 420);
+      }
     }
+    this.markRelated();
+    this.requestDraw();
+  }
+
+  /** Highlight a real-history entry and tie it to the events that answer it; null clears. */
+  setSelectedReal(id: string | null): void {
+    if (this.selectedRealId) this.realById.get(this.selectedRealId)?.el.classList.remove('is-sel');
+    this.selectedRealId = id;
+    const real = id ? this.realById.get(id) : undefined;
+    if (real) {
+      real.el.classList.add('is-sel');
+      const x = this.x0 + (real.ev.day - DOMAIN_START) * this.ppd;
+      if (x < 60 || x > this.width - 200) {
+        this.flyTo({ days: real.ev.day - DOMAIN_START, px: 0 }, this.ppd, this.width * 0.4, 620);
+      }
+    }
+    this.markRelated();
+    this.requestDraw();
+  }
+
+  /** Show or hide the real-history lane. */
+  setLaneVisible(visible: boolean): void {
+    if (visible === this.laneVisible) return;
+    this.laneVisible = visible;
+    this.els.stage.style.setProperty('--lane-h', `${visible ? LANE_HEIGHT : 0}px`);
+    this.els.stage.classList.toggle('lane-off', !visible);
+    this.measure();
+    this.requestDraw();
+  }
+
+  /** Draw a numbered path through these events (a thread, in story order); null removes it. */
+  setThreadPath(ids: readonly string[] | null): void {
+    this.threadPath = ids;
     this.requestDraw();
   }
 
@@ -209,17 +278,30 @@ export class Timeline {
       this.flyTo({ days: CRASH_DAY - DOMAIN_START, px: 0 }, Math.max(this.ppd, 1.2), screenX);
       return;
     }
-    // Fit the volume's events. The frame scene is filed under Vol. 1 but sits in 2008, so skip it.
+    this.fitEvents(this.items.filter((it) => it.ev.volume === target).map((it) => it.ev.id));
+  }
+
+  /** Zoom and pan so that the given events fill the stage. */
+  fitEvents(ids: readonly string[]): void {
     const days: number[] = [];
-    for (const { ev } of this.items) {
-      if (ev.volume !== target || ev.day == null || ev.day >= CRASH_DAY) continue;
-      days.push(ev.day, ev.endDay ?? ev.day);
+    for (const id of ids) {
+      const ev = this.byId.get(id)?.ev;
+      if (ev?.day != null) days.push(ev.day, ev.endDay ?? ev.day);
     }
-    if (!days.length) return;
-    const first = Math.min(...days);
-    const last = Math.max(...days);
-    const ppd = clamp((W - 330) / Math.max(30, last - first), this.ppdMin, 6);
-    this.flyTo({ days: (first + last) / 2 - DOMAIN_START, px: 0 }, ppd, (W - 250) / 2 + 20);
+    // The 2008 frame scene sits five years past everything else; leave it out unless it is all there is.
+    const early = days.filter((d) => d < CRASH_DAY);
+    const range = early.length ? early : days;
+    if (!range.length) return;
+    const first = Math.min(...range);
+    const last = Math.max(...range);
+    const room = this.width - 330;
+    const ppd = clamp(room / Math.max(30, last - first), this.ppdMin, 6);
+    if ((last - first) * ppd > room + 1) {
+      // Too long to fit even fully zoomed out: start at the first event.
+      this.flyTo({ days: first - DOMAIN_START, px: 0 }, ppd, 40);
+    } else {
+      this.flyTo({ days: (first + last) / 2 - DOMAIN_START, px: 0 }, ppd, (this.width - 250) / 2 + 20);
+    }
   }
 
   /** Pan horizontally by a number of pixels. */
@@ -229,16 +311,33 @@ export class Timeline {
     this.requestDraw();
   }
 
-  /** Remove listeners, observers, timers and cards. The instance is unusable afterwards. */
+  /** The current zoom and the timeline point at the centre of the stage. */
+  getView(): ViewState {
+    return { ppd: this.ppd, ...this.anchorAt(this.width / 2) };
+  }
+
+  /** Restore a view returned by `getView`. */
+  setView(view: ViewState): void {
+    this.stopMotion();
+    this.ppd = clamp(view.ppd, this.ppdMin, PPD_MAX);
+    this.x0 = this.width / 2 - (view.days * this.ppd + view.px);
+    this.draw();
+    this.viewKey = this.currentViewKey();
+  }
+
+  /** Remove listeners, observers, timers and generated DOM. The instance is unusable afterwards. */
   destroy(): void {
     this.listeners.abort();
     for (const o of this.observers) o.disconnect();
     cancelAnimationFrame(this.frameRequest);
     window.clearTimeout(this.previewTimer);
     window.clearTimeout(this.revealTimer);
+    window.clearTimeout(this.viewTimer);
     this.els.world.replaceChildren();
-    this.els.stage.classList.remove('dragging', 'overflow', 'scrolled', 'compact');
+    for (const real of this.reals) real.el.remove();
+    this.els.stage.classList.remove('dragging', 'compact', 'has-sel', 'lane-off');
     this.els.stage.style.removeProperty('--axis-h');
+    this.els.stage.style.removeProperty('--lane-h');
   }
 
   /* ── Cards ── */
@@ -277,20 +376,64 @@ export class Timeline {
       ev, el, yEl, card, spanEl,
       thumb: card.firstElementChild as HTMLElement,
       tier: 's', y: -1, sx: 0, width: 0, spanWidth: 0, shift: 0,
-      off: false, visible: matchesFilter(ev, this.filter), laidOut: false, hasArt: false,
+      off: false, visible: matchesFilter(ev, this.filter), laidOut: false, hasArt: false, badge: null,
     };
   }
 
-  /** Illustrations are built lazily, the first time a card grows to the illustrated size. */
+  /** Pictures are built lazily, the first time a card grows to the illustrated size. */
   private ensureArt(item: Item): void {
     if (item.hasArt) return;
     const { ev } = item;
+    const image = eventImage(ev.id);
+    const picture = image
+      ? `<img class="photo" src="${escapeHtml(image)}" alt="" draggable="false">`
+      : `<div class="art">${illustrationSvg(ev.motif, ev.id)}</div>`;
     const figure = ev.figure ? `<span class="fig">${escapeHtml(ev.figure)}</span>` : '';
-    item.thumb.innerHTML = `<div class="art">${illustrationSvg(ev.motif, ev.id)}</div>${figure}`;
+    item.thumb.innerHTML = picture + figure;
     item.hasArt = true;
   }
 
+  /** Build the lane entry for one real event: a marker on the baseline with a label above it. */
+  private createRealItem(ev: RealEvent): RealItem {
+    const el = document.createElement('button');
+    el.type = 'button';
+    el.className = `rh t-${ev.treatment}`;
+    el.dataset.id = ev.id;
+    el.setAttribute('aria-label', `Real history: ${ev.title}, ${ev.when}`);
+    el.innerHTML = `<span class="rh-l">${escapeHtml(ev.title)}</span><i class="rh-m" aria-hidden="true"></i>`;
+    this.els.lane.appendChild(el);
+    return { ev, el, labelWidth: 0, sx: 0, off: false };
+  }
+
+  /** Dim every card that is not the selection or tied to it. */
+  private markRelated(): void {
+    const related = new Set<string>();
+    const selected = this.selectedId ? this.byId.get(this.selectedId) : undefined;
+    if (selected) {
+      for (const id of selected.ev.links) related.add(id);
+      for (const id of this.linkedFrom.get(selected.ev.id) ?? []) related.add(id);
+    }
+    const real = this.selectedRealId ? this.realById.get(this.selectedRealId) : undefined;
+    if (real) for (const id of real.ev.counterparts) related.add(id);
+
+    for (const item of this.items) item.card.classList.toggle('rel', related.has(item.ev.id));
+    for (const r of this.reals) {
+      r.el.classList.toggle('rel', selected != null && r.ev.counterparts.includes(selected.ev.id));
+    }
+    // A selection hidden by the filters has nothing to set the other cards against.
+    this.els.stage.classList.toggle('has-sel', selected?.visible === true || real != null);
+  }
+
   /* ── Geometry ── */
+
+  /** Stage y of the first row of cards. */
+  private get cardsTop(): number {
+    return AXIS_HEIGHT + this.laneHeight + CARDS_PAD;
+  }
+
+  private get laneHeight(): number {
+    return this.laneVisible ? LANE_HEIGHT : 0;
+  }
 
   /** X of an event relative to the start of the axis. Backstory events ignore the zoom. */
   private worldX(ev: TimelineEvent, ppd: number): number {
@@ -315,36 +458,54 @@ export class Timeline {
     return this.zoomTarget ? this.zoomTarget.ppd : this.ppd;
   }
 
+  /** Where a card (or the badge it is folded into) sits in the card viewport. */
+  private boxOf(item: Item): Box {
+    if (item.badge) return { x: this.x0 + item.badge.worldX, y: CARDS_PAD + item.badge.y, w: BADGE.w, h: BADGE.h };
+    const size = this.tiers[item.tier];
+    return { x: item.sx + item.shift, y: CARDS_PAD + item.y, w: size.w, h: size.h };
+  }
+
   /* ── Layout ── */
+
+  /** Pack the visible cards for a given zoom. Pure: it reads state but changes nothing. */
+  private pack(ppd: number): { shown: Item[]; packing: Packing } {
+    const shown = this.items.filter((it) => it.visible);
+    const packing = packCards(
+      shown.map((it) => ({
+        x: this.worldX(it.ev, ppd),
+        spanWidth: it.ev.day != null && it.ev.endDay != null ? (it.ev.endDay - it.ev.day) * ppd : 0,
+        marquee: it.ev.marquee === true,
+      })),
+      this.tiers,
+      Math.max(120, this.height - this.cardsTop - BOTTOM_PAD),
+    );
+    return { shown, packing };
+  }
 
   /**
    * Re-pack the cards. Depends only on zoom, stage size and filters, so panning never re-runs it.
    * Changes are applied to the DOM only where they differ, to keep CSS transitions smooth.
    */
   private layout(): void {
-    const key = `${this.ppd.toFixed(4)}|${this.width}|${this.height}|${this.filterVersion}|${this.tiers.s.w}`;
+    const key = [this.ppd.toFixed(4), this.width, this.height, this.filterVersion, this.tiers.s.w, this.laneVisible].join('|');
     if (key === this.layoutKey) return;
     this.layoutKey = key;
 
-    const shown = this.items.filter((it) => it.visible);
-    const availableHeight = Math.max(120, this.height - CARDS_TOP - BOTTOM_PAD);
-    const placements = packCards(
-      shown.map((it) => ({
-        x: this.worldX(it.ev, this.ppd),
-        spanWidth: it.ev.day != null && it.ev.endDay != null ? (it.ev.endDay - it.ev.day) * this.ppd : 0,
-        marquee: it.ev.marquee === true,
-      })),
-      this.tiers,
-      availableHeight,
-    );
+    const { shown, packing } = this.pack(this.ppd);
+    this.syncBadges(packing, shown);
 
     shown.forEach((item, i) => {
-      const p = placements[i];
+      const p = packing.placements[i];
       const size = this.tiers[p.tier];
+      const badge = p.cluster >= 0 ? this.badges[p.cluster] : null;
       item.width = p.width;
       item.spanWidth = item.ev.day != null && item.ev.endDay != null ? (item.ev.endDay - item.ev.day) * this.ppd : 0;
       item.laidOut = true;
 
+      if (badge !== item.badge) {
+        if (!badge !== !item.badge) item.el.classList.toggle('clustered', badge != null);
+        item.badge = badge;
+      }
       if (p.tier !== item.tier) {
         item.card.classList.replace(`tier-${item.tier}`, `tier-${p.tier}`);
         item.tier = p.tier;
@@ -362,59 +523,92 @@ export class Timeline {
     });
 
     for (const item of this.items) item.el.classList.toggle('gone', !item.visible);
+    this.layoutLane();
+  }
+
+  /** Match the pool of badge elements to the clusters of the latest packing. */
+  private syncBadges(packing: Packing, shown: Item[]): void {
+    while (this.badges.length > packing.clusters.length) this.badges.pop()!.el.remove();
+    packing.clusters.forEach((cluster, i) => {
+      let badge = this.badges[i];
+      if (!badge) {
+        const el = document.createElement('button');
+        el.type = 'button';
+        el.className = 'badge';
+        this.els.world.appendChild(el);
+        badge = this.badges[i] = { el, worldX: 0, y: 0, members: [] };
+      }
+      badge.worldX = cluster.x;
+      badge.y = cluster.y;
+      badge.members = cluster.members.map((index) => shown[index]);
+
+      const count = badge.members.length;
+      const titles = badge.members.slice(0, 8).map((m) => m.ev.title);
+      if (count > titles.length) titles.push(`and ${count - titles.length} more`);
+      const categories = [...new Set(badge.members.map((m) => m.ev.category))].slice(0, 5);
+      badge.el.title = titles.join('\n');
+      badge.el.setAttribute('aria-label', `${count} more event${count === 1 ? '' : 's'} here. Zoom in to show.`);
+      badge.el.dataset.index = String(i);
+      badge.el.innerHTML =
+        `<b>+${count}</b> more<span class="dots">` +
+        categories.map((c) => `<i class="cat-${c}"></i>`).join('') +
+        '</span>';
+    });
+  }
+
+  /**
+   * Decide which real-history entries show their label. Entries flagged `major` choose first;
+   * a label that would run into one already placed is left off, and the entry shows as a marker.
+   */
+  private layoutLane(): void {
+    if (!this.laneVisible) return;
+    const taken: [number, number][] = [];
+    const ordered = [...this.reals].sort((a, b) => Number(b.ev.major === true) - Number(a.ev.major === true));
+    for (const real of ordered) {
+      const from = (real.ev.day - DOMAIN_START) * this.ppd - 8;
+      const to = from + real.labelWidth + 16;
+      const free = taken.every(([a, b]) => to <= a || from >= b);
+      if (free) taken.push([from, to]);
+      real.el.classList.toggle('nolabel', !free);
+    }
+  }
+
+  /** Label widths, measured with the lane's font. Must match .rh-l in app.css. */
+  private measureLaneLabels(): void {
+    setFont(this.ctx, this.palette, 11, 'body', 600);
+    for (const real of this.reals) real.labelWidth = this.ctx.measureText(real.ev.title).width + 14;
+    this.layoutKey = '';
   }
 
   /* ── Frame ── */
 
-  /** Keep the view inside the timeline, and the vertical scroll inside what is on screen. */
+  /** Keep the view inside the timeline. */
   private clampView(): void {
     const span = (DOMAIN_END - DOMAIN_START) * this.ppd;
     // A card can reach past the end of the axis (it starts at its date and extends right),
     // so the right-hand pan limit follows the furthest card edge, not just the last date.
     let contentRight = span + 48;
     for (const item of this.items) {
-      if (!item.visible || !item.laidOut) continue;
+      if (!item.visible || !item.laidOut || item.badge) continue;
       contentRight = Math.max(contentRight, this.worldX(item.ev, this.ppd) + this.tiers[item.tier].w + 24);
     }
     const maxX0 = this.backstoryWidth + 36;
     const minX0 = Math.min(maxX0, this.width - contentRight);
     this.x0 = clamp(this.x0, minX0, maxX0);
-
-    // Tallest stack among the cards currently in view.
-    let tallest = 0;
-    for (const item of this.items) {
-      if (!item.visible || !item.laidOut) continue;
-      const x = this.x0 + this.worldX(item.ev, this.ppd);
-      if (x < this.width && x + item.width > 0) tallest = Math.max(tallest, item.y + this.tiers[item.tier].h);
-    }
-    const maxScroll = Math.max(0, tallest + CARDS_TOP + BOTTOM_PAD - this.height);
-    this.scrollY = clamp(this.scrollY, 0, maxScroll);
-
-    const overflowing = maxScroll - this.scrollY > 24;
-    if (overflowing !== this.overflowing) {
-      this.overflowing = overflowing;
-      this.els.stage.classList.toggle('overflow', overflowing);
-    }
-    const scrolled = this.scrollY > 0;
-    if (scrolled !== this.scrolled) {
-      this.scrolled = scrolled;
-      this.els.stage.classList.toggle('scrolled', scrolled);
-    }
   }
 
-  /** Render one frame: card positions, both canvases, and the tick-level notification. */
+  /** Render one frame: element positions, the canvases, and notifications to the host. */
   private draw(): void {
     this.layout();
     this.clampView();
-    // The world sits inside the card viewport, whose top edge is the bottom of the axis header.
-    this.els.world.style.transform = `translate3d(0,${CARDS_TOP - AXIS_HEIGHT - this.scrollY}px,0)`;
+    const W = this.width;
 
     for (const item of this.items) {
       const x = this.x0 + this.worldX(item.ev, this.ppd);
       item.sx = x;
 
       // Cull cards well outside the viewport.
-      const off = x + Math.max(item.width, 260) < -200 || x > this.width + 200;
+      const off = x + Math.max(item.width, 260) < -200 || x > W + 200;
       if (off !== item.off) {
         item.off = off;
         item.el.classList.toggle('off', off);
@@ -434,28 +628,109 @@ export class Timeline {
       }
     }
 
+    for (const badge of this.badges) {
+      badge.el.style.transform = `translate3d(${(this.x0 + badge.worldX).toFixed(2)}px,${badge.y}px,0)`;
+    }
+
+    if (this.laneVisible) {
+      for (const real of this.reals) {
+        const x = this.x0 + (real.ev.day - DOMAIN_START) * this.ppd;
+        real.sx = x;
+        const off = x + real.labelWidth < -40 || x > W + 40;
+        if (off !== real.off) {
+          real.off = off;
+          real.el.classList.toggle('off', off);
+        }
+        if (!off) real.el.style.transform = `translate3d(${x.toFixed(2)}px,0,0)`;
+      }
+    }
+
+    const focusReal = this.realById.get(this.hoveredRealId ?? this.selectedRealId ?? '');
     const frame: Frame = {
-      width: this.width,
+      width: W,
       height: this.height,
       ppd: this.ppd,
       x0: this.x0,
-      scrollY: this.scrollY,
+      cardsTop: this.cardsTop,
+      laneHeight: this.laneHeight,
       backstoryWidth: this.backstoryWidth,
       palette: this.palette,
       items: this.items,
       selectedId: this.selectedId,
       hoveredId: this.hoveredId,
+      realGuideX: focusReal ? focusReal.sx : null,
     };
     this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     drawAxis(this.ctx, frame);
     this.overviewCtx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     drawOverview(this.overviewCtx, frame, this.overviewWidth, this.overviewHeight);
+    this.drawLinkOverlay(focusReal);
 
     const level = levelOf(this.ppd);
     if (level !== this.level) {
       this.level = level;
       this.callbacks.onLevelChange(level);
     }
+    this.reportView();
+  }
+
+  /** Gather the boxes for the overlay: thread path, the selection's links, and real-history ties. */
+  private drawLinkOverlay(focusReal: RealItem | undefined): void {
+    const boxes = (ids: readonly string[]): Box[] => {
+      const out: Box[] = [];
+      let lastBadge: Badge | null = null;
+      for (const id of ids) {
+        const item = this.byId.get(id);
+        if (!item || !item.visible || !item.laidOut) continue;
+        // Several cards folded into one badge count once.
+        if (item.badge && item.badge === lastBadge) continue;
+        lastBadge = item.badge;
+        out.push(this.boxOf(item));
+      }
+      return out;
+    };
+
+    const selected = this.selectedId ? this.byId.get(this.selectedId) : undefined;
+    const shown = selected?.visible && selected.laidOut ? selected : undefined;
+    const outgoing = shown ? shown.ev.links : [];
+    const incoming = shown ? (this.linkedFrom.get(shown.ev.id) ?? []).filter((id) => !outgoing.includes(id)) : [];
+
+    const realTies: { x: number; to: Box }[] = [];
+    if (this.laneVisible) {
+      if (focusReal) for (const to of boxes(focusReal.ev.counterparts)) realTies.push({ x: focusReal.sx, to });
+      if (shown) {
+        for (const real of this.reals) {
+          if (real !== focusReal && real.ev.counterparts.includes(shown.ev.id)) {
+            realTies.push({ x: real.sx, to: this.boxOf(shown) });
+          }
+        }
+      }
+    }
+
+    this.linkCtx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    drawLinks(this.linkCtx, {
+      width: this.width,
+      height: this.height - AXIS_HEIGHT - this.laneHeight,
+      palette: this.palette,
+      from: shown ? this.boxOf(shown) : null,
+      outgoing: boxes(outgoing),
+      incoming: boxes(incoming),
+      realTies,
+      path: this.threadPath ? boxes(this.threadPath) : [],
+    });
+  }
+
+  private currentViewKey(): string {
+    return `${this.ppd.toFixed(3)}|${this.x0.toFixed(0)}|${this.width}`;
+  }
+
+  /** Tell the host once the view has stopped changing. */
+  private reportView(): void {
+    const key = this.currentViewKey();
+    if (key === this.viewKey) return;
+    this.viewKey = key;
+    window.clearTimeout(this.viewTimer);
+    this.viewTimer = window.setTimeout(() => this.callbacks.onViewChange(this.getView()), VIEW_REPORT_DELAY);
   }
 
   /* ── Motion ── */
@@ -547,20 +822,45 @@ export class Timeline {
     this.requestDraw();
   }
 
-  /** Bring a card into view; `center` forces it to the middle. */
+  /**
+   * Bring a card into view; `center` forces it to the middle.
+   * A card folded into a badge has nothing to show, so the view also zooms in until it has a slot.
+   */
   private reveal(item: Item, center: boolean): void {
     const anchor = this.anchorOf(item.ev);
+    const ppd = item.visible ? this.zoomWithSlotFor(item) : this.ppd;
     const size = this.tiers[item.tier];
     const screenX = this.x0 + anchor.days * this.ppd + anchor.px;
-    if (!center && screenX > 24 && screenX + size.w < this.width - 24) {
+    if (ppd === this.ppd && !center && screenX > 24 && screenX + size.w < this.width - 24) {
       this.requestDraw();
       return;
     }
     const target = clamp(this.width / 2 - size.w / 2, 16, Math.max(16, this.width - size.w - 16));
-    this.flyTo(anchor, this.ppd, target, 620);
-    const needed = item.y + size.h + CARDS_TOP + BOTTOM_PAD - this.height;
-    if (this.scrollY < needed) this.scrollY = needed;
-    if (item.y < this.scrollY) this.scrollY = item.y;
+    this.flyTo(anchor, ppd, target, 620);
+  }
+
+  /** The current zoom if the card has a slot there, otherwise the nearest closer zoom at which it does. */
+  private zoomWithSlotFor(item: Item): number {
+    let ppd = this.ppd;
+    for (;;) {
+      const { shown, packing } = this.pack(ppd);
+      if (packing.placements[shown.indexOf(item)].cluster < 0 || ppd >= PPD_MAX) return ppd;
+      ppd = Math.min(PPD_MAX, ppd * 1.5);
+    }
+  }
+
+  /** Zoom in on the date range a badge stands for. */
+  private openBadge(badge: Badge): void {
+    const days = badge.members.flatMap((m) => (m.ev.day != null ? [m.ev.day, m.ev.endDay ?? m.ev.day] : []));
+    if (!days.length) return;
+    const first = Math.min(...days);
+    const last = Math.max(...days);
+    const fit = (this.width * 0.55) / Math.max(14, last - first);
+    this.flyTo(
+      { days: (first + last) / 2 - DOMAIN_START, px: 0 },
+      Math.max(this.ppd * 2.2, fit),
+      this.width / 2 - this.tiers.s.w / 2,
+    );
   }
 
   /* ── Input: stage ── */
@@ -576,7 +876,7 @@ export class Timeline {
       this.pointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
       if (this.pointers.size === 1) {
         this.stopMotion();
-        this.drag = { kind: 'pan', x: ev.clientX, y: ev.clientY, x0: this.x0, scrollY: this.scrollY };
+        this.drag = { kind: 'pan', x: ev.clientX, y: ev.clientY, x0: this.x0 };
         this.moved = false;
         this.lastDeltaX = 0;
       } else if (this.pointers.size === 2) {
@@ -603,9 +903,8 @@ export class Timeline {
       }
 
       const dx = ev.clientX - drag.x;
-      const dy = ev.clientY - drag.y;
       // A small dead zone keeps a click from turning into a drag.
-      if (!this.moved && Math.hypot(dx, dy) > 5) {
+      if (!this.moved && Math.hypot(dx, ev.clientY - drag.y) > 5) {
         this.moved = true;
         stage.classList.add('dragging');
         try {
@@ -616,7 +915,6 @@ export class Timeline {
       }
       if (this.moved) {
         this.x0 = drag.x0 + dx;
-        this.scrollY = drag.scrollY - dy;
         this.lastDeltaX = ev.clientX - previous.x;
         this.lastMoveTime = performance.now();
         this.requestDraw();
@@ -640,7 +938,7 @@ export class Timeline {
       } else if (this.pointers.size === 1) {
         // One finger lifted from a pinch: carry on as a pan.
         const [p] = [...this.pointers.values()];
-        this.drag = { kind: 'pan', x: p.x, y: p.y, x0: this.x0, scrollY: this.scrollY };
+        this.drag = { kind: 'pan', x: p.x, y: p.y, x0: this.x0 };
       }
     };
     stage.addEventListener('pointerup', endDrag, { signal });
@@ -665,8 +963,8 @@ export class Timeline {
       this.zoomTo(this.targetPpd() * factor, ev.clientX - stage.getBoundingClientRect().left);
     }, { passive: false, signal });
 
-    // The browser may scroll the stage or the card viewport to show a focused card; undo it,
-    // the view handles that. Scroll events do not bubble, hence the capture.
+    // The browser may scroll the stage or one of its clipped children to show a focused element;
+    // undo it, the view handles that. Scroll events do not bubble, hence the capture.
     stage.addEventListener('scroll', (ev) => {
       const target = ev.target as HTMLElement;
       target.scrollLeft = 0;
@@ -674,7 +972,7 @@ export class Timeline {
     }, { capture: true, signal });
   }
 
-  /* ── Input: cards ── */
+  /* ── Input: cards and badges ── */
 
   private bindCards(): void {
     const { world } = this.els;
@@ -697,7 +995,7 @@ export class Timeline {
       if (item.tier === 'l') return;
       this.previewTimer = window.setTimeout(() => {
         if (this.hoveredId === item.ev.id && !this.drag) {
-          this.callbacks.onPreview({ id: item.ev.id, rect: item.card.getBoundingClientRect() });
+          this.callbacks.onPreview({ kind: 'event', id: item.ev.id, rect: item.card.getBoundingClientRect() });
         }
       }, 140);
     }, { signal });
@@ -711,8 +1009,14 @@ export class Timeline {
     }, { signal });
 
     world.addEventListener('click', (ev) => {
+      if (this.moved) return;
       const item = itemOf(ev);
-      if (item && !this.moved) this.callbacks.onSelect(item.ev.id);
+      if (item) {
+        this.callbacks.onSelect(item.ev.id);
+        return;
+      }
+      const badge = (ev.target as Element).closest?.<HTMLElement>('.badge');
+      if (badge) this.openBadge(this.badges[Number(badge.dataset.index)]);
     }, { signal });
 
     // Keyboard focus on an off-screen card brings it into view.
@@ -725,6 +1029,45 @@ export class Timeline {
   private cancelPreview(): void {
     window.clearTimeout(this.previewTimer);
     this.callbacks.onPreview(null);
+  }
+
+  /* ── Input: real-history lane ── */
+
+  private bindLane(): void {
+    const { lane } = this.els;
+    const signal = this.listeners.signal;
+    const realOf = (ev: Event): RealItem | undefined => {
+      const el = (ev.target as Element).closest?.<HTMLElement>('.rh');
+      return el ? this.realById.get(el.dataset.id ?? '') : undefined;
+    };
+
+    lane.addEventListener('pointerover', (ev) => {
+      const real = realOf(ev);
+      if (!real || this.hoveredRealId === real.ev.id) return;
+      this.hoveredRealId = real.ev.id;
+      this.requestDraw();
+      if (ev.pointerType !== 'mouse' || this.drag) return;
+      window.clearTimeout(this.previewTimer);
+      this.previewTimer = window.setTimeout(() => {
+        if (this.hoveredRealId !== real.ev.id || this.drag) return;
+        // Anchor to whichever part is showing: the label, or the bare marker.
+        const part = real.el.querySelector(real.el.classList.contains('nolabel') ? '.rh-m' : '.rh-l') ?? real.el;
+        this.callbacks.onPreview({ kind: 'real', id: real.ev.id, rect: part.getBoundingClientRect() });
+      }, 140);
+    }, { signal });
+
+    lane.addEventListener('pointerout', (ev) => {
+      const real = realOf(ev);
+      if (!real || real.el.contains(ev.relatedTarget as Node | null)) return;
+      this.hoveredRealId = null;
+      this.cancelPreview();
+      this.requestDraw();
+    }, { signal });
+
+    lane.addEventListener('click', (ev) => {
+      const real = realOf(ev);
+      if (real && !this.moved) this.callbacks.onSelectReal(real.ev.id);
+    }, { signal });
   }
 
   /* ── Input: overview strip ── */
@@ -757,13 +1100,17 @@ export class Timeline {
 
   /** Re-measure the stage and strip, resize the canvases, and pick card sizes for the width. */
   private measure(): void {
-    const { stage, axisCanvas, overview, overviewCanvas } = this.els;
+    const { stage, axisCanvas, linkCanvas, overview, overviewCanvas } = this.els;
     const rect = stage.getBoundingClientRect();
+    // A hidden stage has no size; keep the last measurements until it is shown again.
+    if (rect.width === 0 || rect.height === 0) return;
     this.width = Math.max(200, rect.width);
     this.height = Math.max(200, rect.height);
     this.dpr = Math.min(2.5, window.devicePixelRatio || 1);
     axisCanvas.width = Math.round(this.width * this.dpr);
     axisCanvas.height = Math.round(this.height * this.dpr);
+    linkCanvas.width = axisCanvas.width;
+    linkCanvas.height = Math.round((this.height - AXIS_HEIGHT - this.laneHeight) * this.dpr);
 
     const strip = overview.getBoundingClientRect();
     this.overviewWidth = Math.max(100, strip.width);
@@ -788,17 +1135,18 @@ export class Timeline {
     resize.observe(this.els.stage);
     this.observers.push(resize);
 
-    // Canvas colours are resolved values, so re-read them when the theme or fonts change.
-    const recolor = () => {
+    // Canvas colours and text widths are resolved values, so re-read them when the theme or fonts change.
+    const refresh = () => {
       this.palette = readPalette();
+      this.measureLaneLabels();
       this.requestDraw();
     };
     window
       .matchMedia('(prefers-color-scheme: dark)')
-      .addEventListener('change', recolor, { signal: this.listeners.signal });
-    const theme = new MutationObserver(recolor);
+      .addEventListener('change', refresh, { signal: this.listeners.signal });
+    const theme = new MutationObserver(refresh);
     theme.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'class', 'style'] });
     this.observers.push(theme);
-    void document.fonts?.ready.then(recolor);
+    void document.fonts?.ready.then(refresh);
   }
 }

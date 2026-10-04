@@ -12,9 +12,13 @@ export const COMPACT_WIDTH = 560;
 
 /** Height of the axis header. */
 export const AXIS_HEIGHT = 62;
-/** Y where the card area starts. */
-export const CARDS_TOP = AXIS_HEIGHT + 14;
+/** Height of the real-history lane, between the header and the cards. */
+export const LANE_HEIGHT = 36;
+/** Space between the top of the card viewport and the first row of cards. */
+export const CARDS_PAD = 14;
 export const BOTTOM_PAD = 18;
+/** "+N more" badge that stands in for cards with no room. Must match .badge in app.css. */
+export const BADGE = { w: 112, h: 26 };
 /** Gaps between cards. */
 export const GAP_X = 8;
 export const GAP_Y = 6;

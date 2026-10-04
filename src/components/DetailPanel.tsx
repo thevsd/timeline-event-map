@@ -1,187 +1,123 @@
-import { useEffect, useRef, type ReactNode } from 'react';
-import { CRASH_EVENT_ID, EVENT_BY_ID } from '../data';
-import { BASIS_LABEL, CATEGORY_BY_ID, CONFIDENCE_LABEL, HISTORY_LABEL } from '../data/categories';
-import type { TimelineEvent } from '../data/types';
-import { CRASH_DAY } from '../lib/time';
-import { CategoryGlyph } from './CategoryGlyph';
-import { Illustration } from './Illustration';
+import { useEffect, useRef } from 'react';
+import { CORP_NODE_BY_ID, EVENT_BY_ID, REAL_BY_ID, THREAD_BY_ID } from '../data';
+import type { PanelPage } from '../types';
+import { CompanyPage } from './panel/CompanyPage';
+import { EventPage } from './panel/EventPage';
+import { PersonPage } from './panel/PersonPage';
+import { RealPage } from './panel/RealPage';
+import { ThreadPage } from './panel/ThreadPage';
+import type { OpenPage } from './panel/parts';
 
 interface DetailPanelProps {
-  /** Event to show; null closes the panel. */
-  event: TimelineEvent | null;
-  /** 1-based position among the visible events, or 0 if the event is filtered out. */
+  /** Page to show; null closes the panel. */
+  page: PanelPage | null;
+  /** There is an earlier page to return to. */
+  canGoBack: boolean;
+  /** For an event page: its 1-based position among the visible events, or 0 if filtered out. */
   position: number;
   total: number;
+  /** Active filters, so the person and thread pages can show their toggle state. */
+  person: string | null;
+  thread: string | null;
+  /** Corporate-map step, for the company page. */
+  mapStep: number;
+  onBack(): void;
   onClose(): void;
   /** Move to the previous (-1) or next (+1) visible event. */
   onStep(direction: -1 | 1): void;
-  onSelect(id: string): void;
-  /** Search the timeline for a person. */
-  onSearchPerson(name: string): void;
+  /** Open another page on top of this one. */
+  onOpen: OpenPage;
+  onFilterPerson(name: string | null): void;
+  onFilterThread(id: string | null): void;
 }
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <div className="sec">
-      <h4>{title}</h4>
-      {children}
-    </div>
-  );
-}
+const PAGE_LABEL: Record<PanelPage['kind'], string> = {
+  event: 'Event',
+  person: 'Person',
+  thread: 'Thread',
+  real: 'Real history',
+  company: 'Corporate map',
+};
 
-function BulletList({ items }: { items: string[] }) {
-  return (
-    <ul>
-      {items.map((text) => (
-        <li key={text}>{text}</li>
-      ))}
-    </ul>
-  );
-}
+const pageKey = (page: PanelPage) => `${page.kind}:${page.kind === 'person' ? page.name : page.id}`;
 
-/** Countdown to the 2008 frame scene. Backstory events have no date, so no countdown. */
-function Countdown({ event }: { event: TimelineEvent }) {
-  if (event.id === CRASH_EVENT_ID) {
-    return (
-      <div className="count-down">
-        <b>Day zero</b>
-        <span>the night every other event counts down to</span>
-      </div>
-    );
-  }
-  if (event.day == null || event.day >= CRASH_DAY) return null;
-  return (
-    <div className="count-down">
-      <b>{(CRASH_DAY - event.day).toLocaleString('en-US')}</b>
-      <span>days before the crash of 15 September 2008</span>
-    </div>
-  );
-}
-
-/** Side panel with everything recorded about one event. Slides in from the right. */
-export function DetailPanel({ event, position, total, onClose, onStep, onSelect, onSearchPerson }: DetailPanelProps) {
-  const open = event !== null;
+/**
+ * Side panel that slides in from the right. It shows one page at a time (an event, a person,
+ * a thread, a real-history entry or a company); pages link to each other and the header steps back.
+ */
+export function DetailPanel(props: DetailPanelProps) {
+  const { page, canGoBack, position, total, onBack, onClose, onStep, onOpen } = props;
+  const open = page !== null;
   const scroller = useRef<HTMLDivElement>(null);
 
-  // Keep the last event rendered while the panel slides shut.
-  const last = useRef(event);
-  if (event) last.current = event;
-  const shown = event ?? last.current;
+  // Keep the last page rendered while the panel slides shut.
+  const last = useRef(page);
+  if (page) last.current = page;
+  const shown = page ?? last.current;
+  const key = shown ? pageKey(shown) : '';
 
-  // A new event starts at the top.
+  // A new page starts at the top.
   useEffect(() => {
     if (scroller.current) scroller.current.scrollTop = 0;
-  }, [shown?.id]);
+  }, [key]);
 
+  const isEvent = shown?.kind === 'event';
   return (
-    <aside id="panel" className={`panel${open ? ' open' : ''}`} aria-label="Event detail" aria-hidden={!open} inert={!open}>
+    <aside id="panel" className={`panel${open ? ' open' : ''}`} aria-label="Detail" aria-hidden={!open} inert={!open}>
       <div className="panel-in">
         <div className="phead">
-          <span className="pos">{position > 0 ? `${position} of ${total}` : ''}</span>
-          <button className="iconbtn" type="button" aria-label="Previous event" title="Previous event" onClick={() => onStep(-1)}>
-            ‹
-          </button>
-          <button className="iconbtn" type="button" aria-label="Next event" title="Next event" onClick={() => onStep(1)}>
-            ›
-          </button>
+          {canGoBack && (
+            <button className="iconbtn" type="button" id="pback" aria-label="Back" title="Back" onClick={onBack}>
+              ←
+            </button>
+          )}
+          <span className="pos">
+            {shown ? PAGE_LABEL[shown.kind] : ''}
+            {isEvent && position > 0 ? ` · ${position} of ${total}` : ''}
+          </span>
+          {isEvent && (
+            <>
+              <button className="iconbtn" type="button" aria-label="Previous event" title="Previous event" onClick={() => onStep(-1)}>
+                ‹
+              </button>
+              <button className="iconbtn" type="button" aria-label="Next event" title="Next event" onClick={() => onStep(1)}>
+                ›
+              </button>
+            </>
+          )}
           <button className="iconbtn" type="button" aria-label="Close detail" title="Close" onClick={onClose}>
             ×
           </button>
         </div>
 
-        <div className="pscroll" ref={scroller}>
-          {shown && (
-            <div className={`cat-${shown.category}`}>
-              <div className="hero">
-                <Illustration event={shown} />
-              </div>
-              <div className="pbody">
-                <div className="tags">
-                  <span className="tag">
-                    <CategoryGlyph category={shown.category} />
-                    {CATEGORY_BY_ID[shown.category].name}
-                  </span>
-                  <span className="tag">
-                    Vol. {shown.volume} · {shown.chapter}
-                  </span>
-                  <span className={`tag ${HISTORY_LABEL[shown.history].className}`}>{HISTORY_LABEL[shown.history].label}</span>
-                </div>
-
-                <h2 id="ptitle">{shown.title}</h2>
-                <div className="dateline">
-                  {shown.when}
-                  <small>{BASIS_LABEL[shown.basis]}</small>
-                </div>
-                <p className="lede">{shown.brief}</p>
-                <Countdown event={shown} />
-
-                {shown.what?.length ? (
-                  <Section title="What happens">
-                    <BulletList items={shown.what} />
-                  </Section>
-                ) : null}
-
-                {shown.reveals?.length ? (
-                  <Section title="Revelations">
-                    <BulletList items={shown.reveals} />
-                  </Section>
-                ) : null}
-
-                {shown.realWorld && (
-                  <Section title="Real-world history">
-                    <p>{shown.realWorld}</p>
-                  </Section>
-                )}
-
-                {shown.readings?.length ? (
-                  <Section title="Reading">
-                    <div className="reading">
-                      {shown.readings.map((r) => (
-                        <div key={r.text}>
-                          <span className={`conf ${CONFIDENCE_LABEL[r.confidence].className}`}>
-                            {CONFIDENCE_LABEL[r.confidence].label}
-                          </span>
-                          {r.text}
-                        </div>
-                      ))}
-                    </div>
-                  </Section>
-                ) : null}
-
-                {shown.people.length > 0 && (
-                  <Section title="People">
-                    <div className="people">
-                      {shown.people.map((name) => (
-                        <button key={name} type="button" className="person" onClick={() => onSearchPerson(name)}>
-                          {name}
-                        </button>
-                      ))}
-                    </div>
-                  </Section>
-                )}
-
-                {shown.links.length > 0 && (
-                  <Section title="Connected events">
-                    <div className="links">
-                      {shown.links.map((id) => {
-                        const other = EVENT_BY_ID.get(id);
-                        if (!other) return null;
-                        return (
-                          <button key={id} type="button" className={`link cat-${other.category}`} data-go={id} onClick={() => onSelect(id)}>
-                            <CategoryGlyph category={other.category} />
-                            <span className="lt">{other.title}</span>
-                            <span className="ld">{other.when.replace(/^c\. /, '')}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </Section>
-                )}
-              </div>
-            </div>
-          )}
+        <div className="pscroll" ref={scroller} data-page={key}>
+          {shown && <Page {...props} shown={shown} onOpen={onOpen} />}
         </div>
       </div>
     </aside>
   );
+}
+
+/** The page body for whichever kind is showing. Unknown ids render nothing. */
+function Page({ shown, person, thread, mapStep, onOpen, onFilterPerson, onFilterThread }: DetailPanelProps & { shown: PanelPage }) {
+  switch (shown.kind) {
+    case 'event': {
+      const event = EVENT_BY_ID.get(shown.id);
+      return event ? <EventPage event={event} onOpen={onOpen} /> : null;
+    }
+    case 'person':
+      return <PersonPage name={shown.name} filtered={person === shown.name} onFilter={onFilterPerson} onOpen={onOpen} />;
+    case 'thread': {
+      const found = THREAD_BY_ID.get(shown.id);
+      return found ? <ThreadPage thread={found} filtered={thread === found.id} onFilter={onFilterThread} onOpen={onOpen} /> : null;
+    }
+    case 'real': {
+      const real = REAL_BY_ID.get(shown.id);
+      return real ? <RealPage real={real} onOpen={onOpen} /> : null;
+    }
+    case 'company': {
+      const node = CORP_NODE_BY_ID.get(shown.id);
+      return node ? <CompanyPage node={node} step={mapStep} onOpen={onOpen} /> : null;
+    }
+  }
 }

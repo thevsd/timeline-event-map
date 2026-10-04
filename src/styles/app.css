@@ -1,8 +1,9 @@
 /*
  * Timeline styles.
  *
- * Layout: a slim toolbar, then a framed stage (axis on top, cards packed in lanes
- * below), a detail panel that slides in from the right, and an overview strip.
+ * Layout: a slim toolbar, then a framed stage (axis on top, a lane of real-world events,
+ * cards packed in rows below), a side panel that slides in from the right, and an overview
+ * strip. The corporate map replaces the stage in map view.
  *
  * Colour: every colour is a token on :root. The two dark blocks only redefine
  * tokens (OS setting, then explicit data-theme), so components never branch on theme.
@@ -137,6 +138,12 @@ button { font: inherit; color: inherit; }
   background: var(--surface); color: var(--ink); padding: 0 11px; font: inherit; font-size: 13px;
 }
 .search::placeholder { color: var(--ink-3); }
+.textbtn {
+  height: 32px; padding: 0 12px; border-radius: 9px; border: 1px solid var(--line); background: var(--surface);
+  font-size: 12.5px; font-weight: 600; color: var(--ink-2); cursor: pointer; white-space: nowrap;
+  transition: border-color 0.2s, color 0.2s;
+}
+.textbtn:hover { border-color: var(--line-strong); color: var(--ink); }
 
 .rail { display: flex; align-items: center; gap: 8px 14px; flex-wrap: wrap; min-width: 0; }
 .scroller { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; min-width: 0; padding-block: 2px; }
@@ -155,6 +162,25 @@ button { font: inherit; color: inherit; }
 .rail .label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; flex: none; }
 .rail .count { margin-left: auto; font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; flex: none; }
 .sep { width: 1px; height: 18px; background: var(--line-strong); flex: none; }
+/* Thread and person pickers: native selects dressed as chips; accent-tinted while a filter is on. */
+.pick {
+  flex: none; height: 28px; max-width: 200px; padding: 0 8px 0 10px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink); font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+.pick:hover { border-color: var(--line-strong); }
+.pick.on { border-color: var(--accent); background: var(--accent-soft); }
+
+/* Corporate-map step controls, shown in the rail's place in map view. */
+.stepper { display: flex; gap: 4px; flex: none; }
+.stepper .iconbtn { width: 28px; height: 28px; font-size: 15px; }
+.stepper .play { font-size: 10px; color: var(--accent); }
+.scrub { flex: 1 1 140px; max-width: 320px; min-width: 90px; accent-color: var(--accent); }
+.stepinfo {
+  flex: 1 1 220px; min-width: 0; font-size: 12.5px; color: var(--ink-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.stepinfo b { font-family: var(--font-mono); font-weight: 600; color: var(--ink); margin-right: 9px; font-variant-numeric: tabular-nums; }
 
 .glyph {
   flex: none; width: 18px; height: 18px; border-radius: 5px; display: inline-grid; place-items: center;
@@ -172,26 +198,44 @@ button { font: inherit; color: inherit; }
 }
 .stage.dragging { cursor: grabbing; }
 .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-/* Card viewport. Starts under the axis header (height set by the engine as --axis-h),
-   so cards scrolled upward are clipped instead of covering the dates. */
-.cards { position: absolute; left: 0; right: 0; top: var(--axis-h, 62px); bottom: 0; overflow: hidden; }
-/* Soft edge under the header while the cards are scrolled. */
-.cards::before {
-  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 16px; z-index: 6; pointer-events: none;
-  background: linear-gradient(to bottom, var(--stage), transparent); opacity: 0; transition: opacity 0.2s;
+/* Real-history lane: a row between the axis header and the cards. The engine sets both heights. */
+.lane { position: absolute; left: 0; right: 0; top: var(--axis-h, 62px); height: var(--lane-h, 36px); overflow: hidden; }
+.stage.lane-off .lane { display: none; }
+.lane-cap {
+  position: absolute; left: 0; top: 0; bottom: 1px; z-index: 3; display: flex; align-items: center; padding: 0 22px 0 10px;
+  font-size: 10px; letter-spacing: 0.09em; text-transform: uppercase; font-weight: 700; color: var(--ink-3);
+  background: linear-gradient(to right, var(--stage) 72%, transparent); pointer-events: none;
 }
-.stage.scrolled .cards::before { opacity: 1; }
+/* Treatment colour: how the novel handles the real event. */
+.t-preserved { --t: var(--real); }
+.t-altered, .t-moved { --t: var(--altered); }
+.t-prevented { --t: var(--fiction); }
+.t-ahead { --t: var(--ink-3); }
+/* Diamond marker, also used inline in chips, tags and previews. */
+.rh-m { display: inline-block; flex: none; width: 8px; height: 8px; rotate: 45deg; border-radius: 2px; background: var(--t, var(--real)); }
+/* One entry: a zero-width anchor at its date, with the label above the marker. */
+.rh { position: absolute; left: 0; top: 0; width: 0; height: 100%; padding: 0; border: 0; background: none; cursor: pointer; }
+.rh.off { display: none; }
+.rh > .rh-m { position: absolute; left: -4.5px; bottom: 5px; width: 9px; height: 9px; box-shadow: 0 0 0 2px var(--stage); transition: scale 0.15s; }
+.rh > .rh-m::after { content: ""; position: absolute; inset: -6px; } /* larger hit area */
+.rh-l {
+  position: absolute; left: -8px; top: 3px; height: 19px; line-height: 17px; padding: 0 7px; white-space: nowrap;
+  font-size: 11px; font-weight: 600; color: var(--ink-2); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 6px; transition: border-color 0.2s, color 0.2s;
+}
+.rh.nolabel .rh-l { display: none; }
+/* A hidden label comes back while its entry is hovered, selected, or tied to the selected event. */
+.rh:hover, .rh.is-sel, .rh.rel { z-index: 2; }
+.rh:hover .rh-l, .rh.is-sel .rh-l, .rh.rel .rh-l { display: block; border-color: var(--t); color: var(--ink); }
+.rh:hover > .rh-m, .rh.is-sel > .rh-m, .rh.rel > .rh-m { scale: 1.3; }
+.rh:focus-visible { outline: none; }
+.rh:focus-visible > .rh-m { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* Card viewport. Starts under the axis header and the lane, and clips whatever is inside it. */
+.cards { position: absolute; left: 0; right: 0; top: calc(var(--axis-h, 62px) + var(--lane-h, 36px)); bottom: 0; overflow: hidden; }
 .world { position: absolute; left: 0; top: 0; will-change: transform; }
-.fade {
-  position: absolute; left: 0; right: 0; bottom: 0; height: 46px; pointer-events: none;
-  background: linear-gradient(to top, var(--stage), transparent); opacity: 0; transition: opacity 0.3s;
-}
-.more {
-  position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); pointer-events: none;
-  font-size: 11.5px; font-weight: 600; color: var(--ink-2); background: var(--surface); border: 1px solid var(--line);
-  border-radius: 999px; padding: 3px 10px; opacity: 0; transition: opacity 0.3s; box-shadow: var(--shadow);
-}
-.stage.overflow .fade, .stage.overflow .more { opacity: 1; }
+/* Connection lines, drawn above the cards without taking their clicks. */
+.cards .links { z-index: 6; pointer-events: none; }
 .hint {
   position: absolute; right: 12px; bottom: 12px; font-size: 11.5px; color: var(--ink-2); background: var(--surface);
   border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; pointer-events: none;
@@ -209,7 +253,7 @@ button { font: inherit; color: inherit; }
 .ev { position: absolute; left: 0; top: 0; will-change: transform; }
 .ev.off { display: none; }
 .ev-y { position: absolute; left: 0; top: 0; transition: transform 0.34s var(--ease), opacity 0.25s; }
-.ev.gone .ev-y { opacity: 0; pointer-events: none; }
+.ev.gone .ev-y, .ev.clustered .ev-y { opacity: 0; pointer-events: none; }
 .span {
   position: absolute; left: 0; top: 0; height: var(--h); border-radius: 10px; pointer-events: none;
   background: color-mix(in oklab, var(--c) 10%, transparent);
@@ -221,13 +265,16 @@ button { font: inherit; color: inherit; }
   position: absolute; left: 0; top: 0; width: var(--w); height: var(--h); padding: 0; margin: 0; text-align: left;
   background: var(--surface); border: 1px solid var(--line); border-radius: 9px; overflow: hidden; cursor: pointer;
   box-shadow: 0 1px 2px rgba(20, 18, 50, 0.05);
-  transition: width 0.32s var(--ease), height 0.32s var(--ease), box-shadow 0.2s, border-color 0.2s, translate 0.2s var(--ease);
+  transition: width 0.32s var(--ease), height 0.32s var(--ease), box-shadow 0.2s, border-color 0.2s, translate 0.2s var(--ease), opacity 0.25s;
   display: flex; flex-direction: column;
 }
 .card:hover, .card.is-hot { border-color: color-mix(in oklab, var(--c) 70%, var(--line)); box-shadow: var(--shadow-lift); translate: 0 -2px; z-index: 3; }
 .card.is-sel { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent), var(--shadow-lift); z-index: 2; }
 .ev:has(.card:hover), .ev:has(.card.is-hot) { z-index: 5; }
 .ev:has(.card.is-sel) { z-index: 4; }
+/* With a selection, cards that are not tied to it step back so the connection lines read. */
+.card.rel { border-color: color-mix(in oklab, var(--accent) 55%, var(--line)); }
+.stage.has-sel .card:not(.is-sel):not(.rel):not(:hover) { opacity: 0.5; }
 .tier-m { --w: 228px; --h: 64px; border-radius: 11px; }
 .tier-l { --w: 258px; --h: 230px; border-radius: 13px; }
 .card .thumb { flex: none; height: 0; transition: height 0.32s var(--ease); position: relative; overflow: hidden; }
@@ -261,6 +308,18 @@ button { font: inherit; color: inherit; }
   padding: 2px 8px; border-radius: 999px; backdrop-filter: blur(4px);
 }
 
+/* "+N more" badge: stands in for cards with no room at this zoom. Size must match BADGE in engine/config.ts. */
+.badge {
+  position: absolute; left: 0; top: 0; width: 112px; height: 26px; display: flex; align-items: center; gap: 4px;
+  padding: 0 9px; border-radius: 999px; border: 1px dashed var(--line-strong); background: var(--surface-2);
+  font-size: 11.5px; font-weight: 600; color: var(--ink-2); white-space: nowrap; cursor: zoom-in;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+.badge:hover { border-color: var(--ink-3); border-style: solid; color: var(--ink); background: var(--surface); }
+.badge b { font-family: var(--font-mono); font-weight: 600; color: var(--ink); }
+.badge .dots { margin-left: auto; display: flex; gap: 2px; }
+.badge .dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--c); }
+
 /* Narrow stages use smaller cards; must match TIERS_COMPACT in engine/config.ts. */
 .stage.compact .card { --w: 156px; }
 .stage.compact .card.tier-m { --w: 200px; }
@@ -283,6 +342,9 @@ button { font: inherit; color: inherit; }
 .art .sd { fill: none; stroke: var(--art-d); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
 .art .t { fill: none; stroke: var(--art-light); stroke-width: 2.5; stroke-linecap: round; opacity: 0.6; }
 
+/* A real image in place of the pictogram (see art/eventImages.ts). */
+.photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+
 /* ── Hover preview ── */
 .pop {
   position: fixed; z-index: 40; width: 280px; background: var(--surface); border: 1px solid var(--line-strong);
@@ -297,8 +359,12 @@ button { font: inherit; color: inherit; }
 .pop .when { margin-top: 4px; font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); }
 .pop p { margin: 8px 0 0; font-size: 12.5px; line-height: 17px; color: var(--ink-2); }
 .pop .cta { margin-top: 9px; font-size: 11px; color: var(--ink-3); }
+.kicker {
+  display: flex; align-items: center; gap: 7px; margin-bottom: 7px;
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--t, var(--ink-3));
+}
 
-/* ── Detail panel ── */
+/* ── Side panel ── */
 .panel {
   flex: none; width: 0; opacity: 0; overflow: hidden; margin-left: 0;
   transition: width 0.4s var(--ease), opacity 0.3s, margin-left 0.4s var(--ease);
@@ -313,6 +379,7 @@ button { font: inherit; color: inherit; }
 .pscroll { overflow-y: auto; min-height: 0; flex: 1; overscroll-behavior: contain; }
 .hero { position: relative; height: 168px; }
 .pbody { padding: 16px 18px 26px; display: flex; flex-direction: column; gap: 16px; }
+.pbody.page { padding-top: 18px; } /* pages without a hero image */
 .pbody h2 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 23px; line-height: 27px; letter-spacing: -0.015em; text-wrap: balance; }
 .dateline { font-family: var(--font-mono); font-size: 12.5px; color: var(--ink); }
 .dateline small { display: block; font-family: var(--font-body); font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
@@ -325,6 +392,9 @@ button { font: inherit; color: inherit; }
 .tag.h-real { color: var(--real); border-color: color-mix(in oklab, var(--real) 40%, var(--line)); }
 .tag.h-altered { color: var(--altered); border-color: color-mix(in oklab, var(--altered) 40%, var(--line)); }
 .tag.h-fiction { color: var(--fiction); border-color: color-mix(in oklab, var(--fiction) 40%, var(--line)); }
+.tag.rh-tag { color: var(--t); border-color: color-mix(in oklab, var(--t) 40%, var(--line)); }
+.tag.st-active { color: var(--real); border-color: color-mix(in oklab, var(--real) 40%, var(--line)); }
+.tag.st-ended, .tag.st-future { color: var(--ink-3); }
 .lede { margin: 0; font-size: 14.5px; line-height: 22px; color: var(--ink); max-width: 62ch; }
 .count-down {
   display: flex; align-items: baseline; gap: 8px; padding: 10px 12px; border-radius: 11px;
@@ -348,20 +418,105 @@ button { font: inherit; color: inherit; }
 .conf.s { color: var(--real); border-color: color-mix(in oklab, var(--real) 45%, var(--line)); }
 .conf.p { color: var(--altered); border-color: color-mix(in oklab, var(--altered) 45%, var(--line)); }
 .conf.x { color: var(--fiction); border-color: color-mix(in oklab, var(--fiction) 45%, var(--line)); }
-.people { display: flex; flex-wrap: wrap; gap: 6px; }
-.person {
-  border: 1px solid var(--line); background: var(--surface-2); border-radius: 999px; padding: 3px 10px; font-size: 12px;
-  cursor: pointer; color: var(--ink); transition: border-color 0.2s;
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.sec p + .chips { margin-top: 9px; }
+.pill {
+  display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); background: var(--surface-2);
+  border-radius: 999px; padding: 3px 10px; font-size: 12px; text-align: left; cursor: pointer; color: var(--ink);
+  transition: border-color 0.2s;
 }
-.person:hover { border-color: var(--line-strong); }
+.pill:hover { border-color: var(--line-strong); }
+.thread-pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex: none; }
+.rh-pill:hover { border-color: var(--t); }
+.toggle {
+  width: 100%; text-align: left; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line-strong);
+  background: var(--surface); font-size: 13px; font-weight: 600; cursor: pointer; transition: border-color 0.2s, background 0.2s;
+}
+.toggle:hover { border-color: var(--accent); }
+.toggle[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
 .links { display: flex; flex-direction: column; gap: 6px; }
 .link {
   display: flex; align-items: center; gap: 9px; width: 100%; text-align: left; padding: 7px 10px; border-radius: 10px;
   border: 1px solid var(--line); background: var(--surface); cursor: pointer; transition: border-color 0.2s, background 0.2s;
 }
 .link:hover { border-color: var(--line-strong); background: var(--surface-2); }
-.link .lt { flex: 1; min-width: 0; font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.link .lbody { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.link .lt { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.link .ln { font-size: 12px; line-height: 16px; color: var(--ink-2); }
 .link .ld { font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-3); flex: none; }
+.link .num {
+  flex: none; width: 19px; height: 19px; border-radius: 50%; display: inline-grid; place-items: center;
+  font-family: var(--font-mono); font-size: 10px; font-weight: 600; color: var(--surface); background: var(--accent);
+}
+
+/* ── Corporate map ──
+   Edge kinds set --e (colour) here; the same classes style the SVG edges, their arrowheads,
+   and the line samples in the legend and the company page. */
+.ek-owns { --e: var(--ink-2); }
+.ek-stake { --e: var(--cat-finance); }
+.ek-option { --e: var(--moon); }
+.ek-finance { --e: var(--cat-deals); }
+.ek-part { --e: var(--ink-3); }
+.ek-pressure { --e: var(--cat-politics); }
+.ek-family { --e: var(--cat-personal); }
+.ek-merged { --e: var(--ink-3); }
+i.ek, span.ek { display: inline-block; flex: none; width: 22px; height: 0; border-top: 2px solid var(--e); }
+i.ek-option, span.ek-option, i.ek-pressure, span.ek-pressure, i.ek-merged, span.ek-merged { border-top-style: dashed; }
+i.ek-finance, span.ek-finance, i.ek-family, span.ek-family { border-top-style: dotted; }
+
+.mapstage {
+  position: relative; flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; border-radius: 16px;
+  overflow: hidden; background: var(--stage); border: 1px solid var(--line);
+}
+.mapscroll { flex: 1; min-height: 0; overflow: auto; padding: 6px 8px 0; }
+.mapscroll svg { display: block; width: 100%; height: 100%; min-width: 1180px; min-height: 470px; }
+.colbg { fill: var(--surface-2); opacity: 0.55; }
+.coltitle { font: 700 10.5px var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; fill: var(--ink-3); }
+
+/* Nodes. st-* is the state at the current step; fresh marks what changes at it. */
+.cn { cursor: pointer; transition: opacity 0.35s; }
+.cn rect { fill: var(--surface); stroke: var(--line-strong); stroke-width: 1.25; transition: stroke 0.2s, stroke-width 0.2s; }
+.cn text { font: 600 12.5px var(--font-body); fill: var(--ink); text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.cn:hover rect { stroke: var(--ink-2); }
+.cn.k-person rect { fill: var(--accent-soft); stroke: var(--accent); }
+.cn.k-fund rect { fill: color-mix(in oklab, var(--moon) 20%, var(--surface)); stroke: var(--moon); }
+.cn.k-state rect, .cn.k-project rect { stroke-dasharray: 6 4; }
+.cn.k-outside rect, .cn.k-state rect { fill: var(--surface-2); }
+.cn.k-outside text { fill: var(--ink-2); }
+.cn.st-future { opacity: 0; pointer-events: none; }
+.cn.st-ended rect { fill: var(--stage); stroke-dasharray: 3 3; }
+.cn.st-ended text { fill: var(--ink-3); }
+.cn.fresh rect { stroke: var(--accent); stroke-width: 2.25; }
+.cn.sel rect, .cn:focus-visible rect { stroke: var(--accent); stroke-width: 2.75; }
+.cn:focus-visible { outline: none; }
+.nodes.focused .cn:not(.near):not(.st-future) { opacity: 0.28; }
+
+/* Edges. An edge is in the DOM at every step and fades in when it comes into force. */
+.ce { fill: none; stroke: var(--e); stroke-width: 1.5; opacity: 0; transition: opacity 0.35s; pointer-events: none; }
+.ce.on { opacity: 0.75; }
+.ce.ek-owns { stroke-width: 2; }
+.ce.ek-option { stroke-dasharray: 7 4; }
+.ce.ek-finance, .ce.ek-family { stroke-dasharray: 1.5 5; stroke-linecap: round; stroke-width: 2; }
+.ce.ek-pressure { stroke-dasharray: 4 4; }
+.ce.ek-merged { stroke-dasharray: 2 4; }
+.ah { fill: var(--e); }
+.ce.on.hot, .ce.on.fresh { opacity: 1; stroke-width: 2.5; }
+.edges.focused .ce.on:not(.hot) { opacity: 0.1; }
+/* Edge labels, haloed in the stage colour so they read over lines and nodes. */
+.el {
+  font: 600 10.5px var(--font-body); fill: var(--ink); text-anchor: middle; pointer-events: none;
+  paint-order: stroke; stroke: var(--stage); stroke-width: 4px; stroke-linejoin: round;
+}
+.elabels.focused .el:not(.hot) { display: none; }
+
+.maplegend {
+  flex: none; display: flex; flex-wrap: wrap; gap: 5px 16px; padding: 8px 14px 10px; border-top: 1px solid var(--line);
+  font-size: 11.5px; color: var(--ink-2);
+}
+.maplegend span { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+.swatch { width: 14px; height: 10px; border-radius: 3px; border: 1.5px solid var(--line-strong); }
+.swatch.ended { border-style: dashed; opacity: 0.6; }
+.swatch.fresh { border-color: var(--accent); }
 
 /* ── Overview strip ── */
 .mini { position: relative; height: 58px; border-radius: 12px; border: 1px solid var(--line); background: var(--stage); overflow: hidden; cursor: pointer; touch-action: none; }
@@ -384,8 +539,11 @@ button { font: inherit; color: inherit; }
   .panel-in { width: 100%; }
   .mini { height: 48px; }
   .hint { display: none; }
+  .pick { max-width: 150px; }
+  .lane-cap { display: none; }
+  .maprail .label { display: none; }
 }
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
-  .ev-y, .card, .card .thumb, .panel, .pop, .span { transition: none !important; }
+  .ev-y, .card, .card .thumb, .panel, .pop, .span, .cn, .ce { transition: none !important; }
 }

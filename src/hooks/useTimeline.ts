@@ -1,5 +1,5 @@
 import { useEffect, useRef, type RefObject } from 'react';
-import { EVENTS } from '../data';
+import { EVENTS, REAL_EVENTS } from '../data';
 import type { EventFilter } from '../data/types';
 import { Timeline } from '../engine/Timeline';
 import type { TimelineCallbacks } from '../engine/types';
@@ -7,9 +7,20 @@ import type { TimelineCallbacks } from '../engine/types';
 export interface TimelineRefs {
   stage: RefObject<HTMLElement | null>;
   world: RefObject<HTMLDivElement | null>;
+  lane: RefObject<HTMLDivElement | null>;
   axisCanvas: RefObject<HTMLCanvasElement | null>;
+  linkCanvas: RefObject<HTMLCanvasElement | null>;
   overview: RefObject<HTMLDivElement | null>;
   overviewCanvas: RefObject<HTMLCanvasElement | null>;
+}
+
+/** State the host keeps and the engine follows. */
+export interface TimelineState {
+  filter: EventFilter;
+  /** Whether the real-history lane is shown. */
+  laneVisible: boolean;
+  /** Event ids of the active thread, in story order, or null. */
+  threadPath: readonly string[] | null;
 }
 
 /**
@@ -21,15 +32,18 @@ export interface TimelineRefs {
  *
  * @returns Refs to attach to the host elements, and a ref to the engine (null until mounted).
  */
-export function useTimeline(filter: EventFilter, callbacks: TimelineCallbacks) {
+export function useTimeline(state: TimelineState, callbacks: TimelineCallbacks) {
   const refs: TimelineRefs = {
     stage: useRef<HTMLElement>(null),
     world: useRef<HTMLDivElement>(null),
+    lane: useRef<HTMLDivElement>(null),
     axisCanvas: useRef<HTMLCanvasElement>(null),
+    linkCanvas: useRef<HTMLCanvasElement>(null),
     overview: useRef<HTMLDivElement>(null),
     overviewCanvas: useRef<HTMLCanvasElement>(null),
   };
   const engine = useRef<Timeline | null>(null);
+  const { filter, laneVisible, threadPath } = state;
 
   const latestCallbacks = useRef(callbacks);
   const latestFilter = useRef(filter);
@@ -39,24 +53,34 @@ export function useTimeline(filter: EventFilter, callbacks: TimelineCallbacks) {
   });
 
   // Create on mount, destroy on unmount.
-  const { stage, world, axisCanvas, overview, overviewCanvas } = refs;
+  const { stage, world, lane, axisCanvas, linkCanvas, overview, overviewCanvas } = refs;
   useEffect(() => {
-    if (!stage.current || !world.current || !axisCanvas.current || !overview.current || !overviewCanvas.current) return;
+    if (
+      !stage.current || !world.current || !lane.current || !axisCanvas.current ||
+      !linkCanvas.current || !overview.current || !overviewCanvas.current
+    ) {
+      return;
+    }
     const instance = new Timeline(
       {
         stage: stage.current,
         world: world.current,
+        lane: lane.current,
         axisCanvas: axisCanvas.current,
+        linkCanvas: linkCanvas.current,
         overview: overview.current,
         overviewCanvas: overviewCanvas.current,
       },
       EVENTS,
+      REAL_EVENTS,
       latestFilter.current,
       {
         onSelect: (id) => latestCallbacks.current.onSelect(id),
-        onPreview: (preview) => latestCallbacks.current.onPreview(preview),
+        onSelectReal: (id) => latestCallbacks.current.onSelectReal(id),
+        onPreview: (target) => latestCallbacks.current.onPreview(target),
         onLevelChange: (level) => latestCallbacks.current.onLevelChange(level),
         onInteract: () => latestCallbacks.current.onInteract(),
+        onViewChange: (view) => latestCallbacks.current.onViewChange(view),
       },
     );
     engine.current = instance;
@@ -64,12 +88,18 @@ export function useTimeline(filter: EventFilter, callbacks: TimelineCallbacks) {
       instance.destroy();
       engine.current = null;
     };
-  }, [stage, world, axisCanvas, overview, overviewCanvas]);
+  }, [stage, world, lane, axisCanvas, linkCanvas, overview, overviewCanvas]);
 
-  // Push filter changes into the engine.
+  // Push state changes into the engine.
   useEffect(() => {
     engine.current?.setFilter(filter);
   }, [filter]);
+  useEffect(() => {
+    engine.current?.setLaneVisible(laneVisible);
+  }, [laneVisible]);
+  useEffect(() => {
+    engine.current?.setThreadPath(threadPath);
+  }, [threadPath]);
 
   return { refs, engine };
 }

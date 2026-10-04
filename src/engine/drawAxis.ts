@@ -2,7 +2,7 @@ import {
   CRASH_DAY, DOMAIN_END, DOMAIN_START, GAP_END, GAP_START,
   MONTHS_LONG, MONTHS_SHORT, WEEKDAYS, dateOf, dayOf,
 } from '../lib/time';
-import { AXIS_HEIGHT, CARDS_TOP, clamp, smoothstep } from './config';
+import { AXIS_HEIGHT, clamp, smoothstep } from './config';
 import { hatch, setFont } from './palette';
 import type { Frame } from './types';
 
@@ -38,6 +38,19 @@ export function drawAxis(c: CanvasRenderingContext2D, f: Frame): void {
   c.moveTo(0, AXIS_HEIGHT + 0.5);
   c.lineTo(W, AXIS_HEIGHT + 0.5);
   c.stroke();
+
+  // Real-history lane: a band under the header with its own baseline.
+  if (f.laneHeight > 0) {
+    c.fillStyle = palette.stage;
+    c.globalAlpha = 0.8;
+    c.fillRect(0, AXIS_HEIGHT + 1, W, f.laneHeight);
+    c.globalAlpha = 1;
+    c.strokeStyle = palette.line;
+    c.beginPath();
+    c.moveTo(0, AXIS_HEIGHT + f.laneHeight + 0.5);
+    c.lineTo(W, AXIS_HEIGHT + f.laneHeight + 0.5);
+    c.stroke();
+  }
 
   // Opacity per tick level.
   const aQuarter = 1 - smoothstep(1.2, 1.7, ppd);
@@ -187,6 +200,19 @@ export function drawAxis(c: CanvasRenderingContext2D, f: Frame): void {
     c.lineWidth = 1;
   }
 
+  // Guide line under the hovered or selected real-history entry, so its date reads against the cards.
+  if (f.realGuideX != null && f.laneHeight > 0) {
+    c.strokeStyle = palette.real;
+    c.globalAlpha = 0.7;
+    c.setLineDash([2, 4]);
+    c.beginPath();
+    c.moveTo(Math.round(f.realGuideX) + 0.5, AXIS_HEIGHT + f.laneHeight);
+    c.lineTo(Math.round(f.realGuideX) + 0.5, H);
+    c.stroke();
+    c.setLineDash([]);
+    c.globalAlpha = 1;
+  }
+
   // Event markers; the hovered or selected one gets a guide line down to its card.
   for (const item of f.items) {
     if (item.off || !item.visible) continue;
@@ -211,7 +237,7 @@ export function drawAxis(c: CanvasRenderingContext2D, f: Frame): void {
       c.lineWidth = 1.5;
       c.beginPath();
       c.moveTo(x + 0.5, AXIS_HEIGHT);
-      c.lineTo(x + 0.5, Math.max(AXIS_HEIGHT, CARDS_TOP - f.scrollY + item.y));
+      c.lineTo(x + 0.5, f.cardsTop + item.y);
       c.stroke();
       c.lineWidth = 1;
     }

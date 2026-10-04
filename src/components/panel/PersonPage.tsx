@@ -1,5 +1,7 @@
 import { PERSON_BY_NAME, eventsOf } from '../../data';
 import { PERSON_GROUP_LABEL } from '../../data/people';
+import { characterImage } from '../../art/characterImages';
+import { Portrait } from '../Portrait';
 import { EventLinks, FilterToggle, Section, type OpenPage } from './parts';
 
 interface PersonPageProps {
@@ -22,8 +24,14 @@ export function PersonPage({ name, filtered, onFilter, onOpen }: PersonPageProps
           {events.length} event{events.length === 1 ? '' : 's'}
         </span>
       </div>
-      <h2 id="ptitle">{name}</h2>
-      {person && <div className="dateline">{person.role}</div>}
+      <div className="who">
+        <Portrait name={name} person={person} />
+        <div>
+          <h2 id="ptitle">{name}</h2>
+          {person && <div className="dateline">{person.role}</div>}
+          {person?.art && characterImage(name) && <div className="artnote">Portrait: {person.art}</div>}
+        </div>
+      </div>
       {person && <p className="lede">{person.bio}</p>}
       {person?.real && (
         <Section title="Real-world counterpart">

@@ -20,3 +20,10 @@ bin-release/
 # Dependencies and local builds (the published copy lives in Output/)
 node_modules/
 dist/
+
+# Character portraits cropped from the published books: kept locally, not published
+src/assets/characters/*
+!src/assets/characters/README.md
+
+# Files Claude sends in chat are saved here by the desktop app
+Claude outputs/

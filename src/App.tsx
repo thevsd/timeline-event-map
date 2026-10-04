@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { CastRail } from './components/CastRail';
+import { CharacterList } from './components/CharacterList';
 import { CorporateMap } from './components/CorporateMap';
 import { DetailPanel } from './components/DetailPanel';
 import { FilterRail } from './components/FilterRail';
@@ -57,8 +59,9 @@ function fromUrl(url: UrlState) {
 const INITIAL = fromUrl(parseUrlState(window.location.hash));
 
 /**
- * Application shell. React owns the toolbar, filters, side panel, hover preview and the corporate
- * map; the timeline itself is drawn by the engine (see engine/Timeline.ts) inside the stage.
+ * Application shell. React owns the toolbar, filters, side panel, hover preview, the corporate map
+ * and the character list; the timeline itself is drawn by the engine (see engine/Timeline.ts)
+ * inside the stage.
  *
  * State worth sharing (view, zoom, selection, filters) is mirrored into the URL hash.
  */
@@ -66,6 +69,8 @@ export default function App() {
   const [view, setView] = useState<View>(INITIAL.view);
   const [categories, setCategories] = useState<ReadonlySet<CategoryId>>(INITIAL.categories);
   const [search, setSearch] = useState(INITIAL.search);
+  /** Search text of the Characters tab; not part of a link. */
+  const [castQuery, setCastQuery] = useState('');
   const [person, setPerson] = useState(INITIAL.person);
   const [thread, setThread] = useState(INITIAL.thread);
   const [lane, setLane] = useState(INITIAL.lane);
@@ -194,11 +199,13 @@ export default function App() {
     focus(rest[rest.length - 1], 'ifNeeded');
   }, [stack, close, focus]);
 
-  /** Switch between the timeline and the map; a panel page that belongs to the other view is closed. */
+  /** Switch the main view. A panel page that belongs to another view is closed; person pages fit any view. */
   const switchView = useCallback(
     (next: View) => {
       setView(next);
-      if (page && (page.kind === 'company') !== (next === 'map')) close();
+      if (!page || page.kind === 'person') return;
+      const home: View = page.kind === 'company' ? 'map' : 'timeline';
+      if (home !== next) close();
     },
     [page, close],
   );
@@ -303,6 +310,7 @@ export default function App() {
       if (ev.target instanceof HTMLInputElement && ev.target.type === 'search') {
         if (ev.key === 'Escape') {
           setSearch('');
+          setCastQuery('');
           ev.target.blur();
         }
         return;
@@ -318,10 +326,10 @@ export default function App() {
           if (view === 'map') {
             ev.preventDefault();
             setMapStep((current) => Math.max(0, Math.min(LAST_STEP, current + direction)));
-          } else if (page?.kind === 'event') {
+          } else if (view === 'timeline' && page?.kind === 'event') {
             ev.preventDefault();
             step(direction);
-          } else {
+          } else if (view === 'timeline') {
             engine.current?.panBy(-direction * 120);
           }
           break;
@@ -385,11 +393,14 @@ export default function App() {
             onLane={setLane}
             visibleCount={visibleEvents.length}
           />
-        ) : (
+        ) : view === 'map' ? (
           <MapControls step={mapStep} onStep={setMapStep} onOpenEvent={(id) => open({ kind: 'event', id }, 'reset')} />
+        ) : (
+          <CastRail query={castQuery} onQuery={setCastQuery} />
         )}
 
-        <div className="main">
+        {/* Beside the character list the panel floats over it, so the grid never re-wraps while it slides. */}
+        <div className={view === 'cast' ? 'main float' : 'main'}>
           {/* The engine owns everything it adds inside the stage: cards, badges, lane entries, and state classes on the stage. */}
           <section id="stage" className="stage" ref={refs.stage} aria-label="Timeline" hidden={view !== 'timeline'}>
             <canvas ref={refs.axisCanvas} aria-hidden="true" />
@@ -416,6 +427,14 @@ export default function App() {
               step={mapStep}
               selectedId={page?.kind === 'company' ? page.id : null}
               onSelect={(id) => open({ kind: 'company', id }, page?.kind === 'company' ? 'replace' : 'reset')}
+            />
+          )}
+
+          {view === 'cast' && (
+            <CharacterList
+              query={castQuery.trim().toLowerCase()}
+              selected={page?.kind === 'person' ? page.name : null}
+              onSelect={(name) => open({ kind: 'person', name }, 'reset')}
             />
           )}
 

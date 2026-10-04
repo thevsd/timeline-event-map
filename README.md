@@ -9,6 +9,7 @@ A timeline event map webapp, specifically made for Modern Villainesss's intricat
 - **People:** every name opens a profile with that person's events; the timeline can be narrowed to one person.
 - **Real history:** a lane above the cards marks the real-world events the novel preserves, alters, prevents or moves, each tied to the scene that answers it.
 - **Corporate map:** who owns, funds or pressures whom, stepped through in story order.
+- **Characters:** the cast in groups, with a portrait where one exists and a male or female placeholder otherwise; each card opens that person's page.
 - **Links:** the address bar always holds a link to the current view, selection and filters (`Copy link`).
 
 ## Development
@@ -39,8 +40,10 @@ src/
     validate.ts  checks ids and references (runs in `npm run dev`; problems go to the browser console)
   art/         pictogram illustrations, and the lookup for real images
   assets/events/  optional real images, one per event
+  assets/characters/  character portraits (kept out of git, see below)
+  assets/placeholders/  male.svg and female.svg, shown for characters without a portrait
   engine/      the timeline itself: zoom model, card layout, canvas drawing, input (no framework)
-  components/  React shell: toolbar, filters, side panel and its pages, hover preview, corporate map
+  components/  React shell: toolbar, filters, side panel and its pages, hover preview, corporate map, character list
   hooks/       useTimeline: mounts the engine inside React
   lib/         dates, URL state, corporate-map state
   styles/      app.css (colour tokens, light and dark themes)
@@ -53,7 +56,8 @@ Everything below is checked while `npm run dev` is running; mistakes are listed 
 - **Event:** append a record to the matching file in `src/data/events/`. Field reference: `src/data/types.ts`.
 - **Image for an event:** put a file named after the event id in `src/assets/events/`, e.g. `kaitaku.webp`. See the README in that folder for sizes.
 - **Thread:** add an entry to `src/data/threads.ts` with the ids of its events; order does not matter.
-- **Person:** add a profile to `src/data/people.ts`. The name must match the spelling used in the events' `people` lists.
+- **Person:** add a profile to `src/data/people.ts`. The name must match the spelling used in the events' `people` lists; `sex` picks the placeholder.
+- **Portrait:** put a file named after the character in `src/assets/characters/`, e.g. `keikain-runa.webp`. See the README in that folder. The current portraits are cropped from the published books, so the folder's images are listed in `.gitignore` and stay on this computer.
 - **Real-history entry:** add a record to `src/data/realHistory.ts` and list the events that answer it in `counterparts`.
 - **Corporate map:** add nodes and edges to `src/data/corporate.ts`. `since` and `until` are event ids, so the map's steps follow the timeline.
 
@@ -69,5 +73,6 @@ State is kept in the URL hash, for example `#z=2.3&d=1997-11-17&e=kaitaku&thread
 | `cat`, `q`, `who`, `thread` | filters: categories, search text, person, thread |
 | `lane=0` | real-history lane hidden |
 | `view=map`, `step` | corporate map and its step |
+| `view=cast` | Characters tab |
 
 A bare `#kaitaku` still opens that event.

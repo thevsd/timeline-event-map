@@ -79,8 +79,9 @@ export function parseUrlState(hash: string): UrlState {
   const params = new URLSearchParams(text.includes('=') ? text : text ? `e=${text}` : '');
   const categories = params.get('cat')?.split(',').filter((id): id is CategoryId => CATEGORY_IDS.has(id)) ?? null;
   const step = params.get('step');
+  const view = params.get('view');
   return {
-    view: params.get('view') === 'map' ? 'map' : 'timeline',
+    view: view === 'map' || view === 'cast' ? view : 'timeline',
     timeline: parseTimeline(params.get('z'), params.get('d')),
     event: params.get('e'),
     page: pageFromString(params.get('p')),
@@ -96,7 +97,7 @@ export function parseUrlState(hash: string): UrlState {
 /** Build the hash for a state, without the leading `#`. Empty when everything is at its default. */
 export function formatUrlState(state: UrlState): string {
   const params = new URLSearchParams();
-  if (state.view === 'map') params.set('view', 'map');
+  if (state.view !== 'timeline') params.set('view', state.view);
   if (state.timeline) {
     params.set('z', String(Number(state.timeline.ppd.toPrecision(3))));
     params.set('d', centreToString(state.timeline));

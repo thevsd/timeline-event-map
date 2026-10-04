@@ -12,6 +12,7 @@ const LEVELS: { id: ZoomLevel; label: string }[] = [
 const VIEWS: { id: View; label: string }[] = [
   { id: 'timeline', label: 'Timeline' },
   { id: 'map', label: 'Corporate map' },
+  { id: 'cast', label: 'Characters' },
 ];
 
 interface ToolbarProps {

@@ -1,3 +1,4 @@
+import { unmatchedPortraits } from '../art/characterImages';
 import { unmatchedImages } from '../art/eventImages';
 import { MONTHS_SHORT, dateOf, toDay } from '../lib/time';
 import { corpEdges, corpNodes, type CorpNode } from './corporate';
@@ -20,6 +21,9 @@ if (import.meta.env.DEV) {
   const problems = validateData(records, threads, people, realHistory, corpNodes, corpEdges);
   for (const name of unmatchedImages(new Set(records.map((r) => r.id)))) {
     problems.push(`assets/events/${name}: no event with this id`);
+  }
+  for (const name of unmatchedPortraits(people.map((p) => p.name))) {
+    problems.push(`assets/characters/${name}: no character with this name`);
   }
   if (problems.length) console.error('Data problems:\n  ' + problems.join('\n  '));
 }

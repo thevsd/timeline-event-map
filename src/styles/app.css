@@ -518,6 +518,69 @@ i.ek-finance, span.ek-finance, i.ek-family, span.ek-family { border-top-style: d
 .swatch.ended { border-style: dashed; opacity: 0.6; }
 .swatch.fresh { border-color: var(--accent); }
 
+/* ── Characters tab ── */
+/* A group class sets --g, the colour behind a portrait without an image. */
+.g-family { --g: var(--cat-personal); }
+.g-circle { --g: var(--cat-deals); }
+.g-school { --g: var(--cat-world); }
+.g-politics { --g: var(--cat-politics); }
+.g-intelligence { --g: var(--cat-shadow); }
+.g-other { --g: var(--ink-3); }
+.portrait { display: block; position: relative; overflow: hidden; background: color-mix(in oklab, var(--g) 20%, var(--surface-2)); }
+/* Crops from the top, so faces stay in frame. */
+.portrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 12%; display: block; }
+/* Male or female placeholder, tinted from the group colour. */
+.portrait .silhouette { position: absolute; inset: 0; display: block; }
+/* The colour is set on the svg itself: its own `color` attribute would otherwise win over an inherited one. */
+.portrait .silhouette svg { display: block; width: 100%; height: 100%; color: color-mix(in oklab, var(--g) 62%, var(--ink-2)); }
+.portrait .initials {
+  position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--font-display); font-weight: 700;
+  font-size: 34px; letter-spacing: 0.02em; color: color-mix(in oklab, var(--g) 62%, var(--ink));
+}
+.caststage {
+  position: relative; flex: 1 1 0; min-width: 0; overflow-y: auto; overscroll-behavior: contain; padding: 4px 18px 22px;
+  border-radius: 16px; background: var(--stage); border: 1px solid var(--line);
+}
+.castgroup { scroll-margin-top: 6px; }
+.castgroup h2 {
+  display: flex; align-items: baseline; gap: 8px; margin: 16px 0 10px;
+  font-size: 11px; letter-spacing: 0.09em; text-transform: uppercase; font-weight: 700; color: var(--ink-3);
+}
+.castgroup h2 span { font-family: var(--font-mono); font-weight: 500; letter-spacing: 0; }
+.castgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.castcard {
+  display: flex; flex-direction: column; padding: 0 0 11px; text-align: left; overflow: hidden; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 13px;
+  transition: border-color 0.2s, box-shadow 0.2s, translate 0.2s var(--ease);
+}
+.castcard:hover { border-color: var(--line-strong); box-shadow: var(--shadow-lift); translate: 0 -2px; }
+.castcard.is-sel { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.castcard .portrait { width: 100%; aspect-ratio: 4 / 5; }
+.cname { padding: 9px 11px 0; font-family: var(--font-display); font-weight: 700; font-size: 14px; line-height: 18px; }
+.crole {
+  padding: 3px 11px 0; font-size: 12px; line-height: 16px; color: var(--ink-2); min-height: 35px;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+}
+.ccount { padding: 7px 11px 0; font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-3); }
+/* Person page header: portrait beside the name. */
+.who { display: flex; align-items: center; gap: 14px; }
+.who .portrait { flex: none; width: 84px; height: 105px; border-radius: 12px; }
+.who .initials { font-size: 26px; }
+.artnote { margin-top: 5px; font-size: 11px; color: var(--ink-3); }
+
+/* Beside the character list the panel floats above it instead of taking space: pushing the list
+   narrower would re-wrap the grid and rescale every portrait on each frame. Only a transform moves. */
+@media (min-width: 821px) {
+  .main.float { position: relative; }
+  .main.float .panel {
+    position: absolute; top: 0; right: 0; bottom: 0; z-index: 20; width: min(430px, 44vw); margin: 0;
+    overflow: visible; pointer-events: none; transform: translateX(calc(100% + 24px));
+    transition: transform 0.4s var(--ease), opacity 0.3s;
+  }
+  .main.float .panel.open { pointer-events: auto; transform: none; }
+  .main.float .panel-in { box-shadow: var(--shadow-lift); }
+}
+
 /* ── Overview strip ── */
 .mini { position: relative; height: 58px; border-radius: 12px; border: 1px solid var(--line); background: var(--stage); overflow: hidden; cursor: pointer; touch-action: none; }
 .mini canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
@@ -542,8 +605,10 @@ i.ek-finance, span.ek-finance, i.ek-family, span.ek-family { border-top-style: d
   .pick { max-width: 150px; }
   .lane-cap { display: none; }
   .maprail .label { display: none; }
+  .caststage { padding-inline: 12px; }
+  .castgrid { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 9px; }
 }
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
-  .ev-y, .card, .card .thumb, .panel, .pop, .span, .cn, .ce { transition: none !important; }
+  .ev-y, .card, .card .thumb, .panel, .pop, .span, .cn, .ce, .castcard { transition: none !important; }
 }

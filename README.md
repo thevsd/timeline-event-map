@@ -1,5 +1,8 @@
 # timeline-event-map
-A timeline event map webapp, specifically made for Modern Villainesss's intricate storyline
+
+A zoomable timeline and event viewer for the storyline of *Modern Villainess: It's Not Easy Building a Corporate Empire Before the Crash* (Tofuro Futsukaichi). It covers English Volumes 1–5: from Runa's infancy to spring 2003, plus the 15 September 2008 frame scene. Full spoilers, gated by the reader's progress (see **Reading progress** below).
+
+The app is a single self-contained HTML page: open it in a browser, no server needed.
 
 ## Features
 
@@ -14,6 +17,16 @@ A timeline event map webapp, specifically made for Modern Villainesss's intricat
 - **Glossary:** terms of Japanese finance and politics are underlined in the side panel; hover for the definition, click for the page listing where the term comes up.
 - **Reading progress:** `Read up to` hides everything from later volumes: events, characters, threads, map steps, real-history entries and the sentences that give later volumes away. The setting is kept in the browser and is never part of a link.
 - **Links:** the address bar always holds a link to the current view, selection and filters (`Copy link`).
+- **Theme:** light or dark, following the system setting.
+
+### Keyboard
+
+| Key | Action |
+|---|---|
+| `Ctrl+K` / `/` | search |
+| `←` `→` | previous / next event while one is open; step the corporate map; otherwise pan |
+| `+` `-` | zoom the timeline |
+| `Esc` | close the side panel |
 
 ## Development
 
@@ -27,11 +40,15 @@ npm run build      # type-check, then build dist/index.html (one self-contained 
 npm run release    # build, then copy the page to Output/Modern_Villainess_Timeline.html
 ```
 
-`Output/` is the published copy and changes only through `npm run release`.
+`Output/` is the published copy and changes only through `npm run release`; the script creates the folder if it is missing.
 
 ## Structure
 
 ```
+Modern_Villainess_Context.md  the knowledge base behind the data: world, cast, real-world mappings, threads, open questions
+EventMap/      chapter-by-chapter event maps, one per volume; the source the event records are written from
+Legacy/        the earlier plain-JavaScript version (before the move to React), kept for reference
+scripts/       release.mjs: copies the build to Output/
 src/
   data/        the content
     events/      event records, one file per volume

@@ -1,0 +1,53 @@
+<!-- Static shell. Cards, filter chips and jump buttons are created by app.js; ids here are its hooks. -->
+<div class="app" id="app">
+  <header class="bar">
+    <div class="brand">
+      <span class="moon" aria-hidden="true"></span>
+      <div>
+        <h1>Modern Villainess Timeline</h1>
+        <p>Event map of English Vols. 1–5, counting down to 15 September 2008</p>
+      </div>
+    </div>
+    <input class="search" id="search" type="search" placeholder="Search events or people" aria-label="Search events or people" autocomplete="off">
+    <div class="zoom">
+      <button class="iconbtn" id="zout" type="button" aria-label="Zoom out" title="Zoom out">−</button>
+      <div class="seg" id="scale" role="group" aria-label="Time scale">
+        <button type="button" data-level="q" aria-pressed="false">Quarters</button>
+        <button type="button" data-level="m" aria-pressed="false">Months</button>
+        <button type="button" data-level="w" aria-pressed="false">Weeks</button>
+        <button type="button" data-level="d" aria-pressed="false">Days</button>
+      </div>
+      <button class="iconbtn" id="zin" type="button" aria-label="Zoom in" title="Zoom in">+</button>
+    </div>
+  </header>
+  <div class="rail">
+    <span class="label">Jump to</span>
+    <div class="scroller" id="jumps" role="group" aria-label="Jump to a volume"></div>
+    <span class="sep" aria-hidden="true"></span>
+    <div class="scroller" id="cats" role="group" aria-label="Show or hide kinds of event"></div>
+    <span class="count" id="count"></span>
+  </div>
+  <div class="main">
+    <section class="stage" id="stage" aria-label="Timeline">
+      <canvas id="axis" aria-hidden="true"></canvas>
+      <div class="world" id="world"></div>
+      <div class="fade" aria-hidden="true"></div>
+      <div class="more" id="more" aria-hidden="true"></div>
+      <div class="empty" id="empty" hidden>No events match. Clear the search or turn a category back on.</div>
+      <div class="hint" id="hint">Scroll to zoom · drag to pan · click a card for detail</div>
+    </section>
+    <aside class="panel" id="panel" aria-label="Event detail" aria-hidden="true">
+      <div class="panel-in">
+        <div class="phead">
+          <span class="pos" id="pos"></span>
+          <button class="iconbtn" id="pprev" type="button" aria-label="Previous event" title="Previous event">‹</button>
+          <button class="iconbtn" id="pnext" type="button" aria-label="Next event" title="Next event">›</button>
+          <button class="iconbtn" id="pclose" type="button" aria-label="Close detail" title="Close">×</button>
+        </div>
+        <div class="pscroll" id="pscroll"></div>
+      </div>
+    </aside>
+  </div>
+  <div class="mini" id="mini" aria-label="Overview of the whole timeline. Drag to move."><canvas id="minic" aria-hidden="true"></canvas></div>
+</div>
+<div class="pop" id="pop" aria-hidden="true"></div>

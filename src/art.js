@@ -1,0 +1,100 @@
+/**
+ * Event illustrations: original pictograms, built as inline SVG strings.
+ *
+ * Each motif is drawn on a 320×160 field and centred in a 400×160 viewBox, so the
+ * picture survives cropping at any card aspect ratio. Colour comes from CSS: the
+ * shape classes (a, b, c, d, g, s, sd, t) are styled under `.art` in style.css and
+ * take the event's category colour from `--c`.
+ *
+ * Exposes window.MV_ART(motif, seed) and window.MV_MOTIFS (the valid motif names).
+ */
+(function () {
+  'use strict';
+
+  /** FNV-1a string hash, used to seed the decoration per event. */
+  function hash(str) {
+    let h = 2166136261;
+    for (let i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return h >>> 0;
+  }
+
+  /** Mulberry32: a small seeded PRNG, so an event always gets the same picture. */
+  function rng(seed) {
+    let a = seed;
+    return function () {
+      a = (a + 0x6d2b79f5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  // Motif name -> SVG shapes. Add a motif here, then reference it from an event's `motif` field.
+  const M = {
+    bank: '<path class="a" d="M98 68 160 34l62 34z"/><circle class="d" cx="160" cy="55" r="6"/><rect class="a" x="104" y="71" width="112" height="8" rx="2"/><rect class="b" x="112" y="83" width="11" height="38"/><rect class="b" x="133" y="83" width="11" height="38"/><rect class="b" x="154" y="83" width="12" height="38"/><rect class="b" x="176" y="83" width="11" height="38"/><rect class="b" x="197" y="83" width="11" height="38"/><rect class="a" x="100" y="124" width="120" height="8" rx="2"/><rect class="b" x="90" y="134" width="140" height="7" rx="2"/>',
+    chartup: '<rect class="b" x="92" y="102" width="15" height="30" rx="3"/><rect class="b" x="118" y="92" width="15" height="40" rx="3"/><rect class="b" x="144" y="98" width="15" height="34" rx="3"/><rect class="b" x="170" y="76" width="15" height="56" rx="3"/><rect class="b" x="196" y="62" width="15" height="70" rx="3"/><rect class="b" x="222" y="44" width="15" height="88" rx="3"/><path class="s" d="M88 112 124 92l26 8 28-28 26-12 30-30"/><path class="s" d="M214 28h22v22"/>',
+    chartcrash: '<rect class="c" x="88" y="70" width="15" height="62" rx="3"/><rect class="c" x="114" y="60" width="15" height="72" rx="3"/><rect class="c" x="140" y="66" width="15" height="66" rx="3"/><rect class="c" x="166" y="48" width="15" height="84" rx="3"/><rect class="c" x="192" y="88" width="15" height="44" rx="3"/><rect class="c" x="218" y="112" width="15" height="20" rx="3"/><path class="s" d="M84 78 116 62l26 8 28-24 20 6 22 54 24 18"/><path class="s" d="M240 102v24h-24"/>',
+    diet: '<rect class="b" x="80" y="96" width="160" height="32"/><rect class="d" x="92" y="104" width="7" height="24"/><rect class="d" x="108" y="104" width="7" height="24"/><rect class="d" x="124" y="104" width="7" height="24"/><rect class="d" x="189" y="104" width="7" height="24"/><rect class="d" x="205" y="104" width="7" height="24"/><rect class="d" x="221" y="104" width="7" height="24"/><rect class="a" x="138" y="66" width="44" height="62"/><rect class="a" x="143" y="57" width="34" height="9"/><rect class="a" x="149" y="48" width="22" height="9"/><rect class="a" x="155" y="39" width="10" height="9"/><rect class="d" x="152" y="100" width="16" height="28" rx="8"/><rect class="a" x="72" y="128" width="176" height="8" rx="2"/>',
+    ballot: '<rect class="b" x="138" y="34" width="44" height="58" rx="4" transform="rotate(-9 160 62)"/><path class="sd" d="M150 60l8 8 14-16" transform="rotate(-9 160 62)"/><rect class="a" x="108" y="80" width="104" height="56" rx="7"/><rect class="d" x="132" y="88" width="56" height="7" rx="3.5"/><rect class="c" x="100" y="136" width="120" height="6" rx="3"/>',
+    train: '<path class="a" d="M62 120c6-22 40-40 78-42h112q12 0 12 12v30z"/><rect class="d" x="152" y="89" width="100" height="11" rx="5.5"/><path class="d" d="M106 97q14-10 34-11v11z"/><rect class="b" x="62" y="108" width="202" height="4"/><rect class="b" x="46" y="126" width="236" height="5" rx="2.5"/><path class="t" d="M30 92h22M22 104h26M36 80h16"/>',
+    tower: '<rect class="c" x="84" y="92" width="24" height="44"/><rect class="b" x="112" y="66" width="30" height="70"/><rect class="a" x="146" y="34" width="34" height="102"/><rect class="a" x="160" y="18" width="5" height="16"/><rect class="b" x="184" y="74" width="28" height="62"/><rect class="c" x="216" y="96" width="22" height="40"/><g class="d"><rect x="153" y="44" width="7" height="7"/><rect x="166" y="44" width="7" height="7"/><rect x="153" y="58" width="7" height="7"/><rect x="166" y="58" width="7" height="7"/><rect x="153" y="72" width="7" height="7"/><rect x="166" y="72" width="7" height="7"/><rect x="153" y="86" width="7" height="7"/><rect x="166" y="86" width="7" height="7"/><rect x="153" y="100" width="7" height="7"/><rect x="166" y="100" width="7" height="7"/><rect x="119" y="76" width="6" height="6"/><rect x="130" y="76" width="6" height="6"/><rect x="119" y="90" width="6" height="6"/><rect x="130" y="90" width="6" height="6"/><rect x="191" y="84" width="6" height="6"/><rect x="201" y="84" width="6" height="6"/><rect x="191" y="98" width="6" height="6"/><rect x="201" y="98" width="6" height="6"/></g><rect class="a" x="70" y="136" width="182" height="5" rx="2"/>',
+    oil: '<path class="s" d="M136 134 160 54l24 80M143 112h34M149 92h22M143 112l31-20M177 112 146 92"/><path class="d" d="M160 20c8 10 12 16 12 23a12 12 0 0 1-24 0c0-7 4-13 12-23z"/><circle class="d" cx="136" cy="38" r="5"/><circle class="d" cx="186" cy="34" r="4"/><circle class="d" cx="194" cy="52" r="3"/><rect class="a" x="110" y="134" width="100" height="7" rx="2"/><rect class="b" x="214" y="112" width="30" height="22" rx="4"/><rect class="b" x="222" y="104" width="14" height="8"/>',
+    plane: '<path class="a" d="M78 92 214 76q26-2 30 8-4 10-30 10l-44 4-36 34h-16l22-32-30 2-14 14H82l8-20z"/><path class="d" d="M200 82h18"/><rect class="d" x="196" y="80" width="22" height="4" rx="2"/><path class="t" d="M36 100h34M26 112h28M48 124h20"/>',
+    document: '<rect class="a" x="110" y="26" width="100" height="116" rx="7"/><rect class="d" x="124" y="42" width="50" height="7" rx="2" opacity=".85"/><rect class="d" x="124" y="58" width="72" height="5" rx="2" opacity=".4"/><rect class="d" x="124" y="70" width="72" height="9" rx="2"/><rect class="d" x="124" y="86" width="60" height="5" rx="2" opacity=".4"/><rect class="d" x="124" y="98" width="44" height="9" rx="2"/><rect class="d" x="124" y="114" width="36" height="5" rx="2" opacity=".4"/><circle class="sd" cx="186" cy="116" r="15"/><path class="sd" d="M179 116l5 5 9-10"/>',
+    stage: '<path class="c" d="M160 20 112 136h96z"/><path class="b" d="M66 24h46q-10 54 0 112H66z"/><path class="b" d="M254 24h-46q10 54 0 112h46z"/><rect class="a" x="60" y="18" width="200" height="10" rx="3"/><circle class="a" cx="150" cy="106" r="10"/><rect class="a" x="156" y="60" width="5" height="48"/><path class="s" d="M159 62q22 4 20 24"/><rect class="b" x="88" y="136" width="144" height="6" rx="3"/>',
+    school: '<rect class="d" x="155" y="88" width="9" height="48" rx="3"/><path class="sd" d="M159 104q-14-8-20-20M160 96q12-8 18-20"/><circle class="b" cx="132" cy="76" r="22"/><circle class="b" cx="190" cy="72" r="24"/><circle class="a" cx="160" cy="58" r="30"/><circle class="b" cx="160" cy="36" r="15"/><g class="d" opacity=".5"><circle cx="150" cy="54" r="3"/><circle cx="170" cy="64" r="3"/><circle cx="160" cy="42" r="2.5"/><circle cx="186" cy="74" r="3"/><circle cx="134" cy="78" r="3"/></g><rect class="a" x="96" y="136" width="128" height="5" rx="2"/>',
+    crown: '<path class="a" d="M110 110 100 58l34 26 26-40 26 40 34-26-10 52z"/><rect class="a" x="108" y="115" width="104" height="14" rx="5"/><circle class="b" cx="100" cy="56" r="7"/><circle class="b" cx="160" cy="42" r="7"/><circle class="b" cx="220" cy="56" r="7"/><circle class="d" cx="160" cy="122" r="4.5"/><circle class="d" cx="136" cy="122" r="3"/><circle class="d" cx="184" cy="122" r="3"/>',
+    merge: '<circle class="b" cx="138" cy="84" r="40"/><circle class="b" cx="182" cy="84" r="40"/><path class="a" d="M160 50.600A40 40 0 0 1 160 117.400 40 40 0 0 1 160 50.600z"/><path class="sd" d="M112 84h20M208 84h-20"/><path class="sd" d="M126 77l7 7-7 7M194 77l-7 7 7 7"/>',
+    map: '<path class="t" d="M54 60q14-8 28 0t28 0M210 118q14-8 28 0t28 0M60 122q12-7 24 0"/><path class="a" d="M170 20q12 18 3 38 13 18 2 40 9 22-8 44-12-16-7-36-11-18-2-36-9-22 2-36 4-8 10-14z"/><path class="sd" stroke-dasharray="3 8" d="M134 78h62"/><circle class="s" cx="98" cy="96" r="18" style="stroke-width:3"/><path class="a" d="M98 78l5 18-5 18-5-18z"/>',
+    spy: '<path class="a" d="M92 84q68-58 136 0-68 58-136 0z"/><circle class="d" cx="160" cy="84" r="25"/><circle class="a" cx="160" cy="78" r="8"/><path class="a" d="M155 82h10l4 18h-18z"/><path class="t" d="M104 52l-8-10M132 38l-4-12M188 38l4-12M216 52l8-10"/>',
+    grave: '<rect class="c" x="40" y="96" width="240" height="3"/><path class="a" d="M112 134V86q0-18 18-18t18 18v48z"/><rect class="d" x="122" y="92" width="16" height="4" rx="2" opacity=".5"/><rect class="d" x="122" y="102" width="16" height="4" rx="2" opacity=".5"/><rect class="a" x="186" y="54" width="9" height="80" rx="2"/><rect class="a" x="172" y="70" width="37" height="8" rx="2"/><rect class="a" x="178" y="100" width="25" height="7" rx="2" transform="rotate(-18 190 104)"/><g class="b"><ellipse cx="160" cy="128" rx="5" ry="9" transform="rotate(-30 160 128)"/><ellipse cx="168" cy="128" rx="5" ry="9" transform="rotate(30 168 128)"/><ellipse cx="164" cy="124" rx="4.500" ry="9"/></g><rect class="b" x="96" y="134" width="128" height="6" rx="3"/>',
+    dollhouse: '<path class="a" d="M100 82 160 38l60 44z"/><rect class="b" x="112" y="82" width="96" height="54"/><rect class="a" x="124" y="92" width="18" height="16" rx="2"/><rect class="a" x="178" y="92" width="18" height="16" rx="2"/><rect class="a" x="124" y="114" width="18" height="16" rx="2"/><rect class="d" x="152" y="108" width="16" height="28" rx="2"/><circle class="a" cx="160" cy="64" r="7"/><rect class="a" x="186" y="46" width="10" height="20"/><g class="a"><circle cx="70" cy="40" r="2.500"/><circle cx="92" cy="64" r="1.800"/><circle cx="246" cy="36" r="2.500"/><circle cx="262" cy="70" r="1.800"/><circle cx="232" cy="58" r="1.500"/></g><rect class="a" x="98" y="136" width="124" height="5" rx="2"/>',
+    vault: '<rect class="b" x="98" y="30" width="124" height="112" rx="12"/><circle class="a" cx="160" cy="86" r="42"/><circle class="d" cx="160" cy="86" r="31"/><path class="s" d="M160 62v48M136 86h48M143 69l34 34M177 69l-34 34" style="stroke-width:4"/><circle class="a" cx="160" cy="86" r="9"/><circle class="d" cx="108" cy="42" r="3"/><circle class="d" cx="212" cy="42" r="3"/><circle class="d" cx="108" cy="130" r="3"/><circle class="d" cx="212" cy="130" r="3"/><path class="a" d="M232 132l6-14h26l6 14zM246 116l5-12h22l5 12z" opacity=".9"/>',
+    news: '<rect class="b" x="110" y="46" width="112" height="92" rx="5" transform="rotate(5 166 92)"/><rect class="a" x="98" y="36" width="116" height="100" rx="6"/><rect class="d" x="110" y="48" width="92" height="13" rx="2"/><rect class="d" x="110" y="70" width="40" height="30" rx="3" opacity=".7"/><g class="d" opacity=".45"><rect x="158" y="70" width="44" height="5" rx="2"/><rect x="158" y="82" width="44" height="5" rx="2"/><rect x="158" y="94" width="34" height="5" rx="2"/><rect x="110" y="108" width="92" height="5" rx="2"/><rect x="110" y="120" width="70" height="5" rx="2"/></g>',
+    tv: '<path class="s" d="M142 40l18 14 22-22" style="stroke-width:4"/><rect class="a" x="94" y="52" width="132" height="80" rx="12"/><rect class="d" x="104" y="62" width="88" height="60" rx="7"/><rect class="b" x="110" y="68" width="14" height="48"/><rect class="c" x="126" y="68" width="14" height="48"/><rect class="b" x="142" y="68" width="14" height="48"/><rect class="c" x="158" y="68" width="14" height="48"/><rect class="b" x="174" y="68" width="12" height="48"/><circle class="d" cx="208" cy="76" r="7"/><circle class="d" cx="208" cy="98" r="7"/><rect class="b" x="118" y="134" width="12" height="8" rx="2"/><rect class="b" x="190" y="134" width="12" height="8" rx="2"/>',
+    garden: '<ellipse class="b" cx="160" cy="116" rx="84" ry="22"/><ellipse class="c" cx="160" cy="116" rx="60" ry="13"/><circle class="a" cx="136" cy="116" r="10"/><path class="d" d="M136 116l10-2-2 6z"/><circle class="a" cx="190" cy="122" r="7"/><path class="a" d="M108 108q-12-40 8-62 10 30-8 62zM120 106q4-34 26-48-2 30-26 48zM212 106q12-34-6-56-10 28 6 56zM200 106q-6-28-24-40 2 26 24 40z"/><path class="a" d="M170 110q8-5 16 0-8 5-16 0z"/>',
+    car: '<path class="a" d="M78 116l8-22q4-8 14-10l30-4 22-20q6-5 14-5h42q8 0 13 6l17 21 10 4q10 4 10 14v16z"/><path class="d" d="M140 80l18-16h26v16zM190 64h18l14 16h-32z"/><circle class="d" cx="116" cy="118" r="15"/><circle class="a" cx="116" cy="118" r="6"/><circle class="d" cx="222" cy="118" r="15"/><circle class="a" cx="222" cy="118" r="6"/><rect class="b" x="60" y="134" width="212" height="5" rx="2.500"/><path class="t" d="M30 96h26M22 108h30"/>',
+    trophy: '<path class="s" style="stroke-width:20" d="M124 126V80a36 36 0 0 1 72 0v46"/><g class="d"><circle cx="124" cy="116" r="3.500"/><circle cx="124" cy="98" r="3.500"/><circle cx="128" cy="76" r="3.500"/><circle cx="144" cy="56" r="3.500"/><circle cx="176" cy="56" r="3.500"/><circle cx="192" cy="76" r="3.500"/><circle cx="196" cy="98" r="3.500"/><circle cx="196" cy="116" r="3.500"/></g><path class="t" d="M226 64l10-6M232 84h12M92 64l-10-6M88 84H76"/>',
+    telecom: '<path class="s" d="M160 62 138 136M160 62l22 74M145 112h30M151 92h18" style="stroke-width:4"/><circle class="a" cx="160" cy="54" r="8"/><path class="s" d="M134 36a30 30 0 0 0 0 36M186 36a30 30 0 0 1 0 36" style="stroke-width:4"/><path class="t" d="M116 22a50 50 0 0 0 0 64M204 22a50 50 0 0 1 0 64" style="stroke-width:4"/><rect class="a" x="120" y="136" width="80" height="6" rx="3"/>',
+    pharma: '<g transform="rotate(-28 150 84)"><rect class="a" x="98" y="64" width="104" height="40" rx="20"/><path class="d" d="M150 64h32a20 20 0 0 1 0 40h-32z"/></g><circle class="b" cx="226" cy="112" r="14"/><path class="sd" d="M216 112h20" style="stroke-width:3"/><circle class="b" cx="94" cy="118" r="9"/><circle class="c" cx="246" cy="60" r="7"/>',
+    war: '<path class="g" d="M-40 124q70-22 140-6t140-8 120 6v44H-40z"/><path class="s" d="M60 60 196 34" style="stroke-width:3"/><path class="a" d="M196 34l22-8-10 14z"/><path class="t" d="M82 86 228 58"/><path class="a" d="M228 58l18-7-8 12z"/><circle class="b" cx="118" cy="108" r="12"/><circle class="b" cx="132" cy="94" r="15"/><circle class="c" cx="150" cy="78" r="18"/><circle class="c" cx="128" cy="72" r="12"/><rect class="d" x="196" y="106" width="46" height="13" rx="6"/><rect class="d" x="208" y="97" width="22" height="11" rx="4"/><rect class="d" x="228" y="100" width="30" height="4" rx="2"/>',
+    terminal: '<rect class="a" x="96" y="32" width="128" height="84" rx="9"/><rect class="d" x="105" y="41" width="110" height="66" rx="5"/><path class="s" d="M116 56l10 8-10 8" style="stroke-width:3.500"/><rect class="a" x="134" y="68" width="22" height="5" rx="2"/><rect class="b" x="116" y="84" width="60" height="5" rx="2"/><rect class="b" x="116" y="95" width="38" height="5" rx="2"/><rect class="b" x="150" y="116" width="20" height="12"/><rect class="a" x="124" y="128" width="72" height="8" rx="3"/>',
+    hospital: '<rect class="a" x="128" y="28" width="64" height="64" rx="14"/><rect class="d" x="154" y="40" width="12" height="40" rx="3"/><rect class="d" x="140" y="54" width="40" height="12" rx="3"/><path class="s" d="M70 120h54l10-20 14 36 12-26 8 10h82" style="stroke-width:4"/>',
+    tea: '<path class="t" d="M140 70q-8-9 0-18t0-18M158 66q-8-9 0-18t0-18M176 70q-8-9 0-18t0-18"/><path class="a" d="M114 82h88q0 44-44 44t-44-44z"/><path class="s" d="M202 90q22-2 20 12t-24 12" style="stroke-width:5"/><ellipse class="b" cx="158" cy="132" rx="60" ry="7"/><path class="d" d="M126 92h64q-2 8-6 12h-52q-4-4-6-12z" opacity=".35"/>'
+  };
+
+  /**
+   * Build the illustration for one event.
+   * @param {string} motif  Key of M; unknown names fall back to "document".
+   * @param {string} seed   Usually the event id; fixes the moon and petal positions.
+   * @returns {string} SVG markup.
+   */
+  window.MV_ART = function (motif, seed) {
+    const r = rng(hash(seed || motif));
+    const n = (x) => x.toFixed(0);
+
+    // A pale moon in the left or right third.
+    const mx = 40 + r() * 70 + (r() > 0.5 ? 240 : 0);
+    const my = 26 + r() * 22;
+    const mr = 15 + r() * 10;
+    let deco = '<circle class="c" cx="' + n(mx) + '" cy="' + n(my) + '" r="' + n(mr) + '"/>';
+
+    // A few drifting petals, kept clear of the pictogram in the centre.
+    for (let i = 0; i < 7; i++) {
+      const px = r() * 400, py = r() * 150, rot = r() * 180;
+      if (px > 128 && px < 272 && py > 30) continue;
+      deco += '<ellipse class="b" cx="' + n(px) + '" cy="' + n(py) + '" rx="5" ry="2.6" transform="rotate(' + n(rot) + ' ' + n(px) + ' ' + n(py) + ')"/>';
+    }
+
+    // The "war" motif draws its own horizon.
+    const ground = motif === 'war' ? '' : '<path class="g" d="M0 144q100-12 200-3t200-6v25H0z"/>';
+
+    return '<svg viewBox="0 0 400 160" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
+      deco + ground + '<g transform="translate(40 0)">' + (M[motif] || M.document) + '</g></svg>';
+  };
+
+  window.MV_MOTIFS = Object.keys(M);
+})();

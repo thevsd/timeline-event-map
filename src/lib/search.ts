@@ -1,13 +1,13 @@
-import { eventSearchText } from '../data';
 import { CORP_COLUMNS } from '../data/corporate';
-import { PERSON_GROUP_LABEL } from '../data/people';
-import type { World } from '../data/world';
-import type { PanelPage } from '../types';
+import type { Section } from '../model/schema';
+import type { World } from '../model/world';
+import type { ViewPage } from '../types';
+import { corporateOf, hasCorporateMap } from './corporate';
 import { fold, foldWithMap, matchToken, planQuery, prepare, type Prepared, type Token } from './text';
 
 /**
- * Search across everything the app knows: events, people, threads, companies, real history and
- * the glossary. Every word of the query must match somewhere in an entry; a match in the title
+ * Search across everything a timeline holds: events, people, threads, lane entries and the
+ * glossary (and, in the demo, the companies of its corporate map). Every word of the query must match somewhere in an entry; a match in the title
  * counts for more than one in the body, and a whole word for more than a fragment or a near miss.
  */
 
@@ -19,7 +19,7 @@ export interface Fragment {
 
 export interface SearchResult {
   /** The page that shows this entry. */
-  page: PanelPage;
+  page: ViewPage;
   title: Fragment[];
   /** One line of context: a date, a role, what kind of thing it is. */
   subtitle: string;
@@ -44,7 +44,7 @@ interface Field {
 }
 
 interface Doc {
-  page: PanelPage;
+  page: ViewPage;
   title: string;
   subtitle: string;
   fields: Field[];
@@ -58,7 +58,7 @@ const EXACT_BONUS = 20;
 /** Characters of context kept on each side of a matched passage. */
 const SNIPPET_REACH = 56;
 
-function doc(page: PanelPage, title: string, subtitle: string, keys: string, brief: string, body: string): Doc {
+function doc(page: ViewPage, title: string, subtitle: string, keys: string, brief: string, body: string): Doc {
   const field = (raw: string, weight: number): Field => ({ raw, text: prepare(raw), weight });
   return {
     page,
@@ -68,30 +68,40 @@ function doc(page: PanelPage, title: string, subtitle: string, keys: string, bri
   };
 }
 
-/** Index order breaks ties: people, threads, companies and terms come before events, so a name finds its own page first. */
+/** The text of a page's sections, flattened. */
+const sectionText = (sections: readonly Section[] | undefined) =>
+  (sections ?? [])
+    .flatMap((section) => [section.text ?? '', ...(section.items ?? []).map((item) => (typeof item === 'string' ? item : item.text))])
+    .filter(Boolean)
+    .join(' ');
+
+/** Index order breaks ties: people, threads and terms come before events, so a name finds its own page first. */
 function buildIndex(world: World): Doc[] {
   const docs: Doc[] = [];
   for (const p of world.people) {
-    docs.push(doc({ kind: 'person', name: p.name }, p.name, p.role, [p.role, p.real ?? '', PERSON_GROUP_LABEL[p.group]].join(' · '), '', p.bio));
+    const group = p.group ? (world.groupById.get(p.group)?.name ?? '') : '';
+    docs.push(doc({ kind: 'person', name: p.name }, p.name, p.role ?? group, [p.role ?? '', group].join(' · '), '', `${p.bio ?? ''} ${sectionText(p.sections)}`));
   }
   for (const t of world.threads) {
-    docs.push(doc({ kind: 'thread', id: t.id }, t.name, `Thread · ${t.events.length} events`, '', '', t.summary));
+    docs.push(doc({ kind: 'thread', id: t.id }, t.name, `Thread · ${t.events.length} events`, '', '', t.summary ?? ''));
   }
-  for (const n of world.nodes) {
-    // Companies that enter the story later are not on the reader's map yet.
-    if (n.since && !world.eventById.has(n.since)) continue;
-    const history = (n.history ?? []).map(([, text]) => text).join(' ');
-    docs.push(doc({ kind: 'company', id: n.id }, n.name, `Corporate map · ${CORP_COLUMNS[n.col]}`, n.real ?? '', n.note, history));
+  if (hasCorporateMap(world.doc)) {
+    for (const n of corporateOf(world).nodes) {
+      // Companies that enter the story later are not on the reader's map yet.
+      if (n.since && !world.eventById.has(n.since)) continue;
+      const history = (n.history ?? []).map(([, text]) => text).join(' ');
+      docs.push(doc({ kind: 'company', id: n.id }, n.name, `Corporate map · ${CORP_COLUMNS[n.col]}`, n.real ?? '', n.note, history));
+    }
   }
-  for (const r of world.real) {
-    docs.push(doc({ kind: 'real', id: r.id }, r.title, `Real history · ${r.when}`, '', r.real, r.novel));
+  for (const item of world.lane?.items ?? []) {
+    docs.push(doc({ kind: 'lane', id: item.id }, item.title, `${world.lane!.title} · ${item.when}`, item.kindName, item.text ?? '', item.note ?? ''));
   }
   for (const t of world.terms) {
     docs.push(doc({ kind: 'term', id: t.id }, t.term, 'Glossary', [...(t.aliases ?? []), t.origin ?? ''].join(' · '), '', t.definition));
   }
   for (const ev of world.events) {
-    const text = eventSearchText(ev, world.max);
-    docs.push(doc({ kind: 'event', id: ev.id }, ev.title, `${ev.when} · Vol. ${ev.volume}`, text.keys, text.brief, text.body));
+    const keys = [...ev.people, ev.when, ev.partName, ev.source ?? '', ev.categoryName, ...ev.tags.map((tag) => tag.label)].join(' · ');
+    docs.push(doc({ kind: 'event', id: ev.id }, ev.title, ev.partName ? `${ev.when} · ${ev.partName}` : ev.when, keys, ev.summary, sectionText(ev.sections)));
   }
   return docs;
 }

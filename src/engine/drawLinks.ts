@@ -13,7 +13,7 @@ export interface LinkFrame {
   /** Cards that link to the selected event without being linked back. */
   incoming: Box[];
   /** Real-history entries tied to a card: the entry's x in the lane above, and the card. */
-  realTies: { x: number; to: Box }[];
+  laneTies: { x: number; to: Box }[];
   /** Cards of the active thread, in story order. */
   path: Box[];
 }
@@ -71,7 +71,7 @@ function arrow(c: CanvasRenderingContext2D, from: Point, tip: Point): void {
 
 /**
  * Draw the overlay above the cards: the active thread's path, the selected event's connections,
- * and ties to the real-history lane.
+ * and ties to the second lane.
  *
  * Outgoing links are solid with an arrow at the far end; incoming links are dashed with the
  * arrow at the selected card.
@@ -103,13 +103,13 @@ export function drawLinks(c: CanvasRenderingContext2D, f: LinkFrame): void {
     });
   }
 
-  // Ties to the real-history lane: dotted, dropping from the lane's lower edge.
-  if (f.realTies.length) {
-    c.strokeStyle = palette.real;
-    c.fillStyle = palette.real;
+  // Ties to the second lane: dotted, dropping from the lane's lower edge.
+  if (f.laneTies.length) {
+    c.strokeStyle = palette.ink2;
+    c.fillStyle = palette.ink2;
     c.lineWidth = 1.5;
     c.setLineDash([2, 5]);
-    for (const tie of f.realTies) {
+    for (const tie of f.laneTies) {
       const target = { x: Math.max(tie.to.x + 14, Math.min(tie.x, tie.to.x + tie.to.w - 14)), y: tie.to.y };
       const drop = Math.max(6, target.y * 0.6);
       curve(c, [{ x: tie.x, y: 0 }, { x: tie.x, y: drop }, { x: target.x, y: target.y - drop }, target]);

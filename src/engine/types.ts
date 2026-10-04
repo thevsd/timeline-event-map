@@ -1,4 +1,4 @@
-import type { RealEvent, TimelineEvent } from '../data/types';
+import type { LaneItem, TimelineEvent, World } from '../model/world';
 import type { Tier, ZoomLevel } from './config';
 import type { Palette } from './palette';
 
@@ -43,17 +43,15 @@ export interface Badge {
   members: Item[];
 }
 
-/** Runtime state for one entry in the real-history lane. */
-export interface RealItem {
-  ev: RealEvent;
+/** Runtime state for one entry of the second lane. */
+export interface LaneEntry {
+  ev: LaneItem;
   el: HTMLButtonElement;
   /** Pixel width of the label, for the overlap test. */
   labelWidth: number;
   /** Screen x of its date. */
   sx: number;
   off: boolean;
-  /** Held back by the reading-progress guard. */
-  hidden: boolean;
 }
 
 /** A rectangle in card-viewport coordinates. */
@@ -75,16 +73,21 @@ export interface Frame {
   x0: number;
   /** Stage y of the first row of cards. */
   cardsTop: number;
-  /** Height of the real-history lane; 0 when it is hidden. */
+  /** Height of the second lane; 0 when it is hidden or absent. */
   laneHeight: number;
-  /** Pixel width of the backstory zone. */
-  backstoryWidth: number;
+  /** Pixel width of the undated zone. */
+  undatedWidth: number;
+  /** Day numbers at the two ends of the to-scale axis. */
+  domainStart: number;
+  domainEnd: number;
+  /** Source of the captions, gaps and countdown the axis draws. */
+  world: World;
   palette: Palette;
   items: readonly Item[];
   selectedId: string | null;
   hoveredId: string | null;
-  /** Screen x of the hovered or selected real-history entry, for its guide line. */
-  realGuideX: number | null;
+  /** Screen x of the hovered or selected lane entry, for its guide line. */
+  laneGuideX: number | null;
 }
 
 /** Zoom, plus the timeline point at the centre of the stage. */
@@ -93,7 +96,7 @@ export interface ViewState {
   ppd: number;
   /** Days from the start of the axis. */
   days: number;
-  /** Pixel offset; non-zero only inside the backstory zone, which does not scale. */
+  /** Pixel offset; non-zero only inside the undated zone, which does not scale. */
   px: number;
 }
 
@@ -102,7 +105,7 @@ export type Reveal = 'none' | 'ifNeeded' | 'center';
 
 /** What the pointer is resting on. */
 export interface PreviewTarget {
-  kind: 'event' | 'real';
+  kind: 'event' | 'lane';
   id: string;
   rect: DOMRect;
 }
@@ -111,17 +114,19 @@ export interface PreviewTarget {
 export interface TimelineCallbacks {
   /** A card was clicked or tapped. */
   onSelect(id: string): void;
-  /** A real-history entry was clicked or tapped. */
-  onSelectReal(id: string): void;
-  /** The pointer rests on a card without an illustration, or on a real-history entry; null when it leaves. */
+  /** A lane entry was clicked or tapped. */
+  onSelectLane(id: string): void;
+  /** The pointer rests on a card without an illustration, or on a lane entry; null when it leaves. */
   onPreview(target: PreviewTarget | null): void;
   /** The axis switched tick level. */
   onLevelChange(level: ZoomLevel): void;
+  /** The tick level at the furthest zoom-out changed: the timeline's length or the stage's width did. */
+  onCoarsestLevel(level: ZoomLevel): void;
   /** The user panned, zoomed or pressed on the stage. */
   onInteract(): void;
   /** The view came to rest somewhere new. */
   onViewChange(view: ViewState): void;
 }
 
-/** Where a jump button sends the view: the backstory zone, the 2008 frame scene, or a volume. */
-export type JumpTarget = 'backstory' | 'crash' | number;
+/** Where a jump button sends the view: the undated zone, the countdown event, or a part (by number). */
+export type JumpTarget = 'undated' | 'countdown' | number;

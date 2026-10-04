@@ -1,15 +1,13 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react';
 import { useWorld } from '../context';
 import { search, type Fragment } from '../lib/search';
-import { LAST_VOLUME } from '../lib/spoilers';
-import type { PanelPage } from '../types';
+import { pageKey, type ViewPage } from '../types';
 
-const KIND_LABEL: Record<PanelPage['kind'], string> = {
+const KIND_LABEL: Record<Exclude<ViewPage['kind'], 'lane'>, string> = {
   event: 'Event',
   person: 'Person',
   thread: 'Thread',
   company: 'Company',
-  real: 'Real history',
   term: 'Glossary',
 };
 
@@ -19,13 +17,13 @@ function Marked({ parts }: { parts: Fragment[] }) {
 
 interface SearchBoxProps {
   /** Open the page of the chosen result. */
-  onPick(page: PanelPage): void;
+  onPick(page: ViewPage): void;
   /** Narrow the timeline to the events that match this text. */
   onFilter(query: string): void;
 }
 
 /**
- * Search across events, people, threads, companies, real history and the glossary.
+ * Search across events, people, threads, lane entries and the glossary.
  *
  * Results appear as you type, best first. Up and Down move through them and Enter opens one; the
  * last row narrows the timeline to every matching event instead. Ctrl+K (Cmd+K) or "/" focuses the box.
@@ -114,7 +112,7 @@ export function SearchBox({ onPick, onFilter }: SearchBoxProps) {
         aria-expanded={showing}
         aria-controls="results"
         aria-activedescendant={showing && rows ? `result-${active}` : undefined}
-        aria-label="Search events, people, companies and terms"
+        aria-label="Search events, people, threads and terms"
         placeholder="Search everything"
         title="Search everything (Ctrl+K)"
         autoComplete="off"
@@ -134,7 +132,7 @@ export function SearchBox({ onPick, onFilter }: SearchBoxProps) {
         <div id="results" className={alignRight ? 'results right' : 'results'} role="listbox" aria-label="Search results" ref={list} onMouseDown={(ev: MouseEvent) => ev.preventDefault()}>
           {results.map((result, row) => (
             <div
-              key={`${result.page.kind}:${result.page.kind === 'person' ? result.page.name : result.page.id}`}
+              key={pageKey(result.page)}
               id={`result-${row}`}
               role="option"
               aria-selected={row === active}
@@ -142,7 +140,7 @@ export function SearchBox({ onPick, onFilter }: SearchBoxProps) {
               onMouseEnter={() => setActive(row)}
               onClick={() => choose(row)}
             >
-              <span className="rkind">{KIND_LABEL[result.page.kind]}</span>
+              <span className="rkind">{result.page.kind === 'lane' ? (world.lane?.title ?? 'Lane') : KIND_LABEL[result.page.kind]}</span>
               <span className="rbody">
                 <span className="rtitle">
                   <Marked parts={result.title} />
@@ -172,7 +170,7 @@ export function SearchBox({ onPick, onFilter }: SearchBoxProps) {
           {rows === 0 && (
             <div className="rnone">
               Nothing matches “{text.trim()}”.
-              {world.max < LAST_VOLUME ? ' Later volumes are hidden by ‘Read up to’.' : ' Check the spelling, or try fewer words.'}
+              {world.hiddenEvents > 0 ? ' Later parts are hidden by ‘Read up to’.' : ' Check the spelling, or try fewer words.'}
             </div>
           )}
         </div>

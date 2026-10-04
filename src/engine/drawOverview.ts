@@ -1,12 +1,13 @@
-import { CATEGORIES } from '../data/categories';
-import { DOMAIN_END, DOMAIN_START, GAP_END, GAP_START, dateOf, dayOf } from '../lib/time';
+import { MONTHS_SHORT, dayOf, yearLabel, yearOf } from '../lib/time';
 import { clamp } from './config';
 import { hatch, setFont } from './palette';
 import type { Frame } from './types';
 
-/** Strip width reserved for the backstory zone. */
-const BACKSTORY_STRIP = 44;
+/** Strip width reserved for the undated zone, when the timeline has one. */
+const UNDATED_STRIP = 44;
 const RIGHT_PAD = 6;
+/** Least space between two date labels on the strip. */
+const LABEL_PITCH = 54;
 
 /** Maps between the overview strip and the main view. */
 export interface OverviewScale {
@@ -18,67 +19,91 @@ export interface OverviewScale {
   worldOfX(stripX: number): number;
 }
 
-export function overviewScale(stripWidth: number, f: Pick<Frame, 'ppd' | 'x0' | 'backstoryWidth'>): OverviewScale {
-  const span = DOMAIN_END - DOMAIN_START;
-  const usable = stripWidth - BACKSTORY_STRIP - RIGHT_PAD;
-  const xOfDay = (day: number) => BACKSTORY_STRIP + ((day - DOMAIN_START) / span) * usable;
+type ScaleFrame = Pick<Frame, 'ppd' | 'x0' | 'undatedWidth' | 'domainStart' | 'domainEnd'>;
+
+export function overviewScale(stripWidth: number, f: ScaleFrame): OverviewScale {
+  const span = f.domainEnd - f.domainStart;
+  const zone = f.undatedWidth > 0 ? UNDATED_STRIP : RIGHT_PAD;
+  const usable = stripWidth - zone - RIGHT_PAD;
+  const xOfDay = (day: number) => zone + ((day - f.domainStart) / span) * usable;
   return {
     xOfDay,
     xOfScreen(screenX) {
-      if (screenX < f.x0) {
-        return clamp((screenX - (f.x0 - f.backstoryWidth)) / f.backstoryWidth, 0, 1) * BACKSTORY_STRIP;
+      if (screenX < f.x0 && f.undatedWidth > 0) {
+        return clamp((screenX - (f.x0 - f.undatedWidth)) / f.undatedWidth, 0, 1) * zone;
       }
-      return xOfDay(clamp(DOMAIN_START + (screenX - f.x0) / f.ppd, DOMAIN_START, DOMAIN_END));
+      return xOfDay(clamp(f.domainStart + (screenX - f.x0) / f.ppd, f.domainStart, f.domainEnd));
     },
     worldOfX(stripX) {
-      if (stripX < BACKSTORY_STRIP) return -f.backstoryWidth + (stripX / BACKSTORY_STRIP) * f.backstoryWidth;
-      return clamp((stripX - BACKSTORY_STRIP) / usable, 0, 1) * span * f.ppd;
+      if (stripX < zone && f.undatedWidth > 0) return -f.undatedWidth + (stripX / zone) * f.undatedWidth;
+      return clamp((stripX - zone) / usable, 0, 1) * span * f.ppd;
     },
   };
 }
 
+/** Years between labelled lines: the smallest round step that keeps the labels apart. */
+function yearStep(pixelsPerYear: number): number {
+  for (const step of [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]) if (step * pixelsPerYear >= LABEL_PITCH) return step;
+  return 2000;
+}
+
 /** Draw the whole timeline in miniature: one row per category, plus the viewport window. */
 export function drawOverview(c: CanvasRenderingContext2D, f: Frame, stripWidth: number, stripHeight: number): void {
-  const { palette } = f;
+  const { palette, world } = f;
   const scale = overviewScale(stripWidth, f);
   const MW = stripWidth;
   const MH = stripHeight;
 
   c.clearRect(0, 0, MW, MH);
-  hatch(c, palette, 0, BACKSTORY_STRIP, 0, MH);
-  hatch(c, palette, scale.xOfDay(GAP_START), scale.xOfDay(GAP_END) - scale.xOfDay(GAP_START), 0, MH);
+  if (f.undatedWidth > 0) hatch(c, palette, 0, UNDATED_STRIP, 0, MH);
+  for (const gap of world.gaps) hatch(c, palette, scale.xOfDay(gap.from), scale.xOfDay(gap.to) - scale.xOfDay(gap.from), 0, MH);
 
-  // Year lines and labels.
+  // Date lines and labels: years, or months when the whole axis is under two years.
   c.textBaseline = 'alphabetic';
   c.textAlign = 'left';
   setFont(c, palette, 9.5, 'mono');
-  const firstYear = dateOf(DOMAIN_START).getUTCFullYear();
-  const lastYear = dateOf(DOMAIN_END - 1).getUTCFullYear();
-  for (let y = firstYear; y <= lastYear; y++) {
-    const x = scale.xOfDay(dayOf(y, 0));
+  const line = (day: number, label: string) => {
+    const x = scale.xOfDay(day);
     c.strokeStyle = palette.line;
     c.beginPath();
     c.moveTo(Math.round(x) + 0.5, 0);
     c.lineTo(Math.round(x) + 0.5, MH);
     c.stroke();
-    if (MW > 700 || y % 2 === 0) {
+    if (label) {
       c.fillStyle = palette.ink3;
-      c.fillText(MW > 520 ? String(y) : `'${String(y).slice(2)}`, x + 3, MH - 5);
+      c.fillText(label, x + 3, MH - 5);
+    }
+  };
+  const firstYear = yearOf(f.domainStart);
+  const lastYear = yearOf(f.domainEnd - 1);
+  const pixelsPerYear = (scale.xOfDay(f.domainStart + 365) - scale.xOfDay(f.domainStart)) || 1;
+  if (pixelsPerYear > LABEL_PITCH * 6) {
+    const every = pixelsPerYear / 12 >= LABEL_PITCH ? 1 : pixelsPerYear / 4 >= LABEL_PITCH ? 3 : 6;
+    for (let y = firstYear; y <= lastYear; y++) {
+      for (let m = 0; m < 12; m += every) {
+        const day = dayOf(y, m);
+        if (day >= f.domainStart && day < f.domainEnd) line(day, m === 0 ? yearLabel(y) : MONTHS_SHORT[m]);
+      }
+    }
+  } else {
+    const step = yearStep(pixelsPerYear);
+    for (let y = Math.ceil(firstYear / step) * step; y <= lastYear; y += step) {
+      line(Math.max(f.domainStart, dayOf(y, 0)), yearLabel(y));
     }
   }
 
   // Events, one row per category.
   const top = 7;
-  const rowH = (MH - 24) / CATEGORIES.length;
-  const backstoryCount = f.items.filter((it) => it.ev.backstoryOrder != null).length;
-  const backstoryPitch = (BACKSTORY_STRIP - 10) / Math.max(1, backstoryCount - 1);
+  const rows = world.categories;
+  const rowH = (MH - 24) / Math.max(1, rows.length);
+  const undatedPitch = (UNDATED_STRIP - 10) / Math.max(1, world.undatedCount - 1);
   for (const item of f.items) {
     if (!item.visible) continue;
     const { ev } = item;
-    const row = CATEGORIES.findIndex((cat) => cat.id === ev.category);
-    const x = ev.backstoryOrder != null ? 5 + (ev.backstoryOrder - 1) * backstoryPitch : scale.xOfDay(ev.day ?? DOMAIN_START);
+    const row = Math.max(0, rows.findIndex((cat) => cat.id === ev.category));
+    const x = ev.slot != null ? 5 + ev.slot * undatedPitch : scale.xOfDay(ev.day ?? f.domainStart);
     const w = ev.day != null && ev.endDay != null ? Math.max(3, scale.xOfDay(ev.endDay) - scale.xOfDay(ev.day)) : 3;
-    c.fillStyle = palette.category[ev.category];
+    c.fillStyle = palette.hue[ev.hue];
     c.globalAlpha = ev.id === f.selectedId ? 1 : 0.85;
     c.beginPath();
     c.roundRect(x - 1.5, top + row * rowH, w, Math.max(3, rowH - 1.5), 1.5);

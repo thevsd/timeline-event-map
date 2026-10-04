@@ -1,26 +1,24 @@
 /**
  * Reading-progress guard.
  *
- * Data text may carry markers of the form `{v3}`: everything after one, up to the next marker,
- * is shown only to a reader who has reached that volume. `{v1}` returns to text anyone may see.
+ * A timeline may be split into parts (volumes, seasons, acts). A reader who has only reached
+ * part N is shown nothing from later parts. Whole events are hidden by their `part`; inside a
+ * text that belongs to an earlier part, a marker hides the rest:
  *
- *   'Died by apparent suicide.{v2} Volume 2 reveals who pushed him to it.'
+ *   'Died by apparent suicide.{p2} Part 2 reveals who pushed him to it.'
  *
- * Markers are allowed in the long text fields only (see data/validate.ts); titles and briefs,
- * which the timeline engine draws, must be safe for the volume their event belongs to.
+ * Everything after `{p2}`, up to the next marker, is shown only from part 2 on, and `{p1}`
+ * returns to text anyone may see. `{v2}` is accepted as another spelling. Markers work in the
+ * long texts (sections, bios, summaries of threads, lane notes, definitions), not in titles or
+ * event summaries, which the timeline draws as they are.
  */
 
-/** Last volume the data covers. A reader at this volume sees everything. */
-export const LAST_VOLUME = 5;
+const MARKER = /\{[pv](\d+)\}/g;
+const HAS_MARKER = /\{[pv]\d+\}/;
 
-const MARKER = /\{v(\d)\}/g;
-
-/** Whether a text carries spoiler markers. */
-export const hasMarkers = (text: string) => text.includes('{v');
-
-/** The part of a text that a reader who has finished volume `max` may see, with the markers removed. */
+/** The portion of a text that a reader who has finished part `max` may see, with the markers removed. */
 export function reveal(text: string, max: number): string {
-  if (!hasMarkers(text)) return text;
+  if (!HAS_MARKER.test(text)) return text;
   let out = '';
   let level = 0;
   let from = 0;
@@ -33,28 +31,24 @@ export function reveal(text: string, max: number): string {
   return out.replace(/\s{2,}/g, ' ').trim();
 }
 
-/** `reveal` over a list, dropping entries that are hidden entirely. */
-export function revealAll(texts: readonly string[] | undefined, max: number): string[] {
-  return (texts ?? []).map((text) => reveal(text, max)).filter(Boolean);
-}
+/** Progress is remembered per timeline, by title. */
+const storageKey = (title: string) => `timeline-progress:${title}`;
 
-const STORAGE_KEY = 'mv-progress';
-
-const clampVolume = (value: number) => Math.max(1, Math.min(LAST_VOLUME, Math.round(value)));
-
-/** The reader's saved progress; everything, if none is saved or storage is unavailable. */
-export function loadProgress(): number {
+/** The part the reader saved as their progress; null (read everything) if none is saved or storage is unavailable. */
+export function loadProgress(title: string): number | null {
   try {
-    const saved = Number(window.localStorage.getItem(STORAGE_KEY));
-    return saved >= 1 ? clampVolume(saved) : LAST_VOLUME;
+    const saved = Number(window.localStorage.getItem(storageKey(title)));
+    return saved >= 1 ? Math.round(saved) : null;
   } catch {
-    return LAST_VOLUME;
+    return null;
   }
 }
 
-export function saveProgress(volume: number): void {
+/** Remember the reader's progress; null forgets it, which means "everything", however many parts are added later. */
+export function saveProgress(title: string, part: number | null): void {
   try {
-    window.localStorage.setItem(STORAGE_KEY, String(clampVolume(volume)));
+    if (part == null) window.localStorage.removeItem(storageKey(title));
+    else window.localStorage.setItem(storageKey(title), String(part));
   } catch {
     // Private windows and sandboxed frames may refuse storage; the setting then lasts for the visit.
   }

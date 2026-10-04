@@ -1,8 +1,8 @@
 {
   "name": "timeline-event-map",
   "private": true,
-  "version": "0.2.0",
-  "description": "A zoomable timeline event map for the storyline of Modern Villainess.",
+  "version": "0.3.0",
+  "description": "A zoomable timeline event map: build, import and export timelines in the browser.",
   "type": "module",
   "scripts": {
     "dev": "vite",

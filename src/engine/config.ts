@@ -12,7 +12,7 @@ export const COMPACT_WIDTH = 560;
 
 /** Height of the axis header. */
 export const AXIS_HEIGHT = 62;
-/** Height of the real-history lane, between the header and the cards. */
+/** Height of the second lane, between the header and the cards. */
 export const LANE_HEIGHT = 36;
 /** Space between the top of the card viewport and the first row of cards. */
 export const CARDS_PAD = 14;
@@ -25,24 +25,30 @@ export const GAP_Y = 6;
 
 /** Zoom is measured in pixels per day. */
 export const PPD_MAX = 90;
+/** The furthest a short timeline zooms out; a long one goes on until its whole axis fits. */
 export const PPD_MIN = 0.62;
+/** Hard floor: about a millennium across a wide screen. */
+export const PPD_FLOOR = 0.0006;
 
-/** Backstory events sit left of the axis at a fixed pixel pitch (not to scale). */
-export const BACKSTORY_STEP = 176;
-export const BACKSTORY_PAD = 26;
+/** Undated events sit left of the axis at a fixed pixel pitch (not to scale). */
+export const UNDATED_STEP = 176;
+export const UNDATED_PAD = 26;
 
-/** Tick level shown on the axis. */
-export type ZoomLevel = 'quarters' | 'months' | 'weeks' | 'days';
+/** Tick level shown on the axis, coarsest first. */
+export const ZOOM_LEVELS = ['decades', 'years', 'quarters', 'months', 'weeks', 'days'] as const;
+export type ZoomLevel = (typeof ZOOM_LEVELS)[number];
+
+/** Zoom below which each level gives way to the next coarser one. */
+const LEVEL_FROM: Record<ZoomLevel, number> = { decades: 0, years: 0.045, quarters: 0.42, months: 1.45, weeks: 9, days: 30 };
 
 export function levelOf(ppd: number): ZoomLevel {
-  if (ppd < 1.45) return 'quarters';
-  if (ppd < 9) return 'months';
-  if (ppd < 30) return 'weeks';
-  return 'days';
+  let level: ZoomLevel = 'decades';
+  for (const candidate of ZOOM_LEVELS) if (ppd >= LEVEL_FROM[candidate]) level = candidate;
+  return level;
 }
 
 /** Zoom each scale button jumps to. */
-export const LEVEL_PPD: Record<ZoomLevel, number> = { quarters: 0.7, months: 3.1, weeks: 14, days: 54 };
+export const LEVEL_PPD: Record<ZoomLevel, number> = { decades: 0.014, years: 0.16, quarters: 0.7, months: 3.1, weeks: 14, days: 54 };
 
 export const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 

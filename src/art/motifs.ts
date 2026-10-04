@@ -2,8 +2,10 @@
  * Pictogram motifs: SVG shapes drawn on a 320×160 field.
  * Colour comes from CSS; the shape classes (a, b, c, d, g, s, sd, t) are styled under `.art` in app.css.
  * To add a motif, add an entry here and reference its name from an event's `motif` field.
+ * `event` is the neutral one used when an event names none.
  */
 export const MOTIFS = {
+  event: '<rect class="b" x="108" y="40" width="104" height="98" rx="12"/><path class="a" d="M108 52a12 12 0 0 1 12-12h80a12 12 0 0 1 12 12v18H108z"/><rect class="d" x="132" y="28" width="9" height="24" rx="4.5"/><rect class="d" x="179" y="28" width="9" height="24" rx="4.5"/><circle class="a" cx="160" cy="104" r="15"/><circle class="d" cx="160" cy="104" r="6"/>',
   bank: '<path class="a" d="M98 68 160 34l62 34z"/><circle class="d" cx="160" cy="55" r="6"/><rect class="a" x="104" y="71" width="112" height="8" rx="2"/><rect class="b" x="112" y="83" width="11" height="38"/><rect class="b" x="133" y="83" width="11" height="38"/><rect class="b" x="154" y="83" width="12" height="38"/><rect class="b" x="176" y="83" width="11" height="38"/><rect class="b" x="197" y="83" width="11" height="38"/><rect class="a" x="100" y="124" width="120" height="8" rx="2"/><rect class="b" x="90" y="134" width="140" height="7" rx="2"/>',
   chartup: '<rect class="b" x="92" y="102" width="15" height="30" rx="3"/><rect class="b" x="118" y="92" width="15" height="40" rx="3"/><rect class="b" x="144" y="98" width="15" height="34" rx="3"/><rect class="b" x="170" y="76" width="15" height="56" rx="3"/><rect class="b" x="196" y="62" width="15" height="70" rx="3"/><rect class="b" x="222" y="44" width="15" height="88" rx="3"/><path class="s" d="M88 112 124 92l26 8 28-28 26-12 30-30"/><path class="s" d="M214 28h22v22"/>',
   chartcrash: '<rect class="c" x="88" y="70" width="15" height="62" rx="3"/><rect class="c" x="114" y="60" width="15" height="72" rx="3"/><rect class="c" x="140" y="66" width="15" height="66" rx="3"/><rect class="c" x="166" y="48" width="15" height="84" rx="3"/><rect class="c" x="192" y="88" width="15" height="44" rx="3"/><rect class="c" x="218" y="112" width="15" height="20" rx="3"/><path class="s" d="M84 78 116 62l26 8 28-24 20 6 22 54 24 18"/><path class="s" d="M240 102v24h-24"/>',
@@ -37,3 +39,8 @@ export const MOTIFS = {
 } as const;
 
 export type MotifName = keyof typeof MOTIFS;
+
+/** Drawn for an event that names no pictogram, or one that does not exist. */
+export const DEFAULT_MOTIF: MotifName = 'event';
+
+export const MOTIF_NAMES = Object.keys(MOTIFS) as MotifName[];

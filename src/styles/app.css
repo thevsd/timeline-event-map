@@ -27,17 +27,21 @@
   --hatch: rgba(86, 83, 122, 0.07);
   --shadow: 0 1px 2px rgba(31, 29, 58, 0.06), 0 6px 18px rgba(31, 29, 58, 0.07);
   --shadow-lift: 0 2px 4px rgba(31, 29, 58, 0.08), 0 14px 34px rgba(31, 29, 58, 0.16);
-  --cat-finance: #2a78d6;
-  --cat-politics: #eb6834;
-  --cat-deals: #1baf7a;
-  --cat-world: #eda100;
-  --cat-personal: #e87ba4;
-  --cat-shadow: #4a3aa7;
+  /* The colours authors pick from (model/schema.ts HUES): categories, lane kinds, groups, tags. */
+  --hue-blue: #2a78d6;
+  --hue-orange: #eb6834;
+  --hue-green: #1baf7a;
+  --hue-yellow: #eda100;
+  --hue-pink: #e87ba4;
+  --hue-indigo: #4a3aa7;
+  --hue-teal: #0f9aa8;
+  --hue-red: #d5433b;
+  --hue-brown: #a8641f;
+  --hue-gray: #7a7896;
   --art-light: #ffffff;
   --art-deep: #15123a;
-  --real: #0c7a3d;
-  --altered: #a55a00;
-  --fiction: #5a4bb5;
+  --good: #0c7a3d;
+  --danger: #c0362c;
   --font-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
   --font-body: "Instrument Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
   --font-mono: "Spline Sans Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -54,10 +58,10 @@
     --hatch: rgba(182, 180, 212, 0.07);
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 18px rgba(0, 0, 0, 0.28);
     --shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.35), 0 16px 38px rgba(0, 0, 0, 0.5);
-    --cat-finance: #3987e5; --cat-politics: #d95926; --cat-deals: #199e70;
-    --cat-world: #c98500; --cat-personal: #d55181; --cat-shadow: #9085e9;
+    --hue-blue: #3987e5; --hue-orange: #d95926; --hue-green: #199e70; --hue-yellow: #c98500; --hue-pink: #d55181;
+    --hue-indigo: #9085e9; --hue-teal: #22aebb; --hue-red: #e2625a; --hue-brown: #c98a4b; --hue-gray: #8f8db0;
     --art-light: #ffffff; --art-deep: #0d0b26;
-    --real: #4cc98a; --altered: #f0a94a; --fiction: #a79cf2;
+    --good: #4cc98a; --danger: #f0776c;
     color-scheme: dark;
   }
 }
@@ -70,10 +74,10 @@
   --hatch: rgba(182, 180, 212, 0.07);
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 18px rgba(0, 0, 0, 0.28);
   --shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.35), 0 16px 38px rgba(0, 0, 0, 0.5);
-  --cat-finance: #3987e5; --cat-politics: #d95926; --cat-deals: #199e70;
-  --cat-world: #c98500; --cat-personal: #d55181; --cat-shadow: #9085e9;
+  --hue-blue: #3987e5; --hue-orange: #d95926; --hue-green: #199e70; --hue-yellow: #c98500; --hue-pink: #d55181;
+  --hue-indigo: #9085e9; --hue-teal: #22aebb; --hue-red: #e2625a; --hue-brown: #c98a4b; --hue-gray: #8f8db0;
   --art-light: #ffffff; --art-deep: #0d0b26;
-  --real: #4cc98a; --altered: #f0a94a; --fiction: #a79cf2;
+  --good: #4cc98a; --danger: #f0776c;
   color-scheme: dark;
 }
 
@@ -89,13 +93,18 @@ body {
 button { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-/* A category class sets --c, the colour its descendants draw with. */
-.cat-finance { --c: var(--cat-finance); }
-.cat-politics { --c: var(--cat-politics); }
-.cat-deals { --c: var(--cat-deals); }
-.cat-world { --c: var(--cat-world); }
-.cat-personal { --c: var(--cat-personal); }
-.cat-shadow { --c: var(--cat-shadow); }
+/* A hue class sets the colour its descendants draw with: --c for cards and pages, --t for lane
+   entries, --g for portraits. One class serves all three, so any of them can be any colour. */
+.hue-blue { --c: var(--hue-blue); --t: var(--hue-blue); --g: var(--hue-blue); }
+.hue-orange { --c: var(--hue-orange); --t: var(--hue-orange); --g: var(--hue-orange); }
+.hue-green { --c: var(--hue-green); --t: var(--hue-green); --g: var(--hue-green); }
+.hue-yellow { --c: var(--hue-yellow); --t: var(--hue-yellow); --g: var(--hue-yellow); }
+.hue-pink { --c: var(--hue-pink); --t: var(--hue-pink); --g: var(--hue-pink); }
+.hue-indigo { --c: var(--hue-indigo); --t: var(--hue-indigo); --g: var(--hue-indigo); }
+.hue-teal { --c: var(--hue-teal); --t: var(--hue-teal); --g: var(--hue-teal); }
+.hue-red { --c: var(--hue-red); --t: var(--hue-red); --g: var(--hue-red); }
+.hue-brown { --c: var(--hue-brown); --t: var(--hue-brown); --g: var(--hue-brown); }
+.hue-gray { --c: var(--hue-gray); --t: var(--hue-gray); --g: var(--hue-gray); }
 
 /* ── App frame ── */
 .app {
@@ -112,6 +121,9 @@ button { font: inherit; color: inherit; }
 .moon::after {
   content: ""; position: absolute; inset: -3px -9px 5px 9px; border-radius: 50%; background: var(--bg);
 }
+/* In the toolbar the moon is the way back to the home page. */
+button.moon { border: 0; padding: 0; cursor: pointer; transition: scale 0.2s var(--ease); }
+button.moon:hover { scale: 1.08; }
 .brand h1 {
   margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 20px;
   letter-spacing: -0.01em; line-height: 1.1; text-wrap: balance;
@@ -171,6 +183,28 @@ button { font: inherit; color: inherit; }
   transition: border-color 0.2s, color 0.2s;
 }
 .textbtn:hover { border-color: var(--line-strong); color: var(--ink); }
+.textbtn:disabled { opacity: 0.45; cursor: default; }
+.textbtn.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.textbtn.primary:hover { filter: brightness(1.08); color: var(--surface); }
+.textbtn.danger { color: var(--danger); }
+.textbtn.primary.danger { background: var(--danger); border-color: var(--danger); color: var(--surface); }
+.textbtn.on { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); }
+.iconbtn:disabled { opacity: 0.4; cursor: default; }
+
+/* Right-hand tools of the toolbar: undo, redo, the edit switch and the share menu. */
+.tools { display: flex; align-items: center; gap: 6px; }
+.menubox { position: relative; }
+.menu {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 60; width: 290px; padding: 5px; display: flex; flex-direction: column;
+  background: var(--surface); border: 1px solid var(--line-strong); border-radius: 14px; box-shadow: var(--shadow-lift);
+}
+.menu button {
+  display: flex; flex-direction: column; gap: 1px; padding: 8px 10px; border: 0; border-radius: 9px; background: none;
+  text-align: left; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.menu button:hover, .menu button:focus-visible { background: var(--surface-2); }
+.menu small { font-size: 11.5px; font-weight: 400; color: var(--ink-3); }
+.menunote { margin-top: 4px; padding: 8px 10px 5px; border-top: 1px solid var(--line); font-size: 11.5px; color: var(--ink-3); }
 
 .rail { display: flex; align-items: center; gap: 8px 14px; flex-wrap: wrap; min-width: 0; }
 .scroller { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; min-width: 0; padding-block: 2px; }
@@ -186,6 +220,14 @@ button { font: inherit; color: inherit; }
 .chip[aria-pressed="false"] { opacity: 0.45; background: transparent; }
 .chip.jump { padding: 0 11px; color: var(--ink-2); }
 .chip.jump:hover { color: var(--ink); }
+/* Buttons that add something, shown while editing. */
+.chip.add { padding: 0 12px; border-color: var(--accent); background: var(--accent-soft); }
+.chip.add:hover { background: color-mix(in oklab, var(--accent) 22%, var(--surface)); }
+/* Thread mode replaces the filter row with its own instructions and buttons. */
+.threadbar { padding: 6px 8px 6px 14px; border-radius: 12px; background: var(--accent-soft); border: 1px solid var(--accent); }
+.threadbar .tbmode { font-weight: 700; font-size: 13px; }
+.threadbar .tbhint { font-size: 12.5px; color: var(--ink-2); }
+.threadbar .count { color: var(--ink); font-weight: 600; }
 .rail .label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; flex: none; }
 .rail .count { margin-left: auto; font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; flex: none; }
 .sep { width: 1px; height: 18px; background: var(--line-strong); flex: none; }
@@ -237,13 +279,8 @@ button { font: inherit; color: inherit; }
   font-size: 10px; letter-spacing: 0.09em; text-transform: uppercase; font-weight: 700; color: var(--ink-3);
   background: linear-gradient(to right, var(--stage) 72%, transparent); pointer-events: none;
 }
-/* Treatment colour: how the novel handles the real event. */
-.t-preserved { --t: var(--real); }
-.t-altered, .t-moved { --t: var(--altered); }
-.t-prevented { --t: var(--fiction); }
-.t-ahead { --t: var(--ink-3); }
 /* Diamond marker, also used inline in chips, tags and previews. */
-.rh-m { display: inline-block; flex: none; width: 8px; height: 8px; rotate: 45deg; border-radius: 2px; background: var(--t, var(--real)); }
+.rh-m { display: inline-block; flex: none; width: 8px; height: 8px; rotate: 45deg; border-radius: 2px; background: var(--t, var(--hue-green)); }
 /* One entry: a zero-width anchor at its date, with the label above the marker. */
 .rh { position: absolute; left: 0; top: 0; width: 0; height: 100%; padding: 0; border: 0; background: none; cursor: pointer; }
 .rh.off { display: none; }
@@ -274,9 +311,12 @@ button { font: inherit; color: inherit; }
 }
 .hint.gone { opacity: 0; }
 .empty {
-  position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; color: var(--ink-2);
-  font-size: 14px; text-align: center; padding: 24px;
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+  pointer-events: none; color: var(--ink-2); font-size: 14px; text-align: center; padding: 24px;
 }
+.empty .textbtn { pointer-events: auto; }
+/* Thread mode: cards are picked, not opened. */
+.stage.picking .card { cursor: copy; }
 
 /* ── Event cards ──
    .ev carries x (set every frame, no transition); .ev-y carries y (animated).
@@ -420,11 +460,10 @@ button { font: inherit; color: inherit; }
   background: var(--surface-2); border: 1px solid var(--line); font-size: 11.5px; font-weight: 600; color: var(--ink-2); white-space: nowrap;
 }
 .tag .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
-.tag.h-real { color: var(--real); border-color: color-mix(in oklab, var(--real) 40%, var(--line)); }
-.tag.h-altered { color: var(--altered); border-color: color-mix(in oklab, var(--altered) 40%, var(--line)); }
-.tag.h-fiction { color: var(--fiction); border-color: color-mix(in oklab, var(--fiction) 40%, var(--line)); }
-.tag.rh-tag { color: var(--t); border-color: color-mix(in oklab, var(--t) 40%, var(--line)); }
-.tag.st-active { color: var(--real); border-color: color-mix(in oklab, var(--real) 40%, var(--line)); }
+/* Coloured tags mix the hue toward the ink colour, so the text stays readable in any hue. */
+.tag.tinted { color: color-mix(in oklab, var(--c) 68%, var(--ink)); border-color: color-mix(in oklab, var(--c) 40%, var(--line)); }
+.tag.rh-tag { color: color-mix(in oklab, var(--t) 68%, var(--ink)); border-color: color-mix(in oklab, var(--t) 40%, var(--line)); }
+.tag.st-active { color: var(--good); border-color: color-mix(in oklab, var(--good) 40%, var(--line)); }
 .tag.st-ended, .tag.st-future { color: var(--ink-3); }
 .lede { margin: 0; font-size: 14.5px; line-height: 22px; color: var(--ink); max-width: 62ch; }
 .count-down {
@@ -446,9 +485,7 @@ button { font: inherit; color: inherit; }
   display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
   padding: 1px 6px; border-radius: 5px; margin-right: 7px; vertical-align: 1px; border: 1px solid var(--line-strong); color: var(--ink-2);
 }
-.conf.s { color: var(--real); border-color: color-mix(in oklab, var(--real) 45%, var(--line)); }
-.conf.p { color: var(--altered); border-color: color-mix(in oklab, var(--altered) 45%, var(--line)); }
-.conf.x { color: var(--fiction); border-color: color-mix(in oklab, var(--fiction) 45%, var(--line)); }
+[class*="hue-"] > .conf { color: color-mix(in oklab, var(--c) 68%, var(--ink)); border-color: color-mix(in oklab, var(--c) 45%, var(--line)); }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .sec p + .chips { margin-top: 9px; }
 .pill {
@@ -490,12 +527,12 @@ button { font: inherit; color: inherit; }
    Edge kinds set --e (colour) here; the same classes style the SVG edges, their arrowheads,
    and the line samples in the legend and the company page. */
 .ek-owns { --e: var(--ink-2); }
-.ek-stake { --e: var(--cat-finance); }
+.ek-stake { --e: var(--hue-blue); }
 .ek-option { --e: var(--moon); }
-.ek-finance { --e: var(--cat-deals); }
+.ek-finance { --e: var(--hue-green); }
 .ek-part { --e: var(--ink-3); }
-.ek-pressure { --e: var(--cat-politics); }
-.ek-family { --e: var(--cat-personal); }
+.ek-pressure { --e: var(--hue-orange); }
+.ek-family { --e: var(--hue-pink); }
 .ek-merged { --e: var(--ink-3); }
 i.ek, span.ek { display: inline-block; flex: none; width: 22px; height: 0; border-top: 2px solid var(--e); }
 i.ek-option, span.ek-option, i.ek-pressure, span.ek-pressure, i.ek-merged, span.ek-merged { border-top-style: dashed; }
@@ -555,14 +592,8 @@ i.ek-finance, span.ek-finance, i.ek-family, span.ek-family { border-top-style: d
 .swatch.ended { border-style: dashed; opacity: 0.6; }
 .swatch.fresh { border-color: var(--accent); }
 
-/* ── Characters tab ── */
-/* A group class sets --g, the colour behind a portrait without an image. */
-.g-family { --g: var(--cat-personal); }
-.g-circle { --g: var(--cat-deals); }
-.g-school { --g: var(--cat-world); }
-.g-politics { --g: var(--cat-politics); }
-.g-intelligence { --g: var(--cat-shadow); }
-.g-other { --g: var(--ink-3); }
+/* ── People tab ── */
+/* A portrait without a picture is tinted with --g, from its group's hue class. */
 .portrait { display: block; position: relative; overflow: hidden; background: color-mix(in oklab, var(--g) 20%, var(--surface-2)); }
 /* Crops from the top, so faces stay in frame. */
 .portrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 12%; display: block; }
@@ -628,6 +659,11 @@ i.ek-finance, span.ek-finance, i.ek-family, span.ek-family { border-top-style: d
   .brand p { display: none; }
   .brand h1 { font-size: 17px; }
   .search { width: 130px; }
+  .aiguide { grid-template-columns: minmax(0, 1fr); }
+  .hero-head { flex-direction: column; align-items: flex-start; }
+  .hero-head h1 { font-size: 28px; }
+  .frow { flex-direction: column; }
+  .threadbar .tbhint { display: none; }
   /* The results span the toolbar instead of hanging from a narrow box. */
   .bar { position: relative; }
   .searchbox { position: static; }
@@ -654,3 +690,149 @@ i.ek-finance, span.ek-finance, i.ek-family, span.ek-family { border-top-style: d
 @media (prefers-reduced-motion: reduce) {
   .ev-y, .card, .card .thumb, .panel, .pop, .span, .cn, .ce, .castcard { transition: none !important; }
 }
+
+/* ── Glossary tab ── */
+.termgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; padding-top: 14px; }
+.termcard {
+  display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; text-align: left; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 13px;
+  transition: border-color 0.2s, box-shadow 0.2s, translate 0.2s var(--ease);
+}
+.termcard:hover { border-color: var(--line-strong); box-shadow: var(--shadow-lift); translate: 0 -2px; }
+.termcard.is-sel { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.termcard .tname { font-family: var(--font-display); font-weight: 700; font-size: 15px; line-height: 19px; }
+.termcard .torigin { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); }
+.termcard .tdef {
+  font-size: 12.5px; line-height: 17px; color: var(--ink-2);
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden;
+}
+.termcard .ccount { padding: 4px 0 0; }
+.caststage > .empty { position: static; min-height: 240px; }
+
+/* ── Editing forms (side panel) ── */
+.form { display: flex; flex-direction: column; gap: 14px; }
+.field { display: flex; flex-direction: column; gap: 5px; min-width: 0; flex: 1 1 0; }
+.flabel { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; color: var(--ink-3); }
+.flabel.sub { margin-top: 4px; }
+.fhint { font-size: 11.5px; line-height: 15px; color: var(--ink-3); }
+.fhint.bad, .has-error .fhint { color: var(--danger); }
+.form input[type="text"], .form textarea, .form select, .modal input[type="text"], .modal textarea, .modal select, .newform input {
+  width: 100%; min-width: 0; border-radius: 9px; border: 1px solid var(--line-strong); background: var(--surface);
+  color: var(--ink); font: inherit; font-size: 13.5px; padding: 7px 10px;
+}
+.form textarea, .modal textarea { resize: vertical; line-height: 19px; }
+.form select, .modal select { height: 34px; padding: 0 8px; }
+.has-error input { border-color: var(--danger); }
+.frow { display: flex; gap: 10px; align-items: flex-start; }
+.check { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; }
+.check input { width: 16px; height: 16px; accent-color: var(--accent); }
+details.more { border-top: 1px solid var(--line); padding-top: 10px; display: flex; flex-direction: column; }
+details.more > summary { cursor: pointer; font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
+details.more[open] > summary { margin-bottom: 12px; }
+details.more > * + * { margin-top: 12px; }
+/* The foot stays in view while the form scrolls. */
+.formfoot {
+  position: sticky; bottom: 0; z-index: 2; display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap;
+  margin: 4px -18px -26px; padding: 12px 18px; background: var(--surface); border-top: 1px solid var(--line);
+}
+.formfoot .fhint { margin-right: auto; }
+.formfoot .danger { margin-right: auto; }
+.formfoot .fhint + .danger { margin-right: 0; }
+
+/* Chip picker: selected values, then the input that finds more. */
+.picklist {
+  position: relative; display: flex; flex-wrap: wrap; gap: 5px; padding: 5px; border-radius: 9px;
+  border: 1px solid var(--line-strong); background: var(--surface);
+}
+.picklist:focus-within { outline: 2px solid var(--accent); outline-offset: 1px; }
+.form .picklist input[type="text"] { flex: 1 1 120px; width: auto; border: 0; padding: 3px 5px; background: none; outline: none; }
+.pchip {
+  display: inline-flex; align-items: center; gap: 4px; padding: 2px 4px 2px 9px; border-radius: 999px;
+  background: var(--surface-2); border: 1px solid var(--line); font-size: 12.5px;
+}
+.pchip button { border: 0; background: none; padding: 0 4px; font-size: 15px; line-height: 1; color: var(--ink-3); cursor: pointer; }
+.pchip button:hover { color: var(--danger); }
+.psuggest {
+  position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 30; padding: 4px; max-height: 260px; overflow-y: auto;
+  background: var(--surface); border: 1px solid var(--line-strong); border-radius: 11px; box-shadow: var(--shadow-lift);
+}
+.prow { display: flex; justify-content: space-between; gap: 10px; padding: 6px 9px; border-radius: 7px; font-size: 13px; cursor: pointer; }
+.prow small { font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 45%; }
+.prow.is-active { background: var(--surface-2); }
+.prow.pnew { color: var(--accent); font-weight: 600; }
+.pill.add { border-style: dashed; color: var(--ink-2); }
+.pill.static { cursor: default; }
+
+/* Colour picker. */
+.hues { display: flex; flex-wrap: wrap; gap: 6px; }
+.swatch-btn { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--surface); background: var(--c); cursor: pointer; box-shadow: 0 0 0 1px var(--line-strong); }
+.swatch-btn[aria-checked="true"] { box-shadow: 0 0 0 2px var(--ink); }
+
+/* Picture field. */
+.imagefield { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.imagefield img { display: block; border-radius: 10px; object-fit: cover; border: 1px solid var(--line); }
+.imagefield.wide img { width: 100%; max-height: 170px; }
+.imagefield.portrait img { width: 96px; height: 120px; object-position: 50% 12%; }
+.imageactions { display: flex; gap: 6px; }
+
+/* Sections editor and the rows of the settings form. */
+.sections, .rows { display: flex; flex-direction: column; gap: 9px; align-items: flex-start; }
+.sectionbox, .rowbox { display: flex; flex-direction: column; gap: 6px; width: 100%; padding: 9px; border-radius: 11px; background: var(--surface-2); border: 1px solid var(--line); }
+.sectionhead, .rowhead { display: flex; gap: 6px; align-items: center; }
+.rowhead .dot { flex: none; width: 12px; height: 12px; border-radius: 50%; background: var(--c); }
+.form .glyphinput { flex: none; width: 46px; text-align: center; }
+
+/* ── Pop-ups ── */
+.scrim {
+  position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 16px;
+  background: color-mix(in oklab, var(--ink) 34%, transparent); animation: fade-in 0.16s;
+}
+.modal {
+  width: min(440px, 100%); max-height: calc(100vh - 32px); overflow-y: auto; padding: 18px; border-radius: 16px;
+  background: var(--surface); border: 1px solid var(--line-strong); box-shadow: var(--shadow-lift);
+}
+.modal h3 { margin: 0 0 12px; font-family: var(--font-display); font-size: 18px; line-height: 22px; }
+.modal form { display: flex; flex-direction: column; gap: 12px; }
+.mtext { margin: 0; font-size: 13.5px; line-height: 20px; color: var(--ink-2); }
+.mlist { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 5px; font-size: 13px; line-height: 18px; color: var(--ink-2); }
+.mactions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+@keyframes fade-in { from { opacity: 0; } }
+
+/* ── Home page ── */
+.home { height: 100%; overflow-y: auto; padding: 34px max(20px, calc((100vw - 1120px) / 2)) 60px; display: flex; flex-direction: column; gap: 30px; }
+.home.is-dragging { outline: 3px dashed var(--accent); outline-offset: -10px; }
+.hero-head { display: flex; align-items: center; gap: 22px; }
+.moon.big { width: 58px; height: 58px; box-shadow: 0 0 0 8px color-mix(in oklab, var(--moon) 16%, transparent); }
+.moon.big::after { inset: -6px -18px 10px 18px; }
+.hero-head h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 36px; letter-spacing: -0.02em; line-height: 1.1; }
+.hero-head p { margin: 8px 0 0; max-width: 68ch; font-size: 15.5px; line-height: 23px; color: var(--ink-2); }
+.starts { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; }
+.start {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 18px; border-radius: 16px;
+  background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow);
+}
+.start.demo { border-color: color-mix(in oklab, var(--accent) 45%, var(--line)); background: linear-gradient(160deg, var(--accent-soft), var(--surface) 62%); }
+.start.draft { border-style: dashed; border-color: var(--line-strong); }
+.start h2 { margin: 0; font-family: var(--font-display); font-size: 21px; line-height: 25px; }
+.start p { margin: 0; font-size: 13.5px; line-height: 20px; color: var(--ink-2); flex: 1 1 auto; }
+.start .meta { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); }
+.start .kicker { margin: 0; }
+.newform { display: flex; gap: 6px; width: 100%; }
+.startactions { display: flex; gap: 8px; flex-wrap: wrap; }
+.homeproblem { margin: -16px 0 0; padding: 10px 14px; border-radius: 11px; border: 1px solid var(--danger); color: var(--danger); font-size: 13.5px; }
+.sectiontitle { margin: 0 0 12px; font-family: var(--font-display); font-size: 22px; }
+.features { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.feature { padding: 14px 16px; border-radius: 13px; background: var(--stage); border: 1px solid var(--line); }
+.feature h3 { margin: 0 0 4px; font-size: 14px; font-weight: 700; }
+.feature p { margin: 0; font-size: 13px; line-height: 19px; color: var(--ink-2); }
+.aiguide { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 22px; align-items: start; }
+.aiguide ol { margin: 0 0 14px; padding-left: 20px; display: flex; flex-direction: column; gap: 7px; font-size: 14px; line-height: 21px; color: var(--ink-2); }
+.fine { margin: 14px 0 0; font-size: 12.5px; line-height: 19px; color: var(--ink-3); }
+kbd { font-family: var(--font-mono); font-size: 11px; padding: 1px 5px; border-radius: 5px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-2); }
+.sample pre, .promptbox pre {
+  margin: 0; padding: 14px; max-height: 420px; overflow: auto; border-radius: 13px; background: var(--stage); border: 1px solid var(--line);
+  font-family: var(--font-mono); font-size: 11.5px; line-height: 17px; color: var(--ink-2); white-space: pre; tab-size: 2;
+}
+.promptbox > summary { cursor: pointer; font-size: 13.5px; font-weight: 600; color: var(--ink-2); margin-bottom: 10px; }
+.promptbox pre { white-space: pre-wrap; max-height: none; }
+body:has(.home) { overflow: auto; }

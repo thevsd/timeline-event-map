@@ -1,7 +1,7 @@
-import { characterImage } from '../art/characterImages';
+import { useWorld } from '../context';
 import female from '../assets/placeholders/female.svg?raw';
 import male from '../assets/placeholders/male.svg?raw';
-import type { Person } from '../data/people';
+import type { PersonDoc } from '../model/schema';
 
 /** First letters of the first two words of a name: "Keikain Runa" gives "KR". */
 function initials(name: string): string {
@@ -10,28 +10,28 @@ function initials(name: string): string {
 
 interface PortraitProps {
   name: string;
-  /** The character's profile, if they have one; it sets the tint and the placeholder. */
-  person?: Person;
+  /** The person's profile, if they have one; it supplies the picture, the tint and the placeholder. */
+  person?: PersonDoc;
 }
 
 /**
- * A character's portrait: their image if one exists in assets/characters, otherwise the male or
- * female placeholder tinted in the group's colour. A name with no profile shows its initials.
- * The parent sets the size.
+ * A person's portrait: their picture if they have one, otherwise the male or female placeholder
+ * tinted in their group's colour, otherwise their initials. The parent sets the size.
  */
 export function Portrait({ name, person }: PortraitProps) {
-  const image = characterImage(name);
+  const world = useWorld();
+  const hue = (person?.group && world.groupById.get(person.group)?.color) || 'gray';
   let content;
-  if (image) {
-    content = <img src={image} alt="" loading="lazy" draggable={false} />;
-  } else if (person) {
+  if (person?.image) {
+    content = <img src={person.image} alt="" loading="lazy" draggable={false} />;
+  } else if (person?.sex) {
     // Inlined, not linked, so the SVG picks up the page's colours. The markup is our own file.
     content = <span className="silhouette" dangerouslySetInnerHTML={{ __html: person.sex === 'f' ? female : male }} />;
   } else {
     content = <span className="initials">{initials(name)}</span>;
   }
   return (
-    <span className={`portrait g-${person?.group ?? 'other'}`} aria-hidden="true">
+    <span className={`portrait hue-${hue}`} aria-hidden="true">
       {content}
     </span>
   );

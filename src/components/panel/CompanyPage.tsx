@@ -1,7 +1,6 @@
-import { CORP_NODE_BY_ID, EVENT_ORDER } from '../../data';
 import { useWorld } from '../../context';
 import { CORP_COLUMNS, CORP_EDGE_LABEL, type CorpKind, type CorpNode } from '../../data/corporate';
-import { edgesAt, endingOf, nodeStatus, stepOrder } from '../../lib/corporate';
+import { CORP_NODE_BY_ID, edgesAt, endingOf, nodeStatus, orderOf, stepOrder } from '../../lib/corporate';
 import { Prose } from '../Prose';
 import { EventLink, Section, type OpenPage } from './parts';
 
@@ -14,7 +13,7 @@ const KIND_LABEL: Record<CorpKind, string> = {
   outside: 'Outside Runa’s group',
 };
 
-/** An entry on the corporate map: what it is, its ties at the current step, and its history. */
+/** An entry on the demo's corporate map: what it is, its ties at the current step, and its history. */
 export function CompanyPage({ node, step, onOpen }: { node: CorpNode; step: number; onOpen: OpenPage }) {
   const world = useWorld();
   const order = stepOrder(step);
@@ -28,7 +27,7 @@ export function CompanyPage({ node, step, onOpen }: { node: CorpNode; step: numb
   if (node.until && world.eventById.has(node.until) && !history.some(([id]) => id === node.until)) {
     history.push([node.until, `${endingOf(node)}.`]);
   }
-  history.sort((a, b) => (EVENT_ORDER.get(a[0]) ?? 0) - (EVENT_ORDER.get(b[0]) ?? 0));
+  history.sort((a, b) => orderOf(a[0]) - orderOf(b[0]));
 
   return (
     <div className="pbody page">

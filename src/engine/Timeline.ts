@@ -1,19 +1,16 @@
-import { eventImage } from '../art/eventImages';
 import { illustrationSvg } from '../art/illustration';
-import { CATEGORY_BY_ID } from '../data/categories';
-import { matchesFilter } from '../data';
-import type { EventFilter, RealEvent, TimelineEvent } from '../data/types';
-import { CRASH_DAY, DOMAIN_END, DOMAIN_START, toDay } from '../lib/time';
+import { matchesFilter, type EventFilter } from '../model/filter';
+import type { LaneItem, TimelineEvent, World } from '../model/world';
 import {
-  AXIS_HEIGHT, BACKSTORY_PAD, BACKSTORY_STEP, BADGE, BOTTOM_PAD, CARDS_PAD, COMPACT_WIDTH, LANE_HEIGHT, LEVEL_PPD,
-  PPD_MAX, PPD_MIN, TIERS, TIERS_COMPACT, clamp, levelOf, type TierSizes, type ZoomLevel,
+  AXIS_HEIGHT, BADGE, BOTTOM_PAD, CARDS_PAD, COMPACT_WIDTH, LANE_HEIGHT, LEVEL_PPD, PPD_FLOOR, PPD_MAX, PPD_MIN,
+  TIERS, TIERS_COMPACT, UNDATED_PAD, UNDATED_STEP, clamp, levelOf, type TierSizes, type ZoomLevel,
 } from './config';
 import { drawAxis } from './drawAxis';
 import { drawLinks } from './drawLinks';
 import { drawOverview, overviewScale } from './drawOverview';
 import { packCards, type Packing } from './layout';
 import { readPalette, setFont, type Palette } from './palette';
-import type { Badge, Box, Frame, Item, JumpTarget, RealItem, Reveal, TimelineCallbacks, ViewState } from './types';
+import type { Badge, Box, Frame, Item, JumpTarget, LaneEntry, Reveal, TimelineCallbacks, ViewState } from './types';
 
 /** DOM nodes the engine draws into. The host creates them; the engine owns their contents. */
 export interface TimelineElements {
@@ -23,7 +20,7 @@ export interface TimelineElements {
    * the stage that clips its contents to the area below the axis header and the lane.
    */
   world: HTMLElement;
-  /** Row between the axis header and the cards that holds the real-history entries. */
+  /** Row between the axis header and the cards that holds the entries of the second lane. */
   lane: HTMLElement;
   axisCanvas: HTMLCanvasElement;
   /** Overlay inside the card viewport, above the cards, for connection lines. */
@@ -34,7 +31,7 @@ export interface TimelineElements {
 
 /**
  * A point on the timeline: `days` from the start of the axis plus `px` pixels.
- * `px` is only non-zero inside the backstory zone, which does not scale with zoom.
+ * `px` is only non-zero inside the undated zone, which does not scale with zoom.
  */
 interface Anchor {
   days: number;
@@ -77,22 +74,26 @@ const VIEW_REPORT_DELAY = 220;
  * The timeline engine: a zoomable time axis with event cards packed beneath it.
  *
  * Framework-free. Canvases draw the axis, gridlines, markers, connection lines and the overview
- * strip; DOM buttons are the cards, badges and real-history entries, so they keep real text,
+ * strip; DOM buttons are the cards, badges and lane entries, so they keep real text,
  * focus and CSS transitions. The view is two numbers: `ppd` (pixels per day) and `x0` (screen x
  * of the start of the axis).
  *
  * The host passes data and state in through the public methods and listens through callbacks.
  */
 export class Timeline {
-  private readonly items: Item[];
+  private world: World;
+  private items: Item[] = [];
   private readonly byId = new Map<string, Item>();
   /** Ids of the events that link to each event: the reverse of `links`. */
   private readonly linkedFrom = new Map<string, string[]>();
-  private readonly reals: RealItem[];
-  private readonly realById = new Map<string, RealItem>();
+  private entries: LaneEntry[] = [];
+  private readonly entryById = new Map<string, LaneEntry>();
   private badges: Badge[] = [];
-  /** Pixel width of the backstory zone. */
-  private readonly backstoryWidth: number;
+  /** Day numbers at the two ends of the to-scale axis. */
+  private domainStart = 0;
+  private domainEnd = 1;
+  /** Pixel width of the zone that holds undated events. */
+  private undatedWidth = 0;
   private readonly ctx: CanvasRenderingContext2D;
   private readonly linkCtx: CanvasRenderingContext2D;
   private readonly overviewCtx: CanvasRenderingContext2D;
@@ -116,17 +117,20 @@ export class Timeline {
   // State set by the host
   private filter: EventFilter;
   private selectedId: string | null = null;
-  private selectedRealId: string | null = null;
-  private laneVisible = true;
+  private selectedLaneId: string | null = null;
+  /** What the host asked for; the lane only shows when the timeline also has one. */
+  private laneWanted = true;
   /** Event ids of the active thread, in story order; drawn as a path. */
   private threadPath: readonly string[] | null = null;
 
   // Derived
   private hoveredId: string | null = null;
-  private hoveredRealId: string | null = null;
+  private hoveredLaneId: string | null = null;
   private layoutKey = '';
   private filterVersion = 0;
   private level: ZoomLevel | null = null;
+  /** Tick level at the furthest zoom-out, last reported to the host. */
+  private coarsest: ZoomLevel | null = null;
   /** View last reported to the host, as a comparable string. */
   private viewKey = '';
 
@@ -150,8 +154,7 @@ export class Timeline {
 
   constructor(
     private readonly els: TimelineElements,
-    events: readonly TimelineEvent[],
-    realEvents: readonly RealEvent[],
+    world: World,
     filter: EventFilter,
     private readonly callbacks: TimelineCallbacks,
   ) {
@@ -159,25 +162,11 @@ export class Timeline {
     this.linkCtx = els.linkCanvas.getContext('2d')!;
     this.overviewCtx = els.overviewCanvas.getContext('2d')!;
     this.filter = filter;
+    this.world = world;
     this.palette = readPalette();
-
-    this.items = events.map((ev) => this.createItem(ev));
-    for (const item of this.items) {
-      this.byId.set(item.ev.id, item);
-      for (const id of item.ev.links) {
-        const sources = this.linkedFrom.get(id) ?? [];
-        sources.push(item.ev.id);
-        this.linkedFrom.set(id, sources);
-      }
-    }
-    this.reals = realEvents.map((ev) => this.createRealItem(ev));
-    for (const real of this.reals) this.realById.set(real.ev.id, real);
-    const backstoryCount = events.filter((ev) => ev.backstoryOrder != null).length;
-    this.backstoryWidth = BACKSTORY_PAD * 2 + BACKSTORY_STEP * backstoryCount;
 
     // The stylesheet positions the lane and the card viewport from these, so each height has one source.
     els.stage.style.setProperty('--axis-h', `${AXIS_HEIGHT}px`);
-    els.stage.style.setProperty('--lane-h', `${LANE_HEIGHT}px`);
     els.world.style.transform = `translate3d(0,${CARDS_PAD}px,0)`;
 
     this.bindStage();
@@ -186,23 +175,51 @@ export class Timeline {
     this.bindOverview();
     this.observeEnvironment();
 
-    // Opening view: months, starting in spring 1997.
+    this.load(world);
     this.measure();
     this.measureLaneLabels();
-    this.ppd = clamp(this.width < COMPACT_WIDTH ? 1.6 : 2.3, this.ppdMin, PPD_MAX);
-    this.x0 = 40 - (toDay('1997-03-01') - DOMAIN_START) * this.ppd;
+    this.openingView();
     this.draw();
     this.viewKey = this.currentViewKey();
   }
 
   /* ── Public API ── */
 
-  /** Apply new filters: reading progress, categories, search text, person, thread. */
+  /**
+   * Show another world: the same timeline after an edit or a change of reading progress, or a
+   * different timeline. The date at the centre of the stage stays where it is.
+   */
+  setWorld(world: World): void {
+    const hadDates = this.items.some((item) => item.ev.day != null);
+    const centre = this.anchorAt(this.width / 2);
+    const centreDay = this.domainStart + centre.days;
+
+    this.load(world);
+    this.measure();
+    this.measureLaneLabels();
+    if (hadDates) {
+      this.stopMotion();
+      this.ppd = clamp(this.ppd, this.ppdMin, PPD_MAX);
+      this.x0 = this.width / 2 - ((centreDay - this.domainStart) * this.ppd + centre.px);
+    } else {
+      // Nothing was on the axis before, so there is no view worth keeping.
+      this.openingView();
+    }
+    if (this.selectedId && !this.byId.has(this.selectedId)) this.selectedId = null;
+    if (this.selectedLaneId && !this.entryById.has(this.selectedLaneId)) this.selectedLaneId = null;
+    if (this.selectedId) this.byId.get(this.selectedId)!.card.classList.add('is-sel');
+    if (this.selectedLaneId) this.entryById.get(this.selectedLaneId)!.el.classList.add('is-sel');
+    this.hoveredId = null;
+    this.hoveredLaneId = null;
+    this.markRelated();
+    this.draw();
+  }
+
+  /** Apply new filters: categories, search text, person, thread. */
   setFilter(filter: EventFilter): void {
     this.filter = filter;
     this.filterVersion++;
     for (const item of this.items) item.visible = matchesFilter(item.ev, filter);
-    for (const real of this.reals) this.guardReal(real);
     this.markRelated();
     this.requestDraw();
   }
@@ -229,28 +246,27 @@ export class Timeline {
     this.requestDraw();
   }
 
-  /** Highlight a real-history entry and tie it to the events that answer it; null clears. */
-  setSelectedReal(id: string | null): void {
-    if (this.selectedRealId) this.realById.get(this.selectedRealId)?.el.classList.remove('is-sel');
-    this.selectedRealId = id;
-    const real = id ? this.realById.get(id) : undefined;
-    if (real) {
-      real.el.classList.add('is-sel');
-      const x = this.x0 + (real.ev.day - DOMAIN_START) * this.ppd;
+  /** Highlight a lane entry and tie it to the events that answer it; null clears. */
+  setSelectedLane(id: string | null): void {
+    if (this.selectedLaneId) this.entryById.get(this.selectedLaneId)?.el.classList.remove('is-sel');
+    this.selectedLaneId = id;
+    const entry = id ? this.entryById.get(id) : undefined;
+    if (entry) {
+      entry.el.classList.add('is-sel');
+      const x = this.x0 + (entry.ev.day - this.domainStart) * this.ppd;
       if (x < 60 || x > this.width - 200) {
-        this.flyTo({ days: real.ev.day - DOMAIN_START, px: 0 }, this.ppd, this.width * 0.4, 620);
+        this.flyTo({ days: entry.ev.day - this.domainStart, px: 0 }, this.ppd, this.width * 0.4, 620);
       }
     }
     this.markRelated();
     this.requestDraw();
   }
 
-  /** Show or hide the real-history lane. */
+  /** Show or hide the second lane. */
   setLaneVisible(visible: boolean): void {
-    if (visible === this.laneVisible) return;
-    this.laneVisible = visible;
-    this.els.stage.style.setProperty('--lane-h', `${visible ? LANE_HEIGHT : 0}px`);
-    this.els.stage.classList.toggle('lane-off', !visible);
+    if (visible === this.laneWanted) return;
+    this.laneWanted = visible;
+    this.applyLane();
     this.measure();
     this.requestDraw();
   }
@@ -274,20 +290,22 @@ export class Timeline {
     this.flyTo(this.anchorAt(screenX), LEVEL_PPD[level], screenX, 800);
   }
 
-  /** Fly to the backstory zone, the 2008 frame scene, or a volume's date range. */
+  /** Fly to the undated zone, the countdown event, or a part's date range. */
   jumpTo(target: JumpTarget): void {
     const W = this.width;
-    if (target === 'backstory') {
-      this.flyTo({ days: 0, px: -this.backstoryWidth / 2 }, this.ppd, Math.min(W / 2, this.backstoryWidth / 2 + 30));
+    if (target === 'undated') {
+      this.flyTo({ days: 0, px: -this.undatedWidth / 2 }, this.ppd, Math.min(W / 2, this.undatedWidth / 2 + 30));
       return;
     }
-    if (target === 'crash') {
+    if (target === 'countdown') {
+      const { countdown } = this.world;
+      if (!countdown) return;
       // Leave room to the right of the date for the card itself.
       const screenX = clamp(W * 0.42, 16, Math.max(16, W - this.tiers.l.w - 24));
-      this.flyTo({ days: CRASH_DAY - DOMAIN_START, px: 0 }, Math.max(this.ppd, 1.2), screenX);
+      this.flyTo({ days: countdown.day - this.domainStart, px: 0 }, Math.max(this.ppd, 1.2), screenX);
       return;
     }
-    this.fitEvents(this.items.filter((it) => it.ev.volume === target).map((it) => it.ev.id));
+    this.fitEvents(this.items.filter((it) => it.ev.part === target).map((it) => it.ev.id));
   }
 
   /** Zoom and pan so that the given events fill the stage. */
@@ -297,8 +315,9 @@ export class Timeline {
       const ev = this.byId.get(id)?.ev;
       if (ev?.day != null) days.push(ev.day, ev.endDay ?? ev.day);
     }
-    // The 2008 frame scene sits five years past everything else; leave it out unless it is all there is.
-    const early = days.filter((d) => d < CRASH_DAY);
+    // A countdown event can sit years past everything else; leave it out unless it is all there is.
+    const limit = this.world.countdown?.day ?? Infinity;
+    const early = days.filter((d) => d < limit);
     const range = early.length ? early : days;
     if (!range.length) return;
     const first = Math.min(...range);
@@ -307,9 +326,9 @@ export class Timeline {
     const ppd = clamp(room / Math.max(30, last - first), this.ppdMin, 6);
     if ((last - first) * ppd > room + 1) {
       // Too long to fit even fully zoomed out: start at the first event.
-      this.flyTo({ days: first - DOMAIN_START, px: 0 }, ppd, 40);
+      this.flyTo({ days: first - this.domainStart, px: 0 }, ppd, 40);
     } else {
-      this.flyTo({ days: (first + last) / 2 - DOMAIN_START, px: 0 }, ppd, (this.width - 250) / 2 + 20);
+      this.flyTo({ days: (first + last) / 2 - this.domainStart, px: 0 }, ppd, (this.width - 250) / 2 + 20);
     }
   }
 
@@ -342,11 +361,72 @@ export class Timeline {
     window.clearTimeout(this.previewTimer);
     window.clearTimeout(this.revealTimer);
     window.clearTimeout(this.viewTimer);
-    this.els.world.replaceChildren();
-    for (const real of this.reals) real.el.remove();
+    this.unload();
     this.els.stage.classList.remove('dragging', 'compact', 'has-sel', 'lane-off');
     this.els.stage.style.removeProperty('--axis-h');
     this.els.stage.style.removeProperty('--lane-h');
+  }
+
+  /* ── Data ── */
+
+  /** Build the cards and lane entries for a world, replacing whatever was there. */
+  private load(world: World): void {
+    this.unload();
+    this.world = world;
+    this.domainStart = world.domain.start;
+    this.domainEnd = world.domain.end;
+    this.undatedWidth = world.undatedCount ? UNDATED_PAD * 2 + UNDATED_STEP * world.undatedCount : 0;
+
+    this.items = world.events.map((ev) => this.createItem(ev));
+    for (const item of this.items) {
+      this.byId.set(item.ev.id, item);
+      for (const id of item.ev.links) {
+        const sources = this.linkedFrom.get(id) ?? [];
+        sources.push(item.ev.id);
+        this.linkedFrom.set(id, sources);
+      }
+    }
+    this.entries = (world.lane?.items ?? []).map((ev) => this.createLaneEntry(ev));
+    for (const entry of this.entries) this.entryById.set(entry.ev.id, entry);
+    this.applyLane();
+    this.layoutKey = '';
+  }
+
+  private unload(): void {
+    this.els.world.replaceChildren();
+    for (const entry of this.entries) entry.el.remove();
+    this.items = [];
+    this.entries = [];
+    this.badges = [];
+    this.byId.clear();
+    this.entryById.clear();
+    this.linkedFrom.clear();
+  }
+
+  /** Give the lane its height, or none when it is hidden or the timeline has no lane. */
+  private applyLane(): void {
+    this.els.stage.style.setProperty('--lane-h', `${this.laneHeight}px`);
+    this.els.stage.classList.toggle('lane-off', !this.laneVisible);
+  }
+
+  /** First view of a timeline: everything if it fits comfortably, otherwise the stretch where events first get dense. */
+  private openingView(): void {
+    const days = this.items.flatMap((item) => (item.ev.day != null ? [item.ev.day] : []));
+    const span = this.domainEnd - this.domainStart;
+    const comfortable = this.width < COMPACT_WIDTH ? 1.6 : 2.3;
+    if (!days.length || span * comfortable <= this.width - 90) {
+      // Short enough to show whole at a readable zoom.
+      this.ppd = clamp((this.width - 90) / span, this.ppdMin, Math.min(PPD_MAX, 6));
+      this.x0 = this.undatedWidth && this.width > 900 ? this.undatedWidth + 36 : 40;
+      return;
+    }
+    // Skip a sparse run-in: start a tenth of the way through the events, and frame as many of the
+    // next ones as the stage has room for (about two dozen on a desktop, a handful on a phone).
+    const from = Math.floor(days.length * 0.1);
+    const to = Math.min(days.length - 1, from + Math.max(4, Math.round(this.width / 55)));
+    const room = Math.max(this.width - 300, this.width * 0.6);
+    this.ppd = clamp(room / Math.max(30, days[to] - days[from]), this.ppdMin, comfortable);
+    this.x0 = 40 - (days[from] - this.domainStart) * this.ppd;
   }
 
   /* ── Cards ── */
@@ -354,7 +434,7 @@ export class Timeline {
   /** Build the DOM for one event. `.ev` carries x (every frame); `.ev-y` carries y (CSS-animated). */
   private createItem(ev: TimelineEvent): Item {
     const el = document.createElement('div');
-    el.className = `ev cat-${ev.category}`;
+    el.className = `ev hue-${ev.hue}`;
     const yEl = document.createElement('div');
     yEl.className = 'ev-y';
 
@@ -372,10 +452,10 @@ export class Timeline {
     card.setAttribute('aria-label', `${ev.title}, ${ev.when}`);
     card.innerHTML =
       '<div class="thumb"></div>' +
-      `<div class="body"><span class="glyph" aria-hidden="true">${CATEGORY_BY_ID[ev.category].glyph}</span>` +
+      `<div class="body"><span class="glyph" aria-hidden="true">${escapeHtml(ev.glyph)}</span>` +
       `<div class="txt"><div class="title">${escapeHtml(ev.title)}</div>` +
-      `<div class="meta">${escapeHtml(ev.when)} · Vol. ${ev.volume}</div>` +
-      `<p class="brief">${escapeHtml(ev.brief)}</p></div></div>`;
+      `<div class="meta">${escapeHtml(ev.partName ? `${ev.when} · ${ev.partName}` : ev.when)}</div>` +
+      `<p class="brief">${escapeHtml(ev.summary)}</p></div></div>`;
 
     yEl.appendChild(card);
     el.appendChild(yEl);
@@ -393,33 +473,24 @@ export class Timeline {
   private ensureArt(item: Item): void {
     if (item.hasArt) return;
     const { ev } = item;
-    const image = eventImage(ev.id);
-    const picture = image
-      ? `<img class="photo" src="${escapeHtml(image)}" alt="" draggable="false">`
+    const picture = ev.image
+      ? `<img class="photo" src="${escapeHtml(ev.image)}" alt="" draggable="false">`
       : `<div class="art">${illustrationSvg(ev.motif, ev.id)}</div>`;
     const figure = ev.figure ? `<span class="fig">${escapeHtml(ev.figure)}</span>` : '';
     item.thumb.innerHTML = picture + figure;
     item.hasArt = true;
   }
 
-  /** Build the lane entry for one real event: a marker on the baseline with a label above it. */
-  private createRealItem(ev: RealEvent): RealItem {
+  /** Build one lane entry: a marker on the baseline with a label above it. */
+  private createLaneEntry(ev: LaneItem): LaneEntry {
     const el = document.createElement('button');
     el.type = 'button';
-    el.className = `rh t-${ev.treatment}`;
+    el.className = `rh hue-${ev.hue}`;
     el.dataset.id = ev.id;
-    el.setAttribute('aria-label', `Real history: ${ev.title}, ${ev.when}`);
+    el.setAttribute('aria-label', `${this.world.lane?.title ?? 'Lane'}: ${ev.title}, ${ev.when}`);
     el.innerHTML = `<span class="rh-l">${escapeHtml(ev.title)}</span><i class="rh-m" aria-hidden="true"></i>`;
     this.els.lane.appendChild(el);
-    const real: RealItem = { ev, el, labelWidth: 0, sx: 0, off: false, hidden: false };
-    this.guardReal(real);
-    return real;
-  }
-
-  /** Hide a real-history entry whose counterparts all lie beyond the reader's progress. */
-  private guardReal(real: RealItem): void {
-    real.hidden = real.ev.volume > this.filter.maxVolume;
-    real.el.hidden = real.hidden;
+    return { ev, el, labelWidth: 0, sx: 0, off: false };
   }
 
   /** Dim every card that is not the selection or tied to it. */
@@ -430,15 +501,15 @@ export class Timeline {
       for (const id of selected.ev.links) related.add(id);
       for (const id of this.linkedFrom.get(selected.ev.id) ?? []) related.add(id);
     }
-    const real = this.selectedRealId ? this.realById.get(this.selectedRealId) : undefined;
-    if (real) for (const id of real.ev.counterparts) related.add(id);
+    const entry = this.selectedLaneId ? this.entryById.get(this.selectedLaneId) : undefined;
+    if (entry) for (const id of entry.ev.events) related.add(id);
 
     for (const item of this.items) item.card.classList.toggle('rel', related.has(item.ev.id));
-    for (const r of this.reals) {
-      r.el.classList.toggle('rel', selected != null && r.ev.counterparts.includes(selected.ev.id));
+    for (const r of this.entries) {
+      r.el.classList.toggle('rel', selected != null && r.ev.events.includes(selected.ev.id));
     }
     // A selection hidden by the filters has nothing to set the other cards against.
-    this.els.stage.classList.toggle('has-sel', selected?.visible === true || real != null);
+    this.els.stage.classList.toggle('has-sel', selected?.visible === true || entry != null);
   }
 
   /* ── Geometry ── */
@@ -448,16 +519,19 @@ export class Timeline {
     return AXIS_HEIGHT + this.laneHeight + CARDS_PAD;
   }
 
+  /** The lane shows when the host wants it and the timeline has one. */
+  private get laneVisible(): boolean {
+    return this.laneWanted && this.world.lane != null;
+  }
+
   private get laneHeight(): number {
     return this.laneVisible ? LANE_HEIGHT : 0;
   }
 
-  /** X of an event relative to the start of the axis. Backstory events ignore the zoom. */
+  /** X of an event relative to the start of the axis. Undated events ignore the zoom. */
   private worldX(ev: TimelineEvent, ppd: number): number {
-    if (ev.backstoryOrder != null) {
-      return -this.backstoryWidth + BACKSTORY_PAD + (ev.backstoryOrder - 1) * BACKSTORY_STEP;
-    }
-    return ((ev.day ?? DOMAIN_START) - DOMAIN_START) * ppd;
+    if (ev.slot != null) return -this.undatedWidth + UNDATED_PAD + ev.slot * UNDATED_STEP;
+    return ((ev.day ?? this.domainStart) - this.domainStart) * ppd;
   }
 
   private anchorAt(screenX: number): Anchor {
@@ -465,9 +539,9 @@ export class Timeline {
   }
 
   private anchorOf(ev: TimelineEvent): Anchor {
-    return ev.backstoryOrder != null
+    return ev.slot != null
       ? { days: 0, px: this.worldX(ev, 1) }
-      : { days: (ev.day ?? DOMAIN_START) - DOMAIN_START, px: 0 };
+      : { days: (ev.day ?? this.domainStart) - this.domainStart, px: 0 };
   }
 
   /** Zoom currently being eased toward, so repeated steps compound mid-animation. */
@@ -491,7 +565,7 @@ export class Timeline {
       shown.map((it) => ({
         x: this.worldX(it.ev, ppd),
         spanWidth: it.ev.day != null && it.ev.endDay != null ? (it.ev.endDay - it.ev.day) * ppd : 0,
-        marquee: it.ev.marquee === true,
+        marquee: it.ev.featured === true,
       })),
       this.tiers,
       Math.max(120, this.height - this.cardsTop - BOTTOM_PAD),
@@ -563,39 +637,38 @@ export class Timeline {
       const count = badge.members.length;
       const titles = badge.members.slice(0, 8).map((m) => m.ev.title);
       if (count > titles.length) titles.push(`and ${count - titles.length} more`);
-      const categories = [...new Set(badge.members.map((m) => m.ev.category))].slice(0, 5);
+      const hues = [...new Set(badge.members.map((m) => m.ev.hue))].slice(0, 5);
       badge.el.title = titles.join('\n');
       badge.el.setAttribute('aria-label', `${count} more event${count === 1 ? '' : 's'} here. Zoom in to show.`);
       badge.el.dataset.index = String(i);
       badge.el.innerHTML =
         `<b>+${count}</b> more<span class="dots">` +
-        categories.map((c) => `<i class="cat-${c}"></i>`).join('') +
+        hues.map((hue) => `<i class="hue-${hue}"></i>`).join('') +
         '</span>';
     });
   }
 
   /**
-   * Decide which real-history entries show their label. Entries flagged `major` choose first;
+   * Decide which lane entries show their label. Entries flagged `major` choose first;
    * a label that would run into one already placed is left off, and the entry shows as a marker.
    */
   private layoutLane(): void {
     if (!this.laneVisible) return;
     const taken: [number, number][] = [];
-    const ordered = [...this.reals].sort((a, b) => Number(b.ev.major === true) - Number(a.ev.major === true));
-    for (const real of ordered) {
-      if (real.hidden) continue;
-      const from = (real.ev.day - DOMAIN_START) * this.ppd - 8;
-      const to = from + real.labelWidth + 16;
+    const ordered = [...this.entries].sort((a, b) => Number(b.ev.major === true) - Number(a.ev.major === true));
+    for (const entry of ordered) {
+      const from = (entry.ev.day - this.domainStart) * this.ppd - 8;
+      const to = from + entry.labelWidth + 16;
       const free = taken.every(([a, b]) => to <= a || from >= b);
       if (free) taken.push([from, to]);
-      real.el.classList.toggle('nolabel', !free);
+      entry.el.classList.toggle('nolabel', !free);
     }
   }
 
   /** Label widths, measured with the lane's font. Must match .rh-l in app.css. */
   private measureLaneLabels(): void {
     setFont(this.ctx, this.palette, 11, 'body', 600);
-    for (const real of this.reals) real.labelWidth = this.ctx.measureText(real.ev.title).width + 14;
+    for (const entry of this.entries) entry.labelWidth = this.ctx.measureText(entry.ev.title).width + 14;
     this.layoutKey = '';
   }
 
@@ -603,7 +676,7 @@ export class Timeline {
 
   /** Keep the view inside the timeline. */
   private clampView(): void {
-    const span = (DOMAIN_END - DOMAIN_START) * this.ppd;
+    const span = (this.domainEnd - this.domainStart) * this.ppd;
     // A card can reach past the end of the axis (it starts at its date and extends right),
     // so the right-hand pan limit follows the furthest card edge, not just the last date.
     let contentRight = span + 48;
@@ -611,7 +684,7 @@ export class Timeline {
       if (!item.visible || !item.laidOut || item.badge) continue;
       contentRight = Math.max(contentRight, this.worldX(item.ev, this.ppd) + this.tiers[item.tier].w + 24);
     }
-    const maxX0 = this.backstoryWidth + 36;
+    const maxX0 = this.undatedWidth + 36;
     const minX0 = Math.min(maxX0, this.width - contentRight);
     this.x0 = clamp(this.x0, minX0, maxX0);
   }
@@ -652,19 +725,19 @@ export class Timeline {
     }
 
     if (this.laneVisible) {
-      for (const real of this.reals) {
-        const x = this.x0 + (real.ev.day - DOMAIN_START) * this.ppd;
-        real.sx = x;
-        const off = x + real.labelWidth < -40 || x > W + 40;
-        if (off !== real.off) {
-          real.off = off;
-          real.el.classList.toggle('off', off);
+      for (const entry of this.entries) {
+        const x = this.x0 + (entry.ev.day - this.domainStart) * this.ppd;
+        entry.sx = x;
+        const off = x + entry.labelWidth < -40 || x > W + 40;
+        if (off !== entry.off) {
+          entry.off = off;
+          entry.el.classList.toggle('off', off);
         }
-        if (!off) real.el.style.transform = `translate3d(${x.toFixed(2)}px,0,0)`;
+        if (!off) entry.el.style.transform = `translate3d(${x.toFixed(2)}px,0,0)`;
       }
     }
 
-    const focusReal = this.realById.get(this.hoveredRealId ?? this.selectedRealId ?? '');
+    const focusEntry = this.entryById.get(this.hoveredLaneId ?? this.selectedLaneId ?? '');
     const frame: Frame = {
       width: W,
       height: this.height,
@@ -672,18 +745,21 @@ export class Timeline {
       x0: this.x0,
       cardsTop: this.cardsTop,
       laneHeight: this.laneHeight,
-      backstoryWidth: this.backstoryWidth,
+      undatedWidth: this.undatedWidth,
+      domainStart: this.domainStart,
+      domainEnd: this.domainEnd,
+      world: this.world,
       palette: this.palette,
       items: this.items,
       selectedId: this.selectedId,
       hoveredId: this.hoveredId,
-      realGuideX: focusReal ? focusReal.sx : null,
+      laneGuideX: focusEntry ? focusEntry.sx : null,
     };
     this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     drawAxis(this.ctx, frame);
     this.overviewCtx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     drawOverview(this.overviewCtx, frame, this.overviewWidth, this.overviewHeight);
-    this.drawLinkOverlay(focusReal);
+    this.drawLinkOverlay(focusEntry);
 
     const level = levelOf(this.ppd);
     if (level !== this.level) {
@@ -693,8 +769,8 @@ export class Timeline {
     this.reportView();
   }
 
-  /** Gather the boxes for the overlay: thread path, the selection's links, and real-history ties. */
-  private drawLinkOverlay(focusReal: RealItem | undefined): void {
+  /** Gather the boxes for the overlay: thread path, the selection's links, and lane ties. */
+  private drawLinkOverlay(focusEntry: LaneEntry | undefined): void {
     const boxes = (ids: readonly string[]): Box[] => {
       const out: Box[] = [];
       let lastBadge: Badge | null = null;
@@ -714,13 +790,13 @@ export class Timeline {
     const outgoing = shown ? shown.ev.links : [];
     const incoming = shown ? (this.linkedFrom.get(shown.ev.id) ?? []).filter((id) => !outgoing.includes(id)) : [];
 
-    const realTies: { x: number; to: Box }[] = [];
+    const laneTies: { x: number; to: Box }[] = [];
     if (this.laneVisible) {
-      if (focusReal) for (const to of boxes(focusReal.ev.counterparts)) realTies.push({ x: focusReal.sx, to });
+      if (focusEntry) for (const to of boxes(focusEntry.ev.events)) laneTies.push({ x: focusEntry.sx, to });
       if (shown) {
-        for (const real of this.reals) {
-          if (real !== focusReal && !real.hidden && real.ev.counterparts.includes(shown.ev.id)) {
-            realTies.push({ x: real.sx, to: this.boxOf(shown) });
+        for (const entry of this.entries) {
+          if (entry !== focusEntry && entry.ev.events.includes(shown.ev.id)) {
+            laneTies.push({ x: entry.sx, to: this.boxOf(shown) });
           }
         }
       }
@@ -734,9 +810,14 @@ export class Timeline {
       from: shown ? this.boxOf(shown) : null,
       outgoing: boxes(outgoing),
       incoming: boxes(incoming),
-      realTies,
+      laneTies,
       path: this.threadPath ? boxes(this.threadPath) : [],
     });
+  }
+
+  /** What the overview strip needs to map between itself and the stage. */
+  private scaleFrame() {
+    return { ppd: this.ppd, x0: this.x0, undatedWidth: this.undatedWidth, domainStart: this.domainStart, domainEnd: this.domainEnd };
   }
 
   private currentViewKey(): string {
@@ -876,7 +957,7 @@ export class Timeline {
     const last = Math.max(...days);
     const fit = (this.width * 0.55) / Math.max(14, last - first);
     this.flyTo(
-      { days: (first + last) / 2 - DOMAIN_START, px: 0 },
+      { days: (first + last) / 2 - this.domainStart, px: 0 },
       Math.max(this.ppd * 2.2, fit),
       this.width / 2 - this.tiers.s.w / 2,
     );
@@ -1050,42 +1131,42 @@ export class Timeline {
     this.callbacks.onPreview(null);
   }
 
-  /* ── Input: real-history lane ── */
+  /* ── Input: second lane ── */
 
   private bindLane(): void {
     const { lane } = this.els;
     const signal = this.listeners.signal;
-    const realOf = (ev: Event): RealItem | undefined => {
+    const entryOf = (ev: Event): LaneEntry | undefined => {
       const el = (ev.target as Element).closest?.<HTMLElement>('.rh');
-      return el ? this.realById.get(el.dataset.id ?? '') : undefined;
+      return el ? this.entryById.get(el.dataset.id ?? '') : undefined;
     };
 
     lane.addEventListener('pointerover', (ev) => {
-      const real = realOf(ev);
-      if (!real || this.hoveredRealId === real.ev.id) return;
-      this.hoveredRealId = real.ev.id;
+      const entry = entryOf(ev);
+      if (!entry || this.hoveredLaneId === entry.ev.id) return;
+      this.hoveredLaneId = entry.ev.id;
       this.requestDraw();
       if (ev.pointerType !== 'mouse' || this.drag) return;
       window.clearTimeout(this.previewTimer);
       this.previewTimer = window.setTimeout(() => {
-        if (this.hoveredRealId !== real.ev.id || this.drag) return;
+        if (this.hoveredLaneId !== entry.ev.id || this.drag) return;
         // Anchor to whichever part is showing: the label, or the bare marker.
-        const part = real.el.querySelector(real.el.classList.contains('nolabel') ? '.rh-m' : '.rh-l') ?? real.el;
-        this.callbacks.onPreview({ kind: 'real', id: real.ev.id, rect: part.getBoundingClientRect() });
+        const part = entry.el.querySelector(entry.el.classList.contains('nolabel') ? '.rh-m' : '.rh-l') ?? entry.el;
+        this.callbacks.onPreview({ kind: 'lane', id: entry.ev.id, rect: part.getBoundingClientRect() });
       }, 140);
     }, { signal });
 
     lane.addEventListener('pointerout', (ev) => {
-      const real = realOf(ev);
-      if (!real || real.el.contains(ev.relatedTarget as Node | null)) return;
-      this.hoveredRealId = null;
+      const entry = entryOf(ev);
+      if (!entry || entry.el.contains(ev.relatedTarget as Node | null)) return;
+      this.hoveredLaneId = null;
       this.cancelPreview();
       this.requestDraw();
     }, { signal });
 
     lane.addEventListener('click', (ev) => {
-      const real = realOf(ev);
-      if (real && !this.moved) this.callbacks.onSelectReal(real.ev.id);
+      const entry = entryOf(ev);
+      if (entry && !this.moved) this.callbacks.onSelectLane(entry.ev.id);
     }, { signal });
   }
 
@@ -1096,7 +1177,7 @@ export class Timeline {
     const signal = this.listeners.signal;
     /** Centre the main view on a strip position. */
     const moveTo = (ev: PointerEvent) => {
-      const scale = overviewScale(this.overviewWidth, { ppd: this.ppd, x0: this.x0, backstoryWidth: this.backstoryWidth });
+      const scale = overviewScale(this.overviewWidth, this.scaleFrame());
       this.stopMotion();
       this.x0 = this.width / 2 - scale.worldOfX(ev.clientX - overview.getBoundingClientRect().left);
       this.requestDraw();
@@ -1138,9 +1219,15 @@ export class Timeline {
     stage.classList.toggle('compact', compact);
     this.tiers = compact ? TIERS_COMPACT : TIERS;
 
-    // Never zoom out past the point where the whole axis fits.
-    this.ppdMin = Math.max(PPD_MIN, (this.width - 90) / (DOMAIN_END - DOMAIN_START));
+    // Zoom out as far as the whole axis fitting on screen, but never past it.
+    const fit = (this.width - 90) / (this.domainEnd - this.domainStart);
+    this.ppdMin = clamp(fit, PPD_FLOOR, PPD_MIN);
     if (this.ppd < this.ppdMin) this.ppd = this.ppdMin;
+    const coarsest = levelOf(this.ppdMin);
+    if (coarsest !== this.coarsest) {
+      this.coarsest = coarsest;
+      this.callbacks.onCoarsestLevel(coarsest);
+    }
   }
 
   private observeEnvironment(): void {

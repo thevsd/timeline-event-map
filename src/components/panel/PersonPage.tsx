@@ -1,9 +1,7 @@
 import { useWorld } from '../../context';
-import { PERSON_GROUP_LABEL } from '../../data/people';
-import { characterImage } from '../../art/characterImages';
 import { Portrait } from '../Portrait';
 import { Prose } from '../Prose';
-import { EventLinks, FilterToggle, Section, type OpenPage } from './parts';
+import { EventLinks, FilterToggle, Section, Sections, type OpenPage } from './parts';
 
 interface PersonPageProps {
   name: string;
@@ -13,15 +11,16 @@ interface PersonPageProps {
   onOpen: OpenPage;
 }
 
-/** A character: who they are and every event they take part in. */
+/** A person: who they are and every event they take part in. */
 export function PersonPage({ name, filtered, onFilter, onOpen }: PersonPageProps) {
   const world = useWorld();
   const person = world.personByName.get(name);
   const events = world.eventsOf(name);
+  const group = person?.group ? world.groupById.get(person.group) : undefined;
   return (
     <div className="pbody page">
       <div className="tags">
-        <span className="tag">{person ? PERSON_GROUP_LABEL[person.group] : 'Character'}</span>
+        {group && <span className="tag">{group.name}</span>}
         <span className="tag">
           {events.length} event{events.length === 1 ? '' : 's'}
         </span>
@@ -30,24 +29,24 @@ export function PersonPage({ name, filtered, onFilter, onOpen }: PersonPageProps
         <Portrait name={name} person={person} />
         <div>
           <h2 id="ptitle">{name}</h2>
-          {person && <div className="dateline">{person.role}</div>}
-          {person?.art && characterImage(name) && <div className="artnote">Portrait: {person.art}</div>}
+          {person?.role && <div className="dateline">{person.role}</div>}
+          {person?.image && person.imageCredit && <div className="artnote">Portrait: {person.imageCredit}</div>}
         </div>
       </div>
-      {person && (
+      {person?.bio && (
         <p className="lede">
           <Prose text={person.bio} />
         </p>
       )}
-      {person?.real && (
-        <Section title="Real-world counterpart">
-          <p>{person.real}</p>
-        </Section>
+      <Sections sections={person?.sections ?? []} />
+      {events.length > 0 && (
+        <>
+          <FilterToggle active={filtered} label="Show only their events on the timeline" onToggle={() => onFilter(filtered ? null : name)} />
+          <Section title="Appears in">
+            <EventLinks ids={events.map((e) => e.id)} onOpen={onOpen} />
+          </Section>
+        </>
       )}
-      <FilterToggle active={filtered} label="Show only their events on the timeline" onToggle={() => onFilter(filtered ? null : name)} />
-      <Section title="Appears in">
-        <EventLinks ids={events.map((e) => e.id)} onOpen={onOpen} />
-      </Section>
     </div>
   );
 }

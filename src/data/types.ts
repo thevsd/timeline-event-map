@@ -1,5 +1,4 @@
 import type { MotifName } from '../art/motifs';
-import type { RealEventRecord } from './realHistory';
 
 export type CategoryId = 'finance' | 'politics' | 'deals' | 'world' | 'personal' | 'shadow';
 
@@ -20,7 +19,7 @@ export interface Reading {
   text: string;
 }
 
-/** An event as authored in `data/events/*`. */
+/** A Modern Villainess event as authored in `data/events/*`. `data/index.ts` turns these into the app's document format. */
 export interface EventRecord {
   /** Unique key; also the deep-link hash and the illustration seed. */
   id: string;
@@ -56,36 +55,4 @@ export interface EventRecord {
   people?: string[];
   /** Ids of connected events. */
   links?: string[];
-}
-
-/** An event after normalisation: dates resolved, optional lists filled in. */
-export interface TimelineEvent extends EventRecord {
-  /** Day number of `date`; null for backstory events. */
-  day: number | null;
-  endDay: number | null;
-  people: string[];
-  links: string[];
-}
-
-/** Active filters. An event must pass all of them. */
-export interface EventFilter {
-  categories: ReadonlySet<CategoryId>;
-  /** Reading progress: events from later volumes are hidden. */
-  maxVolume: number;
-  /** Ids of the events matching the text filter (see lib/search.ts); null when no text is set. */
-  textMatches: ReadonlySet<string> | null;
-  /** Only events this person takes part in. */
-  person: string | null;
-  /** Only events on this thread (a thread id). */
-  thread: string | null;
-}
-
-/** A real-world event after normalisation. */
-export interface RealEvent extends RealEventRecord {
-  day: number;
-  /** Date as displayed, e.g. "17 Nov 1997" or "Jun 1997". */
-  when: string;
-  counterparts: string[];
-  /** Volume of its earliest counterpart; the entry is hidden from readers who are not there yet. */
-  volume: number;
 }

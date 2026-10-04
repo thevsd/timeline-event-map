@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useWorld } from '../context';
-import { stepEvent } from '../lib/corporate';
+import { corporateOf, stepEvent } from '../lib/corporate';
 
 /** Pause on each step while playing. */
 const PLAY_INTERVAL = 1700;
@@ -15,7 +15,7 @@ interface MapControlsProps {
 
 /** Step controls for the corporate map: first, back, play, forward, last, a scrubber, and the step's event. */
 export function MapControls({ step, onStep, onOpenEvent }: MapControlsProps) {
-  const lastStep = useWorld().lastStep;
+  const { lastStep } = corporateOf(useWorld());
   const [playing, setPlaying] = useState(false);
   const event = stepEvent(step);
 

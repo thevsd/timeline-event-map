@@ -1,28 +1,27 @@
 import { useWorld } from '../../context';
-import { CRASH_EVENT_ID } from '../../data';
-import { BASIS_LABEL, CATEGORY_BY_ID, CONFIDENCE_LABEL, HISTORY_LABEL } from '../../data/categories';
-import type { TimelineEvent } from '../../data/types';
-import { CRASH_DAY } from '../../lib/time';
+import type { TimelineEvent } from '../../model/world';
 import { CategoryGlyph } from '../CategoryGlyph';
 import { Illustration } from '../Illustration';
 import { Prose } from '../Prose';
-import { BulletList, EventLinks, Section, type OpenPage } from './parts';
+import { EventLinks, Section, Sections, type OpenPage } from './parts';
 
-/** Countdown to the 2008 frame scene. Backstory events have no date, so no countdown. */
+/** Days left until the event the timeline counts down to. Undated events have no countdown. */
 function Countdown({ event }: { event: TimelineEvent }) {
-  if (event.id === CRASH_EVENT_ID) {
+  const { countdown } = useWorld();
+  if (!countdown) return null;
+  if (event.id === countdown.eventId) {
     return (
       <div className="count-down">
         <b>Day zero</b>
-        <span>the night every other event counts down to</span>
+        <span>the day every other event counts down to</span>
       </div>
     );
   }
-  if (event.day == null || event.day >= CRASH_DAY) return null;
+  if (event.day == null || event.day >= countdown.day) return null;
   return (
     <div className="count-down">
-      <b>{(CRASH_DAY - event.day).toLocaleString('en-US')}</b>
-      <span>days before the crash of 15 September 2008</span>
+      <b>{(countdown.day - event.day).toLocaleString('en-US')}</b>
+      <span>days before {countdown.label}</span>
     </div>
   );
 }
@@ -31,78 +30,52 @@ function Countdown({ event }: { event: TimelineEvent }) {
 export function EventPage({ event, onOpen }: { event: TimelineEvent; onOpen: OpenPage }) {
   const world = useWorld();
   const threads = world.threadsOf(event.id);
-  const real = world.realOf(event.id);
+  const laneItems = world.laneOf(event.id);
   return (
-    <div className={`cat-${event.category}`}>
+    <div className={`hue-${event.hue}`}>
       <div className="hero">
         <Illustration event={event} />
       </div>
       <div className="pbody">
         <div className="tags">
           <span className="tag">
-            <CategoryGlyph category={event.category} />
-            {CATEGORY_BY_ID[event.category].name}
+            <CategoryGlyph glyph={event.glyph} />
+            {event.categoryName}
           </span>
-          <span className="tag">
-            Vol. {event.volume} · {event.chapter}
-          </span>
-          <span className={`tag ${HISTORY_LABEL[event.history].className}`}>{HISTORY_LABEL[event.history].label}</span>
+          {(event.partName || event.source) && <span className="tag">{[event.partName, event.source].filter(Boolean).join(' · ')}</span>}
+          {event.tags.map((tag) => (
+            <span key={tag.label} className={tag.color ? `tag tinted hue-${tag.color}` : 'tag'}>
+              {tag.label}
+            </span>
+          ))}
         </div>
 
         <h2 id="ptitle">{event.title}</h2>
         <div className="dateline">
           {event.when}
-          <small>{BASIS_LABEL[event.basis]}</small>
+          {event.dateNote && <small>{event.dateNote}</small>}
         </div>
-        <p className="lede">
-          <Prose text={event.brief} />
-        </p>
+        {event.summary && (
+          <p className="lede">
+            <Prose text={event.summary} />
+          </p>
+        )}
         <Countdown event={event} />
 
-        {event.what?.length ? (
-          <Section title="What happens">
-            <BulletList items={event.what} />
-          </Section>
-        ) : null}
+        <Sections sections={event.sections} />
 
-        {event.reveals?.length ? (
-          <Section title="Revelations">
-            <BulletList items={event.reveals} />
-          </Section>
-        ) : null}
-
-        {(event.realWorld || real.length > 0) && (
-          <Section title="Real-world history">
-            {event.realWorld && (
-              <p>
-                <Prose text={event.realWorld} />
-              </p>
-            )}
-            {real.length > 0 && (
-              <div className="chips">
-                {real.map((r) => (
-                  <button key={r.id} type="button" className={`pill rh-pill t-${r.treatment}`} onClick={() => onOpen({ kind: 'real', id: r.id })}>
-                    <i className="rh-m" aria-hidden="true" />
-                    {r.title} · {r.when}
-                  </button>
-                ))}
-              </div>
-            )}
-          </Section>
-        )}
-
-        {event.readings?.length ? (
-          <Section title="Reading">
-            <div className="reading">
-              {event.readings.map((r) => (
-                <div key={r.text}>
-                  <span className={`conf ${CONFIDENCE_LABEL[r.confidence].className}`}>{CONFIDENCE_LABEL[r.confidence].label}</span>
-                  <Prose text={r.text} />
-                </div>
+        {laneItems.length > 0 && world.lane && (
+          <Section title={`On the “${world.lane.title}” lane`}>
+            <div className="chips">
+              {laneItems.map((item) => (
+                <button key={item.id} type="button" className={`pill rh-pill hue-${item.hue}`} onClick={() => onOpen({ kind: 'lane', id: item.id })}>
+                  <i className="rh-m" aria-hidden="true" />
+                  {item.title} · {item.when}
+                </button>
               ))}
             </div>
           </Section>
-        ) : null}
+        )}
 
         {threads.length > 0 && (
           <Section title="Threads">

@@ -1,26 +1,28 @@
-import { CATEGORIES } from '../data/categories';
-import type { CategoryId } from '../data/types';
 import type { ViewState } from '../engine/types';
-import type { PanelPage, View } from '../types';
-import { DOMAIN_START, dateOf, toDay } from './time';
+import type { PanelPage, View, ViewPage } from '../types';
+import { parseDate, toIso } from './time';
 
 /**
  * Everything worth sharing in a link, kept in the URL hash:
  *
- *   #z=2.3&d=1997-11-17&e=kaitaku&thread=accounting
+ *   #t=demo&z=2.3&d=1997-11-17&e=kaitaku&thread=accounting
  *
- * Fields at their default are left out. A bare `#kaitaku` (the older form) still opens that event.
+ * Fields at their default are left out. A bare `#kaitaku` (the oldest form) still opens that event.
  */
 export interface UrlState {
+  /** Which timeline the link is for: the demo, or the draft kept in this browser. Null in an exported page. */
+  timeline: 'demo' | 'draft' | null;
   view: View;
   /** Timeline zoom and centre; null leaves the opening view alone. */
-  timeline: ViewState | null;
+  zoom: ViewState | null;
   /** Selected event. */
   event: string | null;
   /** Side-panel page, when it is not the selected event's. */
-  page: PanelPage | null;
-  /** Enabled categories; null means all. */
-  categories: CategoryId[] | null;
+  page: ViewPage | null;
+  /** Ids of the categories turned off. */
+  hidden: string[];
+  /** From links older than `hide`: the only categories left on. Read, never written. */
+  only?: string[];
   query: string;
   person: string | null;
   thread: string | null;
@@ -29,65 +31,77 @@ export interface UrlState {
   mapStep: number | null;
 }
 
-const CATEGORY_IDS = new Set<string>(CATEGORIES.map((c) => c.id));
-
-const PAGE_PREFIX: Record<Exclude<PanelPage['kind'], 'event'>, string> = {
+const PAGE_PREFIX: Record<Exclude<ViewPage['kind'], 'event'>, string> = {
   person: 'person',
   thread: 'thread',
-  real: 'real',
+  lane: 'lane',
   company: 'co',
   term: 'term',
 };
 
 function pageToString(page: PanelPage): string | null {
-  if (page.kind === 'event') return null;
+  if (page.kind === 'event' || page.kind === 'form') return null;
   return `${PAGE_PREFIX[page.kind]}:${page.kind === 'person' ? page.name : page.id}`;
 }
 
-function pageFromString(text: string | null): PanelPage | null {
+function pageFromString(text: string | null): ViewPage | null {
   if (!text) return null;
   const cut = text.indexOf(':');
   const value = text.slice(cut + 1);
   switch (text.slice(0, cut)) {
     case 'person': return { kind: 'person', name: value };
     case 'thread': return { kind: 'thread', id: value };
-    case 'real': return { kind: 'real', id: value };
+    case 'lane':
+    case 'real': return { kind: 'lane', id: value }; // `real` is the older spelling
     case 'co': return { kind: 'company', id: value };
     case 'term': return { kind: 'term', id: value };
     default: return null;
   }
 }
 
-/** Centre of the view as text: an ISO date, or `pre<pixels>` inside the backstory zone. */
-function centreToString(view: ViewState): string {
+/** Centre of the view as text: an ISO date, or `pre<pixels>` inside the undated zone. */
+function centreToString(view: ViewState, domainStart: number): string {
   if (view.px < 0) return `pre${Math.round(-view.px)}`;
-  return dateOf(DOMAIN_START + Math.round(view.days)).toISOString().slice(0, 10);
+  return toIso(domainStart + Math.round(view.days));
 }
 
-function parseTimeline(zoom: string | null, centre: string | null): ViewState | null {
+function parseZoom(zoom: string | null, centre: string | null, domainStart: number): ViewState | null {
   const ppd = Number(zoom);
   if (!zoom || !centre || !(ppd > 0)) return null;
   if (centre.startsWith('pre')) {
     const px = Number(centre.slice(3));
     return Number.isFinite(px) ? { ppd, days: 0, px: -px } : null;
   }
-  return /^\d{4}-\d{2}-\d{2}$/.test(centre) ? { ppd, days: toDay(centre) - DOMAIN_START, px: 0 } : null;
+  const date = /^-?\d+-\d{2}-\d{2}$/.test(centre) ? parseDate(centre) : null;
+  return date ? { ppd, days: date.day - domainStart, px: 0 } : null;
 }
 
-/** Read the state from a URL hash. Unknown or malformed fields fall back to their defaults. */
-export function parseUrlState(hash: string): UrlState {
+/** Which timeline a hash asks for, without reading the rest. Links older than the home page are for the demo. */
+export function timelineOf(hash: string): 'demo' | 'draft' | null {
   const text = hash.replace(/^#/, '');
-  // Older links are just the event id.
+  if (!text) return null;
+  const wanted = new URLSearchParams(text.includes('=') ? text : '').get('t');
+  return wanted === 'draft' ? 'draft' : 'demo';
+}
+
+/**
+ * Read the state from a URL hash. Unknown or malformed fields fall back to their defaults.
+ * @param domainStart Day number at the start of the timeline's axis; view positions are stored as dates.
+ */
+export function parseUrlState(hash: string, domainStart: number): UrlState {
+  const text = hash.replace(/^#/, '');
+  // The oldest links are just the event id.
   const params = new URLSearchParams(text.includes('=') ? text : text ? `e=${text}` : '');
-  const categories = params.get('cat')?.split(',').filter((id): id is CategoryId => CATEGORY_IDS.has(id)) ?? null;
   const step = params.get('step');
   const view = params.get('view');
   return {
-    view: view === 'map' || view === 'cast' ? view : 'timeline',
-    timeline: parseTimeline(params.get('z'), params.get('d')),
+    timeline: timelineOf(hash),
+    view: view === 'map' || view === 'cast' || view === 'glossary' ? view : 'timeline',
+    zoom: parseZoom(params.get('z'), params.get('d'), domainStart),
     event: params.get('e'),
     page: pageFromString(params.get('p')),
-    categories,
+    hidden: params.get('hide')?.split(',').filter(Boolean) ?? [],
+    only: params.get('cat')?.split(',').filter(Boolean),
     query: params.get('q') ?? '',
     person: params.get('who'),
     thread: params.get('thread'),
@@ -96,18 +110,19 @@ export function parseUrlState(hash: string): UrlState {
   };
 }
 
-/** Build the hash for a state, without the leading `#`. Empty when everything is at its default. */
-export function formatUrlState(state: UrlState): string {
+/** Build the hash for a state, without the leading `#`. */
+export function formatUrlState(state: UrlState, domainStart: number): string {
   const params = new URLSearchParams();
+  if (state.timeline) params.set('t', state.timeline);
   if (state.view !== 'timeline') params.set('view', state.view);
-  if (state.timeline) {
-    params.set('z', String(Number(state.timeline.ppd.toPrecision(3))));
-    params.set('d', centreToString(state.timeline));
+  if (state.zoom) {
+    params.set('z', String(Number(state.zoom.ppd.toPrecision(3))));
+    params.set('d', centreToString(state.zoom, domainStart));
   }
   if (state.event) params.set('e', state.event);
   const page = state.page ? pageToString(state.page) : null;
   if (page) params.set('p', page);
-  if (state.categories) params.set('cat', state.categories.join(','));
+  if (state.hidden.length) params.set('hide', state.hidden.join(','));
   if (state.query) params.set('q', state.query);
   if (state.person) params.set('who', state.person);
   if (state.thread) params.set('thread', state.thread);

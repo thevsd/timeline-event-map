@@ -1,4 +1,4 @@
-import type { World } from '../data/world';
+import type { World } from '../model/world';
 import { fold, foldWithMap } from './text';
 
 /** A run of text: plain, or a glossary term to mark. */
@@ -9,7 +9,8 @@ export interface TextPart {
 }
 
 interface Matcher {
-  pattern: RegExp;
+  /** Null when the glossary is empty: there is nothing to look for. */
+  pattern: RegExp | null;
   /** Folded spelling to term id. */
   idOf: Map<string, string>;
 }
@@ -19,12 +20,16 @@ const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&
 function buildMatcher(world: World): Matcher {
   const idOf = new Map<string, string>();
   for (const term of world.terms) {
-    for (const spelling of [term.term, ...(term.aliases ?? [])]) idOf.set(fold(spelling), term.id);
+    for (const spelling of [term.term, ...(term.aliases ?? [])]) {
+      const key = fold(spelling).trim();
+      // The first term to claim a spelling keeps it.
+      if (key && !idOf.has(key)) idOf.set(key, term.id);
+    }
   }
   // Longest first, so "BOJ special loans" wins over "special loan".
   const spellings = [...idOf.keys()].sort((a, b) => b.length - a.length).map(escapeRegExp);
   // Whole words only: not inside a longer word or number.
-  const pattern = new RegExp(`(?<![a-z0-9])(?:${spellings.join('|')})(?![a-z0-9])`, 'g');
+  const pattern = spellings.length ? new RegExp(`(?<![a-z0-9])(?:${spellings.join('|')})(?![a-z0-9])`, 'g') : null;
   return { pattern, idOf };
 }
 
@@ -43,6 +48,7 @@ function matcherFor(world: World): Matcher {
  */
 export function splitTerms(text: string, world: World, skip?: string): TextPart[] {
   const { pattern, idOf } = matcherFor(world);
+  if (!pattern) return [{ text }];
   const { folded, map } = foldWithMap(text);
   const parts: TextPart[] = [];
   const seen = new Set<string>();
@@ -65,6 +71,7 @@ export function splitTerms(text: string, world: World, skip?: string): TextPart[
 /** Whether a text names a term. */
 export function mentions(text: string, termId: string, world: World): boolean {
   const { pattern, idOf } = matcherFor(world);
+  if (!pattern) return false;
   pattern.lastIndex = 0;
   const folded = fold(text);
   for (let match = pattern.exec(folded); match; match = pattern.exec(folded)) {
@@ -84,7 +91,11 @@ export function eventsNaming(termId: string, world: World): string[] {
     ids = world.events
       .filter((ev) =>
         mentions(
-          [ev.title, ev.brief, ...(ev.what ?? []), ...(ev.reveals ?? []), ev.realWorld ?? '', ...(ev.readings ?? []).map((r) => r.text)].join('\n'),
+          [
+            ev.title,
+            ev.summary,
+            ...ev.sections.flatMap((section) => [section.text ?? '', ...(section.items ?? []).map((item) => (typeof item === 'string' ? item : item.text))]),
+          ].join('\n'),
           termId,
           world,
         ),

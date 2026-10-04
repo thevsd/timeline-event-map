@@ -1,6 +1,6 @@
 import { useEffect, useRef, type RefObject } from 'react';
-import { EVENTS, REAL_EVENTS } from '../data';
-import type { EventFilter } from '../data/types';
+import type { EventFilter } from '../model/filter';
+import type { World } from '../model/world';
 import { Timeline } from '../engine/Timeline';
 import type { TimelineCallbacks } from '../engine/types';
 
@@ -16,8 +16,10 @@ export interface TimelineRefs {
 
 /** State the host keeps and the engine follows. */
 export interface TimelineState {
+  /** The timeline to draw. */
+  world: World;
   filter: EventFilter;
-  /** Whether the real-history lane is shown. */
+  /** Whether the second lane is shown, if the timeline has one. */
   laneVisible: boolean;
   /** Event ids of the active thread, in story order, or null. */
   threadPath: readonly string[] | null;
@@ -43,10 +45,11 @@ export function useTimeline(state: TimelineState, callbacks: TimelineCallbacks) 
     overviewCanvas: useRef<HTMLCanvasElement>(null),
   };
   const engine = useRef<Timeline | null>(null);
-  const { filter, laneVisible, threadPath } = state;
+  const { world: data, filter, laneVisible, threadPath } = state;
 
   const latestCallbacks = useRef(callbacks);
   const latestFilter = useRef(filter);
+  const latestWorld = useRef(data);
   useEffect(() => {
     latestCallbacks.current = callbacks;
     latestFilter.current = filter;
@@ -71,14 +74,14 @@ export function useTimeline(state: TimelineState, callbacks: TimelineCallbacks) 
         overview: overview.current,
         overviewCanvas: overviewCanvas.current,
       },
-      EVENTS,
-      REAL_EVENTS,
+      latestWorld.current,
       latestFilter.current,
       {
         onSelect: (id) => latestCallbacks.current.onSelect(id),
-        onSelectReal: (id) => latestCallbacks.current.onSelectReal(id),
+        onSelectLane: (id) => latestCallbacks.current.onSelectLane(id),
         onPreview: (target) => latestCallbacks.current.onPreview(target),
         onLevelChange: (level) => latestCallbacks.current.onLevelChange(level),
+        onCoarsestLevel: (level) => latestCallbacks.current.onCoarsestLevel(level),
         onInteract: () => latestCallbacks.current.onInteract(),
         onViewChange: (view) => latestCallbacks.current.onViewChange(view),
       },
@@ -90,7 +93,12 @@ export function useTimeline(state: TimelineState, callbacks: TimelineCallbacks) 
     };
   }, [stage, world, lane, axisCanvas, linkCanvas, overview, overviewCanvas]);
 
-  // Push state changes into the engine.
+  // Push state changes into the engine. A new world comes first: the filter and path refer to its events.
+  useEffect(() => {
+    if (latestWorld.current === data) return;
+    latestWorld.current = data;
+    engine.current?.setWorld(data);
+  }, [data]);
   useEffect(() => {
     engine.current?.setFilter(filter);
   }, [filter]);

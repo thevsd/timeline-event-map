@@ -1,21 +1,20 @@
 import { useLayoutEffect, useRef, useState } from 'react';
-import type { Term } from '../data/glossary';
-import { TREATMENT_LABEL } from '../data/realHistory';
-import type { RealEvent, TimelineEvent } from '../data/types';
+import type { TermDoc } from '../model/schema';
+import type { LaneItem, TimelineEvent } from '../model/world';
 import { Illustration } from './Illustration';
 
 /** What is being hovered, and the screen rectangle to attach the preview to. */
 export type Preview =
   | { kind: 'event'; event: TimelineEvent; rect: DOMRect }
-  | { kind: 'real'; real: RealEvent; rect: DOMRect }
-  | { kind: 'term'; term: Term; rect: DOMRect };
+  | { kind: 'lane'; item: LaneItem; lane: string; rect: DOMRect }
+  | { kind: 'term'; term: TermDoc; rect: DOMRect };
 
 const WIDTH = 280; // matches .pop in app.css
 const MARGIN = 8;
 
 /**
  * Floating preview shown while the pointer rests on a card that has no illustration, on a
- * real-history entry, or on a glossary term. Sits below its target when there is room, otherwise above it.
+ * lane entry, or on a glossary term. Sits below its target when there is room, otherwise above it.
  */
 export function HoverPreview({ preview }: { preview: Preview | null }) {
   const element = useRef<HTMLDivElement>(null);
@@ -57,19 +56,20 @@ export function HoverPreview({ preview }: { preview: Preview | null }) {
     );
   }
 
-  if (shown.kind === 'real') {
-    const { real } = shown;
+  if (shown.kind === 'lane') {
+    const { item } = shown;
     return (
-      <div ref={element} className={`pop${on}`} style={position} aria-hidden="true">
+      <div ref={element} className={`pop hue-${item.hue}${on}`} style={position} aria-hidden="true">
         <div className="pb">
-          <div className={`kicker rh-tag t-${real.treatment}`}>
+          <div className="kicker rh-tag">
             <i className="rh-m" />
-            Real history · {TREATMENT_LABEL[real.treatment]}
+            {shown.lane}
+            {item.kindName && ` · ${item.kindName}`}
           </div>
-          <h3>{real.title}</h3>
-          <div className="when">{real.when}</div>
-          <p>{real.real}</p>
-          <div className="cta">Click for how the novel treats it</div>
+          <h3>{item.title}</h3>
+          <div className="when">{item.when}</div>
+          {item.text && <p>{item.text}</p>}
+          <div className="cta">Click for the full entry</div>
         </div>
       </div>
     );
@@ -77,16 +77,16 @@ export function HoverPreview({ preview }: { preview: Preview | null }) {
 
   const { event } = shown;
   return (
-    <div ref={element} className={`pop cat-${event.category}${on}`} style={position} aria-hidden="true">
+    <div ref={element} className={`pop hue-${event.hue}${on}`} style={position} aria-hidden="true">
       <div className="ph">
         <Illustration event={event} />
       </div>
       <div className="pb">
         <h3>{event.title}</h3>
         <div className="when">
-          {event.when} · Vol. {event.volume}, {event.chapter}
+          {[event.when, event.partName, event.source].filter(Boolean).join(' · ')}
         </div>
-        <p>{event.brief}</p>
+        <p>{event.summary}</p>
         <div className="cta">Click the card for the full entry</div>
       </div>
     </div>

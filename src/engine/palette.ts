@@ -1,5 +1,4 @@
-import type { CategoryId } from '../data/types';
-import { CATEGORIES } from '../data/categories';
+import { HUES, type Hue } from '../model/schema';
 
 /** CSS tokens resolved to concrete values, for canvas drawing. */
 export interface Palette {
@@ -11,13 +10,12 @@ export interface Palette {
   stage: string;
   surface: string;
   accent: string;
-  /** Colour of real-history marks. */
-  real: string;
   hatch: string;
   fontMono: string;
   fontBody: string;
   fontDisplay: string;
-  category: Record<CategoryId, string>;
+  /** The colours authors pick from, for categories, lane kinds and groups. */
+  hue: Record<Hue, string>;
 }
 
 /** Read the current theme's tokens from :root. Call again when the theme or fonts change. */
@@ -33,12 +31,11 @@ export function readPalette(): Palette {
     stage: token('--stage'),
     surface: token('--surface'),
     accent: token('--accent'),
-    real: token('--real'),
     hatch: token('--hatch'),
     fontMono: token('--font-mono'),
     fontBody: token('--font-body'),
     fontDisplay: token('--font-display'),
-    category: Object.fromEntries(CATEGORIES.map((c) => [c.id, token(`--cat-${c.id}`)])) as Record<CategoryId, string>,
+    hue: Object.fromEntries(HUES.map((hue) => [hue, token(`--hue-${hue}`)])) as Record<Hue, string>,
   };
 }
 

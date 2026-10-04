@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { useWorld } from '../../context';
+import type { LabelledItem, Section as SectionData } from '../../model/schema';
 import type { PanelPage } from '../../types';
 import { CategoryGlyph } from '../CategoryGlyph';
 import { Prose } from '../Prose';
@@ -16,15 +17,44 @@ export function Section({ title, children }: { title: string; children: ReactNod
   );
 }
 
-export function BulletList({ items }: { items: string[] }) {
+/** The titled blocks of an event or person page: a paragraph, a bullet list, or a list of labelled entries. */
+export function Sections({ sections }: { sections: readonly SectionData[] }) {
   return (
-    <ul>
-      {items.map((text) => (
-        <li key={text}>
-          <Prose text={text} />
-        </li>
-      ))}
-    </ul>
+    <>
+      {sections.map((section, index) => {
+        const items = section.items ?? [];
+        const labelled = items.filter((item): item is LabelledItem => typeof item !== 'string');
+        const plain = items.filter((item): item is string => typeof item === 'string');
+        return (
+          <Section key={`${index}:${section.title}`} title={section.title}>
+            {section.text && (
+              <p>
+                <Prose text={section.text} />
+              </p>
+            )}
+            {plain.length > 0 && (
+              <ul>
+                {plain.map((text, i) => (
+                  <li key={i}>
+                    <Prose text={text} />
+                  </li>
+                ))}
+              </ul>
+            )}
+            {labelled.length > 0 && (
+              <div className="reading">
+                {labelled.map((item, i) => (
+                  <div key={i} className={item.color ? `hue-${item.color}` : undefined}>
+                    <span className="conf">{item.label}</span>
+                    <Prose text={item.text} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </Section>
+        );
+      })}
+    </>
   );
 }
 
@@ -33,9 +63,9 @@ export function EventLink({ id, onOpen, prefix, note }: { id: string; onOpen: Op
   const event = useWorld().eventById.get(id);
   if (!event) return null;
   return (
-    <button type="button" className={`link cat-${event.category}`} data-go={id} onClick={() => onOpen({ kind: 'event', id })}>
+    <button type="button" className={`link hue-${event.hue}`} data-go={id} onClick={() => onOpen({ kind: 'event', id })}>
       {prefix}
-      <CategoryGlyph category={event.category} />
+      <CategoryGlyph glyph={event.glyph} />
       <span className="lbody">
         <span className="lt">{event.title}</span>
         {note && <span className="ln">{note}</span>}

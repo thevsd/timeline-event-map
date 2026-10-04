@@ -1,32 +1,25 @@
 # timeline-event-map
 
-A zoomable timeline and event viewer for the storyline of *Modern Villainess: It's Not Easy Building a Corporate Empire Before the Crash* (Tofuro Futsukaichi). It covers English Volumes 1–5: from Runa's infancy to spring 2003, plus the 15 September 2008 frame scene. Full spoilers, gated by the reader's progress (see **Reading progress** below).
+A timeline event map webapp. Build a timeline in the browser or import one as JSON, then export it as a single web page. There is no server and no account.
 
-The app is a single self-contained HTML page: open it in a browser, no server needed.
+It ships with a demo: the storyline of *Modern Villainess* (English Vols. 1–5), mapped against the real financial history it rewrites.
 
 ## Features
 
-- **Timeline:** zoom from quarters down to days; cards grow from a title to an illustrated summary as space allows. Where even titles do not fit, the rest fold into a `+N more` badge; click it to zoom in.
+- **Home page:** open the demo, start a new timeline, import a file, or continue the draft kept in the browser. It also carries a prompt for an AI model and a sample file.
+- **Timeline:** zoom from decades down to days; cards grow from a title to an illustrated summary as space allows. Where even titles do not fit, the rest fold into a `+N more` badge; click it to zoom in. Events without a date sit in an undated zone before the axis.
 - **Connections:** selecting an event draws lines to the events it links to (solid) and from the events that link to it (dashed).
 - **Threads:** pick a storyline to show only its events, joined by a numbered path.
-- **People:** every name opens a profile with that person's events; the timeline can be narrowed to one person.
-- **Real history:** a lane above the cards marks the real-world events the novel preserves, alters, prevents or moves, each tied to the scene that answers it.
-- **Corporate map:** who owns, funds or pressures whom, stepped through in story order.
-- **Characters:** the cast in groups, with a portrait where one exists and a male or female placeholder otherwise; each card opens that person's page.
-- **Search:** one box for events, people, threads, companies, real history and the glossary (`Ctrl+K` or `/`). Every word must match; accents and case are ignored, a word found nowhere as typed is matched against near misses, and titles outrank body text. The last row narrows the timeline to the matching events.
-- **Glossary:** terms of Japanese finance and politics are underlined in the side panel; hover for the definition, click for the page listing where the term comes up.
-- **Reading progress:** `Read up to` hides everything from later volumes: events, characters, threads, map steps, real-history entries and the sentences that give later volumes away. The setting is kept in the browser and is never part of a link.
-- **Links:** the address bar always holds a link to the current view, selection and filters (`Copy link`).
+- **People:** the cast in groups, each with a page listing their events; the timeline can be narrowed to one person.
+- **Glossary:** its own tab; terms are also underlined in the side panel, with the definition on hover.
+- **Second lane:** one smaller timeline above the cards for a parallel sequence (the demo's real history), each entry tied to the events it relates to.
+- **Reading progress:** a timeline split into parts (volumes, seasons, acts) can hide everything beyond the part a reader has reached. Kept in the browser, never part of a link.
+- **Search:** one box for events, people, threads, lane entries and terms (`Ctrl+K` or `/`). Every word must match; accents and case are ignored and near misses are forgiven.
+- **Editing:** forms in the side panel for events, people, terms, threads, lane entries and the timeline's settings, with undo and redo.
+- **Import and export:** JSON in and out; export to one self-contained HTML page.
+- **Links:** the address bar always holds a link to the current view, selection and filters.
+- **Corporate map:** who owns, funds or pressures whom. Part of the demo only.
 - **Theme:** light or dark, following the system setting.
-
-### Keyboard
-
-| Key | Action |
-|---|---|
-| `Ctrl+K` / `/` | search |
-| `←` `→` | previous / next event while one is open; step the corporate map; otherwise pan |
-| `+` `-` | zoom the timeline |
-| `Esc` | close the side panel |
 
 ## Development
 
@@ -40,73 +33,144 @@ npm run build      # type-check, then build dist/index.html (one self-contained 
 npm run release    # build, then copy the page to Output/Modern_Villainess_Timeline.html
 ```
 
-`Output/` is the published copy and changes only through `npm run release`; the script creates the folder if it is missing.
+`Output/` is the published copy and changes only through `npm run release`.
+
+Export to HTML works from the built page (`dist/index.html`), not from the dev server, which serves the app as loose modules. Export to JSON works in both.
+
+## How a timeline is stored
+
+A timeline is one JSON document (`src/model/schema.ts`). Everything else derives from it:
+
+```
+document ──parse──▶ checked document ──worldOf(progress)──▶ world ──▶ engine and components
+```
+
+- **`model/parse.ts`** accepts loose input. Only `title` and `events` are needed; missing categories, people and ids are created, and anything it cannot use is dropped with a warning rather than failing the import.
+- **`model/world.ts`** resolves the document for a reader at a given part: dates to day numbers, ids to records, later parts removed.
+- **`model/edit.ts`** holds the edits as pure functions that return a new document, which is what makes undo and redo simple.
+
+Where a timeline comes from:
+
+| Origin | Source | Edits |
+|---|---|---|
+| Demo | built from `src/data/` | become the draft |
+| Draft | IndexedDB in this browser, saved on every change | in place |
+| Exported page | embedded in the page itself | become the draft |
+
+There is one draft. Starting, importing or editing another timeline asks before replacing it.
+
+### Document format
+
+```jsonc
+{
+  "format": "timeline-event-map",
+  "version": 1,
+  "title": "…",
+  "parts": ["Vol. 1", "Vol. 2"],        // optional; enables jump buttons and reading progress
+  "categories": [{ "id": "politics", "name": "Politics", "color": "orange", "glyph": "P" }],
+  "groups": [{ "id": "family", "name": "The family", "color": "pink" }],
+  "events": [{
+    "id": "bank-takeover", "title": "…", "date": "1997-11-17", "category": "politics",
+    "summary": "…", "part": 1, "people": ["Full Name"], "links": ["another-event-id"],
+    "sections": [{ "title": "What happens", "items": ["…"] }]
+  }],
+  "people": [{ "name": "Full Name", "role": "…", "group": "family", "bio": "…" }],
+  "threads": [{ "id": "the-takeover", "name": "The takeover", "events": ["bank-takeover"] }],
+  "glossary": [{ "id": "convoy-system", "term": "Convoy system", "definition": "…" }],
+  "lane": {
+    "title": "Real history",
+    "kinds": [{ "id": "preserved", "name": "Preserved", "color": "green" }],
+    "items": [{ "id": "r-1", "date": "1997-11", "title": "…", "kind": "preserved", "events": ["bank-takeover"] }]
+  }
+}
+```
+
+- **Dates** are `YYYY`, `YYYY-MM` or `YYYY-MM-DD`; a leading minus is BC. An event without a date is undated.
+- **Colours** are `blue`, `orange`, `green`, `yellow`, `pink`, `indigo`, `teal`, `red`, `brown`, `gray`.
+- **Images** are `data:` or `https:` URLs. Pictures added in the app are resized and stored in the document.
+- The full field reference is `src/model/schema.ts`. The home page offers the demo as a sample file and a prompt that describes the format to an AI model.
+
+### Spoiler markers
+
+Reading progress hides whole events, people and terms by their `part`. Where a text that belongs to an earlier part mentions something from a later one, mark it: everything after `{p3}`, up to the next marker, is shown only to a reader who has reached part 3, and `{p1}` returns to text anyone may see. `{v3}` is accepted as another spelling.
+
+```
+"bio": "Died by apparent suicide.{p2} Volume 2 reveals who pushed him to it."
+```
+
+Markers work in the long texts: sections, roles and bios, thread summaries, lane texts and definitions. Titles, summaries and dates cannot carry them.
+
+## Editing in the app
+
+`Edit` in the toolbar switches editing on. Each tab then has an add button, and every page in the side panel has an `Edit` button. The shortcuts that change the timeline switch editing on themselves.
+
+| Shortcut | Action |
+|---|---|
+| `Ctrl+Insert` | add an event, person or term, depending on the tab |
+| `Ctrl+>` | thread mode: click cards in order, then save and name the thread |
+| `Ctrl+Enter` | save the open form |
+| `Ctrl+Z`, `Ctrl+Shift+Z` | undo, redo |
+| `Ctrl+K` or `/` | search |
+| `←` `→` | previous or next event while one is open; otherwise pan |
+| `+` `-` | zoom the timeline |
+| `Esc` | leave thread mode, or close the side panel |
+
+A name typed into a form that does not exist yet (a person, a category, a group, a term, a thread) can be created on the spot from a small dialog.
 
 ## Structure
 
 ```
-Modern_Villainess_Context.md  the knowledge base behind the data: world, cast, real-world mappings, threads, open questions
-EventMap/      chapter-by-chapter event maps, one per volume; the source the event records are written from
-Legacy/        the earlier plain-JavaScript version (before the move to React), kept for reference
-scripts/       release.mjs: copies the build to Output/
 src/
-  data/        the content
+  App.tsx        shell: home page or one open timeline; draft loading and saving
+  Workspace.tsx  the timeline screen: tabs, filters, side panel, editing, shortcuts
+  model/       the document: schema, loader, per-reader world, edits, event filter
+  store/       draft (IndexedDB), import and export, image resizing
+  data/        the Modern Villainess demo, authored as typed records
     events/      event records, one file per volume
-    threads.ts   storylines across volumes
-    people.ts    character profiles
-    realHistory.ts  real-world events for the history lane
-    corporate.ts    nodes and edges of the corporate map
-    glossary.ts  terms and definitions
-    index.ts     loads, sorts and cross-references all of the above
-    world.ts     the data as a reader at a given volume may see it; components read from this
-    validate.ts  checks ids, references and spoiler markers (runs in `npm run dev`; problems go to the browser console)
-  art/         pictogram illustrations, and the lookup for real images
-  assets/events/  optional real images, one per event
-  assets/characters/  character portraits (kept out of git, see below)
-  assets/placeholders/  male.svg and female.svg, shown for characters without a portrait
+    index.ts     converts the records into a document
+    corporate.ts nodes and edges of the corporate map (demo only)
+  art/         pictogram illustrations, and the lookup for the demo's image files
+  assets/events/      optional images for demo events
+  assets/characters/  demo portraits (kept out of git, see below)
+  assets/placeholders/  male.svg and female.svg, shown for people without a portrait
   engine/      the timeline itself: zoom model, card layout, canvas drawing, input (no framework)
-  components/  React shell: toolbar, search box, filters, side panel and its pages, hover preview, corporate map, character list
-  hooks/       useTimeline: mounts the engine inside React
-  lib/         dates, URL state, corporate-map state, text matching, search, glossary matching, spoiler markers
+  components/  toolbar, search box, rails, side panel and its pages
+    editor/      forms, form fields and dialogs
+    home/        home page and the AI prompt
+    panel/       side-panel pages
+  hooks/       useTimeline (mounts the engine), useDocument (document with undo and redo)
+  lib/         dates, URL state, text matching, search, glossary matching, spoiler markers
   styles/      app.css (colour tokens, light and dark themes)
 ```
 
-## Editing the content
+## Editing the demo
 
-Everything below is checked while `npm run dev` is running; mistakes are listed in the browser console.
+The demo is authored in `src/data/` and checked by the loader; problems are listed in the browser console while `npm run dev` is running.
 
 - **Event:** append a record to the matching file in `src/data/events/`. Field reference: `src/data/types.ts`.
-- **Image for an event:** put a file named after the event id in `src/assets/events/`, e.g. `kaitaku.webp`. See the README in that folder for sizes.
-- **Thread:** add an entry to `src/data/threads.ts` with the ids of its events; order does not matter.
-- **Person:** add a profile to `src/data/people.ts`. The name must match the spelling used in the events' `people` lists; `sex` picks the placeholder; `intro` is the volume they first appear in.
-- **Portrait:** put a file named after the character in `src/assets/characters/`, e.g. `keikain-runa.webp`. See the README in that folder. The current portraits are cropped from the published books, so the folder's images are listed in `.gitignore` and stay on this computer.
-- **Real-history entry:** add a record to `src/data/realHistory.ts` and list the events that answer it in `counterparts`.
-- **Corporate map:** add nodes and edges to `src/data/corporate.ts`. `since` and `until` are event ids, so the map's steps follow the timeline.
-- **Glossary term:** add an entry to `src/data/glossary.ts`. List other spellings in `aliases`; a term the novel invents takes the `volume` that introduces it.
+- **Image for an event:** put a file named after the event id in `src/assets/events/`. See the README in that folder.
+- **Thread, person, glossary term, real-history entry:** `threads.ts`, `people.ts`, `glossary.ts`, `realHistory.ts`.
+- **Portrait:** put a file named after the character in `src/assets/characters/`. See the README in that folder.
+- **Corporate map:** `corporate.ts`. `since` and `until` are event ids, so the map's steps follow the timeline.
 
-### Spoiler markers
+### Portraits and exported pages
 
-Reading progress hides whole events by their `volume`. Where a text that belongs to an earlier volume mentions something from a later one, mark it: everything after `{v3}`, up to the next marker, is shown only to a reader who has reached Volume 3, and `{v1}` returns to text anyone may see.
+The current portraits are cropped from the published books, so the folder's images are listed in `.gitignore` and stay on this computer.
 
-```
-bio: 'Died by apparent suicide.{v2} Volume 2 reveals who pushed him to it.'
-role: 'Duke; uncle{v2}, guardian{v3} and then adoptive father'
-```
-
-Markers work in the long text fields: an event's `what`, `reveals`, `realWorld` and `readings`; a person's `role` and `bio`; a thread's `summary`; a real-history entry's `novel`; a company's `note`; a term's `definition`. Titles, briefs and dates cannot carry them, so keep those safe for the volume they belong to.
+An exported page is a copy of the built app, demo included. A build made on a computer that has the portraits therefore carries them inside every page it exports. Build from a clean clone before sharing an exported page.
 
 ## Links
 
-State is kept in the URL hash, for example `#z=2.3&d=1997-11-17&e=kaitaku&thread=accounting`:
+State is kept in the URL hash, for example `#t=demo&z=2.3&d=1997-11-17&e=kaitaku&thread=accounting`:
 
 | Key | Meaning |
 |---|---|
+| `t` | which timeline: `demo` or `draft`. A link without it opens the demo; an empty address opens the home page |
 | `z`, `d` | zoom (pixels per day) and the date at the centre |
 | `e` | selected event id |
-| `p` | side-panel page: `person:Name`, `thread:id`, `real:id`, `co:id`, `term:id` |
-| `cat`, `q`, `who`, `thread` | filters: categories, text, person, thread |
-| `lane=0` | real-history lane hidden |
-| `view=map`, `step` | corporate map and its step |
-| `view=cast` | Characters tab |
+| `p` | side-panel page: `person:Name`, `thread:id`, `lane:id`, `term:id`, `co:id` |
+| `hide`, `q`, `who`, `thread` | filters: hidden categories, text, person, thread |
+| `lane=0` | second lane hidden |
+| `view` | tab: `cast`, `glossary`, or `map` with `step` (demo) |
 
-A bare `#kaitaku` still opens that event. A link to something beyond the viewer's reading progress opens without it.
+Older links still work: a bare `#kaitaku`, `p=real:id` and `cat=`. A link to something beyond the viewer's reading progress opens without it.

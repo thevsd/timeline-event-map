@@ -1,4 +1,4 @@
-import { MOTIFS, type MotifName } from './motifs';
+import { DEFAULT_MOTIF, MOTIFS } from './motifs';
 
 /** FNV-1a string hash, used to seed the decoration per event. */
 function hash(text: string): number {
@@ -24,9 +24,11 @@ function seededRandom(seed: number): () => number {
 /**
  * SVG markup for one illustration.
  * The motif is centred in a 400×160 viewBox so it survives cropping at any card aspect ratio.
+ * @param motif Name of a pictogram; anything else, or nothing, draws the default one.
  * @param seed Usually the event id; fixes the moon and petal positions.
  */
-export function illustrationSvg(motif: MotifName, seed: string): string {
+export function illustrationSvg(motif: string | undefined, seed: string): string {
+  const shape = (motif && (MOTIFS as Record<string, string>)[motif]) || MOTIFS[DEFAULT_MOTIF];
   const random = seededRandom(hash(seed));
   const n = (x: number) => x.toFixed(0);
 
@@ -50,6 +52,6 @@ export function illustrationSvg(motif: MotifName, seed: string): string {
 
   return (
     '<svg viewBox="0 0 400 160" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
-    `${deco}${ground}<g transform="translate(40 0)">${MOTIFS[motif]}</g></svg>`
+    `${deco}${ground}<g transform="translate(40 0)">${shape}</g></svg>`
   );
 }

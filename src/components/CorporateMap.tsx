@@ -68,7 +68,7 @@ interface CorporateMapProps {
 }
 
 /**
- * The corporate map: Runa's group, the original Keika companies and the rival groups, drawn as
+ * The corporate map of the Modern Villainess demo: Runa's group, the original Keika companies and the rival groups, drawn as
  * a fixed grid of nodes with edges for ownership, funding and pressure.
  *
  * Every node and edge is always in the DOM and only changes class, so stepping through the

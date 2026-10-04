@@ -1,172 +1,145 @@
-import { unmatchedPortraits } from '../art/characterImages';
-import { unmatchedImages } from '../art/eventImages';
-import { reveal, revealAll } from '../lib/spoilers';
-import { MONTHS_SHORT, dateOf, toDay } from '../lib/time';
-import { corpEdges, corpNodes, type CorpNode } from './corporate';
+import { characterImage, unmatchedPortraits } from '../art/characterImages';
+import { eventImage, unmatchedImages } from '../art/eventImages';
+import { parseDoc } from '../model/parse';
+import { FORMAT, VERSION, type Hue, type TimelineDoc } from '../model/schema';
+import { BASIS_LABEL, CATEGORIES, CONFIDENCE_LABEL, HISTORY_LABEL } from './categories';
 import { backstory } from './events/backstory';
-import { glossary, type Term } from './glossary';
 import { volume1 } from './events/volume1';
 import { volume2 } from './events/volume2';
 import { volume3 } from './events/volume3';
 import { volume4 } from './events/volume4';
 import { volume5 } from './events/volume5';
-import { people, type Person } from './people';
-import { realHistory } from './realHistory';
-import { threads, type Thread } from './threads';
-import type { EventFilter, EventRecord, RealEvent, TimelineEvent } from './types';
-import { validateData } from './validate';
+import { glossary } from './glossary';
+import { PERSON_GROUP_LABEL, people, type PersonGroup } from './people';
+import { TREATMENT_LABEL, realHistory, type Treatment } from './realHistory';
+import { threads } from './threads';
+import type { CategoryId, Confidence, EventRecord, HistoryStatus } from './types';
+
+/**
+ * The demo: Modern Villainess, English Vols. 1–5.
+ *
+ * Its content is authored as typed records in this folder. This module turns them into the
+ * app's document format, the same one an imported JSON file uses, so the demo exercises exactly
+ * what a user's own timeline does.
+ */
+
+const CATEGORY_HUE: Record<CategoryId, Hue> = {
+  finance: 'blue', politics: 'orange', deals: 'green', world: 'yellow', personal: 'pink', shadow: 'indigo',
+};
+const GROUP_HUE: Record<PersonGroup, Hue> = {
+  family: 'pink', circle: 'green', school: 'yellow', politics: 'orange', intelligence: 'indigo', other: 'gray',
+};
+const HISTORY_HUE: Record<HistoryStatus, Hue | undefined> = { real: 'green', altered: 'brown', fiction: 'indigo', story: undefined };
+const CONFIDENCE_HUE: Record<Confidence, Hue> = { strong: 'green', plausible: 'brown', speculative: 'indigo' };
+const TREATMENT_HUE: Record<Treatment, Hue> = {
+  preserved: 'green', altered: 'brown', prevented: 'indigo', moved: 'brown', ahead: 'gray',
+};
 
 const records: EventRecord[] = [...backstory, ...volume1, ...volume2, ...volume3, ...volume4, ...volume5];
 
-// Surface data mistakes while developing; production builds skip the check.
+const source = {
+  format: FORMAT,
+  version: VERSION,
+  title: 'Modern Villainess',
+  subtitle: 'Event map of English Vols. 1–5, counting down to 15 September 2008',
+  parts: ['Vol. 1', 'Vol. 2', 'Vol. 3', 'Vol. 4', 'Vol. 5'],
+  undated: { label: 'Before the story', note: '1944 – 1990 · not to scale' },
+  countdown: { event: 'crash2008', label: 'the crash of 15 September 2008', jump: 'The crash, 2008' },
+  gaps: [{ from: '2003-05-20', to: '2008-08-20', label: 'Summer 2003 to summer 2008', note: 'Volumes 6 onward are not mapped yet' }],
+  categories: CATEGORIES.map((c) => ({ ...c, color: CATEGORY_HUE[c.id] })),
+  groups: (Object.keys(PERSON_GROUP_LABEL) as PersonGroup[]).map((id) => ({ id, name: PERSON_GROUP_LABEL[id], color: GROUP_HUE[id] })),
+  events: records.map((r) => ({
+    id: r.id,
+    title: r.title,
+    date: r.date,
+    endDate: r.endDate,
+    order: r.backstoryOrder,
+    when: r.when,
+    dateNote: BASIS_LABEL[r.basis],
+    part: r.volume,
+    source: r.chapter,
+    category: r.category,
+    summary: r.brief,
+    image: eventImage(r.id),
+    motif: r.motif,
+    figure: r.figure,
+    featured: r.marquee,
+    tags: [{ label: HISTORY_LABEL[r.history].label, color: HISTORY_HUE[r.history] }],
+    sections: [
+      { title: 'What happens', items: r.what },
+      { title: 'Revelations', items: r.reveals },
+      { title: 'Real-world history', text: r.realWorld },
+      {
+        title: 'Reading',
+        items: r.readings?.map((reading) => ({
+          label: CONFIDENCE_LABEL[reading.confidence].label,
+          color: CONFIDENCE_HUE[reading.confidence],
+          text: reading.text,
+        })),
+      },
+    ],
+    people: r.people,
+    links: r.links,
+  })),
+  people: people.map((p) => ({
+    name: p.name,
+    group: p.group,
+    role: p.role,
+    bio: p.bio,
+    image: characterImage(p.name),
+    imageCredit: p.art,
+    sex: p.sex,
+    part: p.intro,
+    sections: p.real ? [{ title: 'Real-world counterpart', text: p.real }] : [],
+  })),
+  threads,
+  glossary: glossary.map((t) => ({
+    id: t.id,
+    term: t.term,
+    aliases: t.aliases,
+    origin: t.origin,
+    definition: t.definition,
+    part: t.volume,
+    tags: [...(t.volume != null ? ['The novel’s own term'] : []), ...(t.general ? ['General reference'] : [])],
+  })),
+  lane: {
+    title: 'Real history',
+    textLabel: 'What really happened',
+    noteLabel: 'In the novel',
+    kinds: (Object.keys(TREATMENT_LABEL) as Treatment[]).map((id) => ({ id, name: TREATMENT_LABEL[id], color: TREATMENT_HUE[id] })),
+    items: realHistory.map((r) => ({
+      id: r.id,
+      // An entry known only to the month is dated to the month.
+      date: r.precision === 'month' ? r.date.slice(0, 7) : r.date,
+      title: r.title,
+      text: r.real,
+      note: r.novel,
+      kind: r.treatment,
+      events: r.counterparts,
+      major: r.major,
+    })),
+  },
+};
+
+// Through the same loader as an imported file: it fills defaults and checks every reference.
+const parsed = parseDoc(source);
 if (import.meta.env.DEV) {
-  const problems = validateData(records, threads, people, realHistory, corpNodes, corpEdges, glossary);
-  for (const name of unmatchedImages(new Set(records.map((r) => r.id)))) {
-    problems.push(`assets/events/${name}: no event with this id`);
-  }
-  for (const name of unmatchedPortraits(people.map((p) => p.name))) {
-    problems.push(`assets/characters/${name}: no character with this name`);
-  }
-  if (problems.length) console.error('Data problems:\n  ' + problems.join('\n  '));
+  const problems = [
+    ...parsed.warnings,
+    ...unmatchedImages(new Set(parsed.doc.events.map((ev) => ev.id))).map((file) => `assets/events/${file}: no event with this id.`),
+    ...unmatchedPortraits(people.map((p) => p.name)).map((file) => `assets/characters/${file}: no character with this name.`),
+  ];
+  if (problems.length) console.error('Demo data problems:\n  ' + problems.join('\n  '));
 }
 
-const knownIds = new Set(records.map((r) => r.id));
+/** The Modern Villainess demo as a document. */
+export const demoDoc: TimelineDoc = parsed.doc;
 
-function normalise(r: EventRecord): TimelineEvent {
-  const people = r.people ?? [];
+/** The demo without its pictures: the sample file offered for download, which must not carry the books' artwork. */
+export function sampleDoc(): TimelineDoc {
   return {
-    ...r,
-    day: r.date ? toDay(r.date) : null,
-    endDay: r.endDate ? toDay(r.endDate) : null,
-    people,
-    // Drop links to unknown ids so the panel never renders a dead link.
-    links: (r.links ?? []).filter((id) => knownIds.has(id) && id !== r.id),
+    ...demoDoc,
+    events: demoDoc.events.map(({ image: _image, ...ev }) => ev),
+    people: demoDoc.people.map(({ image: _image, imageCredit: _credit, ...p }) => p),
   };
-}
-
-/** All events: backstory first (by its order), then chronological. Source order breaks ties. */
-export const EVENTS: readonly TimelineEvent[] = records
-  .map((r, i) => ({ ev: normalise(r), i }))
-  .sort(
-    (a, b) =>
-      (a.ev.backstoryOrder ?? 99) - (b.ev.backstoryOrder ?? 99) ||
-      (a.ev.day ?? 0) - (b.ev.day ?? 0) ||
-      a.i - b.i,
-  )
-  .map((x) => x.ev);
-
-export const EVENT_BY_ID: ReadonlyMap<string, TimelineEvent> = new Map(EVENTS.map((e) => [e.id, e]));
-
-/** Position of each event in story order; the common clock for threads and the corporate map. */
-export const EVENT_ORDER: ReadonlyMap<string, number> = new Map(EVENTS.map((e, i) => [e.id, i]));
-
-/** Id of the frame scene (15 September 2008). */
-export const CRASH_EVENT_ID = 'crash2008';
-
-/** Sort event ids into story order, dropping unknown ones. */
-function inStoryOrder(ids: readonly string[]): string[] {
-  return ids.filter((id) => EVENT_ORDER.has(id)).sort((a, b) => EVENT_ORDER.get(a)! - EVENT_ORDER.get(b)!);
-}
-
-/* ── Threads ── */
-
-export const THREADS: readonly Thread[] = threads.map((t) => ({ ...t, events: inStoryOrder(t.events) }));
-export const THREAD_BY_ID: ReadonlyMap<string, Thread> = new Map(THREADS.map((t) => [t.id, t]));
-const THREAD_EVENT_SETS = new Map(THREADS.map((t) => [t.id, new Set(t.events)]));
-
-/** Threads that pass through an event. */
-export function threadsOf(eventId: string): Thread[] {
-  return THREADS.filter((t) => THREAD_EVENT_SETS.get(t.id)!.has(eventId));
-}
-
-/* ── People ── */
-
-export const PEOPLE: readonly Person[] = people;
-export const PERSON_BY_NAME: ReadonlyMap<string, Person> = new Map(people.map((p) => [p.name, p]));
-
-/** Events a person takes part in, in story order. */
-export function eventsOf(name: string): TimelineEvent[] {
-  return EVENTS.filter((ev) => ev.people.includes(name));
-}
-
-/* ── Real history ── */
-
-function displayDate(day: number, monthOnly: boolean): string {
-  const d = dateOf(day);
-  const month = `${MONTHS_SHORT[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
-  return monthOnly ? month : `${d.getUTCDate()} ${month}`;
-}
-
-export const REAL_EVENTS: readonly RealEvent[] = realHistory
-  .map((r) => {
-    const day = toDay(r.date);
-    const counterparts = (r.counterparts ?? []).filter((id) => knownIds.has(id));
-    return {
-      ...r,
-      day,
-      when: displayDate(day, r.precision === 'month'),
-      counterparts,
-      volume: counterparts.length ? Math.min(...counterparts.map((id) => EVENT_BY_ID.get(id)!.volume)) : 1,
-    };
-  })
-  .sort((a, b) => a.day - b.day);
-
-export const REAL_BY_ID: ReadonlyMap<string, RealEvent> = new Map(REAL_EVENTS.map((r) => [r.id, r]));
-
-/** Real events that a timeline event answers. */
-export function realEventsOf(eventId: string): RealEvent[] {
-  return REAL_EVENTS.filter((r) => r.counterparts.includes(eventId));
-}
-
-/* ── Corporate map ── */
-
-export const CORP_NODE_BY_ID: ReadonlyMap<string, CorpNode> = new Map(corpNodes.map((n) => [n.id, n]));
-
-/** Events at which the corporate map changes, in story order. Step 0 of the map is the state before them. */
-export const CORP_STEPS: readonly string[] = inStoryOrder([
-  ...new Set([
-    ...corpNodes.flatMap((n) => [n.since, n.until, ...(n.history ?? []).map(([id]) => id)]),
-    ...corpEdges.flatMap((e) => [e.since, e.until]),
-  ].filter((id): id is string => id != null)),
-]);
-
-// The reading-progress guard cuts the map's steps at the reader's volume, which needs them to be a prefix.
-if (import.meta.env.DEV) {
-  const volumes = CORP_STEPS.map((id) => EVENT_BY_ID.get(id)!.volume);
-  if (volumes.some((volume, i) => i > 0 && volume < volumes[i - 1])) {
-    console.error('Data problems:\n  corporate map: steps go back a volume, so reading progress cannot cut them cleanly');
-  }
-}
-
-/* ── Glossary ── */
-
-export const TERMS: readonly Term[] = glossary;
-
-/* ── Filtering ── */
-
-/** Everything about an event that the search box looks through, as a reader at `max` sees it. */
-export function eventSearchText(ev: TimelineEvent, max: number) {
-  return {
-    title: ev.title,
-    /** Names and labels: people, date, volume and chapter. */
-    keys: [...ev.people, ev.when, `Vol. ${ev.volume}`, ev.chapter].join(' · '),
-    brief: ev.brief,
-    body: [
-      ...revealAll(ev.what, max),
-      ...revealAll(ev.reveals, max),
-      reveal(ev.realWorld ?? '', max),
-      ...revealAll(ev.readings?.map((r) => r.text), max),
-    ].filter(Boolean).join(' '),
-  };
-}
-
-/** Whether an event passes every active filter. */
-export function matchesFilter(ev: TimelineEvent, filter: EventFilter): boolean {
-  return (
-    ev.volume <= filter.maxVolume &&
-    filter.categories.has(ev.category) &&
-    (!filter.textMatches || filter.textMatches.has(ev.id)) &&
-    (!filter.person || ev.people.includes(filter.person)) &&
-    (!filter.thread || (THREAD_EVENT_SETS.get(filter.thread)?.has(ev.id) ?? false))
-  );
 }

@@ -144,7 +144,10 @@ export default function App() {
           {/* The engine owns everything inside the stage: it fills `.world` with cards and toggles state classes on the stage. */}
           <section id="stage" className="stage" ref={refs.stage} aria-label="Timeline">
             <canvas ref={refs.axisCanvas} aria-hidden="true" />
-            <div className="world" ref={refs.world} />
+            {/* Card viewport: clips the cards to the area below the axis header. */}
+            <div className="cards">
+              <div className="world" ref={refs.world} />
+            </div>
             <div className="fade" aria-hidden="true" />
             <div className="more" aria-hidden="true">
               More events below: drag to scroll

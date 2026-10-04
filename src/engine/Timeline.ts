@@ -4,7 +4,7 @@ import { matchesFilter } from '../data';
 import type { EventFilter, TimelineEvent } from '../data/types';
 import { CRASH_DAY, DOMAIN_END, DOMAIN_START, toDay } from '../lib/time';
 import {
-  BACKSTORY_PAD, BACKSTORY_STEP, BOTTOM_PAD, CARDS_TOP, COMPACT_WIDTH, LEVEL_PPD, PPD_MAX, PPD_MIN,
+  AXIS_HEIGHT, BACKSTORY_PAD, BACKSTORY_STEP, BOTTOM_PAD, CARDS_TOP, COMPACT_WIDTH, LEVEL_PPD, PPD_MAX, PPD_MIN,
   TIERS, TIERS_COMPACT, clamp, levelOf, type TierSizes, type ZoomLevel,
 } from './config';
 import { drawAxis } from './drawAxis';
@@ -16,7 +16,10 @@ import type { Frame, Item, JumpTarget, TimelineCallbacks } from './types';
 /** DOM nodes the engine draws into. The host creates them; the engine owns their contents. */
 export interface TimelineElements {
   stage: HTMLElement;
-  /** Container for the event cards, inside the stage. */
+  /**
+   * Container for the event cards. Its parent must be the card viewport: an element inside
+   * the stage that clips its contents, so scrolled cards never cover the axis header.
+   */
   world: HTMLElement;
   axisCanvas: HTMLCanvasElement;
   overview: HTMLElement;
@@ -99,6 +102,7 @@ export class Timeline {
   private filterVersion = 0;
   private level: ZoomLevel | null = null;
   private overflowing = false;
+  private scrolled = false;
 
   // Motion
   private frameRequest = 0;
@@ -132,6 +136,9 @@ export class Timeline {
     for (const item of this.items) this.byId.set(item.ev.id, item);
     const backstoryCount = events.filter((ev) => ev.backstoryOrder != null).length;
     this.backstoryWidth = BACKSTORY_PAD * 2 + BACKSTORY_STEP * backstoryCount;
+
+    // The stylesheet positions the card viewport from this, so the header height has one source.
+    els.stage.style.setProperty('--axis-h', `${AXIS_HEIGHT}px`);
 
     this.bindStage();
     this.bindCards();
@@ -197,7 +204,9 @@ export class Timeline {
       return;
     }
     if (target === 'crash') {
-      this.flyTo({ days: CRASH_DAY - DOMAIN_START, px: 0 }, Math.max(this.ppd, 1.2), W * 0.42);
+      // Leave room to the right of the date for the card itself.
+      const screenX = clamp(W * 0.42, 16, Math.max(16, W - this.tiers.l.w - 24));
+      this.flyTo({ days: CRASH_DAY - DOMAIN_START, px: 0 }, Math.max(this.ppd, 1.2), screenX);
       return;
     }
     // Fit the volume's events. The frame scene is filed under Vol. 1 but sits in 2008, so skip it.
@@ -228,7 +237,8 @@ export class Timeline {
     window.clearTimeout(this.previewTimer);
     window.clearTimeout(this.revealTimer);
     this.els.world.replaceChildren();
-    this.els.stage.classList.remove('dragging', 'overflow', 'compact');
+    this.els.stage.classList.remove('dragging', 'overflow', 'scrolled', 'compact');
+    this.els.stage.style.removeProperty('--axis-h');
   }
 
   /* ── Cards ── */
@@ -359,8 +369,15 @@ export class Timeline {
   /** Keep the view inside the timeline, and the vertical scroll inside what is on screen. */
   private clampView(): void {
     const span = (DOMAIN_END - DOMAIN_START) * this.ppd;
+    // A card can reach past the end of the axis (it starts at its date and extends right),
+    // so the right-hand pan limit follows the furthest card edge, not just the last date.
+    let contentRight = span + 48;
+    for (const item of this.items) {
+      if (!item.visible || !item.laidOut) continue;
+      contentRight = Math.max(contentRight, this.worldX(item.ev, this.ppd) + this.tiers[item.tier].w + 24);
+    }
     const maxX0 = this.backstoryWidth + 36;
-    const minX0 = Math.min(maxX0, this.width - 48 - span);
+    const minX0 = Math.min(maxX0, this.width - contentRight);
     this.x0 = clamp(this.x0, minX0, maxX0);
 
     // Tallest stack among the cards currently in view.
@@ -378,13 +395,19 @@ export class Timeline {
       this.overflowing = overflowing;
       this.els.stage.classList.toggle('overflow', overflowing);
     }
+    const scrolled = this.scrollY > 0;
+    if (scrolled !== this.scrolled) {
+      this.scrolled = scrolled;
+      this.els.stage.classList.toggle('scrolled', scrolled);
+    }
   }
 
   /** Render one frame: card positions, both canvases, and the tick-level notification. */
   private draw(): void {
     this.layout();
     this.clampView();
-    this.els.world.style.transform = `translate3d(0,${CARDS_TOP - this.scrollY}px,0)`;
+    // The world sits inside the card viewport, whose top edge is the bottom of the axis header.
+    this.els.world.style.transform = `translate3d(0,${CARDS_TOP - AXIS_HEIGHT - this.scrollY}px,0)`;
 
     for (const item of this.items) {
       const x = this.x0 + this.worldX(item.ev, this.ppd);
@@ -642,11 +665,13 @@ export class Timeline {
       this.zoomTo(this.targetPpd() * factor, ev.clientX - stage.getBoundingClientRect().left);
     }, { passive: false, signal });
 
-    // The browser may scroll the stage itself to show a focused card; undo it, the view handles that.
-    stage.addEventListener('scroll', () => {
-      stage.scrollLeft = 0;
-      stage.scrollTop = 0;
-    }, { signal });
+    // The browser may scroll the stage or the card viewport to show a focused card; undo it,
+    // the view handles that. Scroll events do not bubble, hence the capture.
+    stage.addEventListener('scroll', (ev) => {
+      const target = ev.target as HTMLElement;
+      target.scrollLeft = 0;
+      target.scrollTop = 0;
+    }, { capture: true, signal });
   }
 
   /* ── Input: cards ── */

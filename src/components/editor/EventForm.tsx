@@ -1,12 +1,11 @@
 import { useState } from 'react';
-import { MOTIF_NAMES } from '../../art/motifs';
 import { useWorld } from '../../context';
 import { splitTerms } from '../../lib/glossary';
 import { parseDate } from '../../lib/time';
 import { newId, removeEvent, saveCategory, saveEvent, savePerson, saveTerm, saveThread, setEventThreads } from '../../model/edit';
-import type { EventDoc, Tag, ThreadDoc } from '../../model/schema';
-import { EVENT_IMAGE_SIDE } from '../../store/images';
-import { DateField, Field, ImageField, PickList, SectionsField, fromSectionDrafts, toSectionDrafts } from './fields';
+import type { ArtDoc, EventDoc, Tag, ThreadDoc } from '../../model/schema';
+import { PictureField } from './PictureField';
+import { DateField, Field, PickList, SectionsField, fromSectionDrafts, toSectionDrafts } from './fields';
 import { FormShell, compact, type FormProps } from './form';
 
 /** Value of the "new…" entry in a select. */
@@ -38,6 +37,7 @@ export function EventForm({ id, onCommit, onCancel, onTouch, ask }: FormProps & 
   const [part, setPart] = useState(existing?.part ? String(existing.part) : '');
   const [figure, setFigure] = useState(existing?.figure ?? '');
   const [motif, setMotif] = useState(existing?.motif ?? '');
+  const [art, setArt] = useState<ArtDoc>(existing?.art ?? {});
   const [featured, setFeatured] = useState(existing?.featured === true);
   const [tags, setTags] = useState((existing?.tags ?? []).map((tag) => tag.label).join('\n'));
 
@@ -83,6 +83,7 @@ export function EventForm({ id, onCommit, onCancel, onTouch, ask }: FormProps & 
       part: part ? Number(part) : undefined,
       figure: figure.trim(),
       motif,
+      art: Object.keys(art).length ? art : undefined,
       featured,
       tags: tags.split('\n').map((label) => label.trim()).filter(Boolean).map((label): Tag => compact({ label, color: colours.get(label) })),
     });
@@ -148,8 +149,18 @@ export function EventForm({ id, onCommit, onCancel, onTouch, ask }: FormProps & 
         <textarea rows={3} value={summary} onChange={(e) => edit(setSummary)(e.target.value)} />
       </Field>
 
-      <Field label="Picture" group hint="Optional. Without one the card shows a pictogram.">
-        <ImageField value={image} onChange={edit(setImage)} maxSide={EVENT_IMAGE_SIDE} shape="wide" />
+      <Field label="Picture" group>
+        <PictureField
+          seed={existing?.id ?? newId(title, doc.events)}
+          categoryHue={world.categoryById.get(category)?.color ?? 'gray'}
+          motif={motif}
+          art={art}
+          image={image}
+          figure={figure}
+          onMotif={edit(setMotif)}
+          onArt={edit(setArt)}
+          onImage={edit(setImage)}
+        />
       </Field>
 
       <Field label="People" group>
@@ -225,7 +236,7 @@ export function EventForm({ id, onCommit, onCancel, onTouch, ask }: FormProps & 
         </div>
       </Field>
 
-      <details className="more" open={Boolean(when || dateNote || source || part || figure || motif || featured || tags)}>
+      <details className="more" open={Boolean(when || dateNote || source || part || figure || featured || tags)}>
         <summary>More details</summary>
         <div className="frow">
           <Field label="Date as shown" hint="Overrides the written-out date, e.g. “c. spring 1997”.">
@@ -253,16 +264,6 @@ export function EventForm({ id, onCommit, onCancel, onTouch, ask }: FormProps & 
           </Field>
         </div>
         <div className="frow">
-          <Field label="Pictogram">
-            <select value={motif} onChange={(e) => edit(setMotif)(e.target.value)}>
-              <option value="">Default</option>
-              {MOTIF_NAMES.filter((name) => name !== 'event').map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
-          </Field>
           <Field label="Key figure" hint="Shown on the picture, e.g. “¥800bn”.">
             <input type="text" value={figure} onChange={(e) => edit(setFigure)(e.target.value)} />
           </Field>

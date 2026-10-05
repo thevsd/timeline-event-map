@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useWorld } from '../context';
 import female from '../assets/placeholders/female.svg?raw';
 import male from '../assets/placeholders/male.svg?raw';
@@ -21,9 +22,12 @@ interface PortraitProps {
 export function Portrait({ name, person }: PortraitProps) {
   const world = useWorld();
   const hue = (person?.group && world.groupById.get(person.group)?.color) || 'gray';
+  // A linked picture that cannot be loaded gives way to the placeholder.
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [person?.image]);
   let content;
-  if (person?.image) {
-    content = <img src={person.image} alt="" loading="lazy" draggable={false} />;
+  if (person?.image && !failed) {
+    content = <img src={person.image} alt="" loading="lazy" decoding="async" draggable={false} onError={() => setFailed(true)} />;
   } else if (person?.sex) {
     // Inlined, not linked, so the SVG picks up the page's colours. The markup is our own file.
     content = <span className="silhouette" dangerouslySetInnerHTML={{ __html: person.sex === 'f' ? female : male }} />;

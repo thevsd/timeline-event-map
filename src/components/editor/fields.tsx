@@ -1,5 +1,6 @@
 import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
-import { imageToDataUrl } from '../../store/images';
+import { formatSize } from '../../store/export';
+import { dataUrlBytes, imageToDataUrl, isEmbedded, type PictureLimit } from '../../store/images';
 import { matchesAll, planQuery, prepare } from '../../lib/text';
 import { formatDate, parseDate } from '../../lib/time';
 import { HUES, type Hue, type LabelledItem, type Section } from '../../model/schema';
@@ -201,34 +202,63 @@ export function PickList({ values, choices, onChange, placeholder, onCreate, cre
 interface ImageFieldProps {
   value: string | undefined;
   onChange(value: string | undefined): void;
-  /** Longest side the stored picture may have. */
-  maxSide: number;
+  /** Size a stored picture is brought down to. */
+  limit: PictureLimit;
   /** Shape of the preview. */
   shape: 'wide' | 'portrait';
 }
 
-/** A picture: choose a file (it is scaled down and stored in the timeline), replace it, or remove it. */
-export function ImageField({ value, onChange, maxSide, shape }: ImageFieldProps) {
+const isWebAddress = (text: string) => /^https?:\/\/\S+\.\S+/i.test(text);
+
+/**
+ * A picture. A chosen file is scaled down and stored in the timeline; a pasted web address is
+ * kept as a link, which adds nothing to the file but needs a connection to show.
+ */
+export function ImageField({ value, onChange, limit, shape }: ImageFieldProps) {
   const input = useRef<HTMLInputElement>(null);
   const [problem, setProblem] = useState('');
+  const [address, setAddress] = useState(isEmbedded(value) ? '' : (value ?? ''));
   const pick = async (file: File | undefined) => {
     if (!file) return;
     try {
-      onChange(await imageToDataUrl(file, maxSide));
+      onChange(await imageToDataUrl(file, limit));
+      setAddress('');
       setProblem('');
     } catch {
       setProblem('That file could not be read as a picture.');
     }
   };
+  const link = (text: string) => {
+    setAddress(text);
+    const trimmed = text.trim();
+    if (isWebAddress(trimmed)) {
+      onChange(trimmed);
+      setProblem('');
+    } else if (!trimmed) {
+      // Clearing the address removes a linked picture, not a stored one.
+      if (!isEmbedded(value)) onChange(undefined);
+      setProblem('');
+    } else {
+      setProblem('A web address starts with https://');
+    }
+  };
   return (
     <div className={`imagefield ${shape}`}>
-      {value && <img src={value} alt="" />}
+      {value && <img src={value} alt="" onError={() => setProblem('This picture cannot be loaded from its address.')} />}
       <div className="imageactions">
         <button type="button" className="textbtn" onClick={() => input.current?.click()}>
           {value ? 'Replace picture' : 'Choose a picture'}
         </button>
         {value && (
-          <button type="button" className="textbtn" onClick={() => onChange(undefined)}>
+          <button
+            type="button"
+            className="textbtn"
+            onClick={() => {
+              onChange(undefined);
+              setAddress('');
+              setProblem('');
+            }}
+          >
             Remove
           </button>
         )}
@@ -243,7 +273,22 @@ export function ImageField({ value, onChange, maxSide, shape }: ImageFieldProps)
           }}
         />
       </div>
-      {problem && <span className="fhint bad">{problem}</span>}
+      <input
+        type="url"
+        className="imagelink"
+        placeholder="or paste a picture’s web address"
+        aria-label="Web address of a picture"
+        value={address}
+        onChange={(e) => link(e.target.value)}
+      />
+      <span className={problem ? 'fhint bad' : 'fhint'}>
+        {problem ||
+          (isEmbedded(value)
+            ? `Stored in the timeline · ${formatSize(dataUrlBytes(value))}`
+            : value
+              ? 'Linked: adds nothing to the file, but needs a connection to show.'
+              : `A chosen file is stored in the timeline, at up to ${formatSize(limit.bytes)}.`)}
+      </span>
     </div>
   );
 }

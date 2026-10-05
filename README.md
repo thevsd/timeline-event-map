@@ -6,7 +6,8 @@ It ships with a demo: the storyline of *Modern Villainess* (English Vols. 1–5)
 
 ## Features
 
-- **Home page:** open the demo, start a new timeline, import a file, or continue the draft kept in the browser. It also carries a prompt for an AI model and a sample file.
+- **Home page:** open the demo, start a new timeline, import a file, or continue the draft kept in the browser. It also carries a prompt for an AI model and a sample file. `← Home` in the toolbar returns to it, as does the browser's Back button.
+- **Pictograms:** every event gets a picture from a library of 161 pictograms, in a colour, theme and scene of your choice; a picture from the web can take its place.
 - **Timeline:** zoom from decades down to days; cards grow from a title to an illustrated summary as space allows. Where even titles do not fit, the rest fold into a `+N more` badge; click it to zoom in. Events without a date sit in an undated zone before the axis.
 - **Connections:** selecting an event draws lines to the events it links to (solid) and from the events that link to it (dashed).
 - **Threads:** pick a storyline to show only its events, joined by a numbered path.
@@ -16,7 +17,7 @@ It ships with a demo: the storyline of *Modern Villainess* (English Vols. 1–5)
 - **Reading progress:** a timeline split into parts (volumes, seasons, acts) can hide everything beyond the part a reader has reached. Kept in the browser, never part of a link.
 - **Search:** one box for events, people, threads, lane entries and terms (`Ctrl+K` or `/`). Every word must match; accents and case are ignored and near misses are forgiven.
 - **Editing:** forms in the side panel for events, people, terms, threads, lane entries and the timeline's settings, with undo and redo.
-- **Import and export:** JSON in and out; export to one self-contained HTML page.
+- **Import and export:** JSON in and out, with or without the stored pictures; export to one self-contained HTML page. The Share menu shows what each file will weigh.
 - **Links:** the address bar always holds a link to the current view, selection and filters.
 - **Corporate map:** who owns, funds or pressures whom. Part of the demo only.
 - **Theme:** light or dark, following the system setting.
@@ -35,7 +36,16 @@ npm run release    # build, then copy the page to Output/Modern_Villainess_Timel
 
 `Output/` is the published copy and changes only through `npm run release`.
 
-Export to HTML works from the built page (`dist/index.html`), not from the dev server, which serves the app as loose modules. Export to JSON works in both.
+Export to HTML works wherever the built app runs: a hosted site, `npm run preview`, or `dist/index.html` opened from disk. The dev server serves the app as loose modules, which cannot be packed into one file, so there the menu item explains this and JSON export is the way out.
+
+## Hosting
+
+The build is one static file. Put `dist/index.html` on any static host; there is nothing to configure and no server code.
+
+- **Export needs nothing from the host.** A visitor's exported page is a copy of the hosted page with their timeline embedded. It is made from the page's own source, fetched again, so nothing a browser extension added to the open page ends up in the file. Scripts from other origins (an analytics beacon the host injects) are left out.
+- **An exported page is the whole app.** It opens offline, can be edited and exported again, and can itself be hosted. Expect about 0.7 MB plus the timeline's own data and [portraits](#pictures).
+- **Timelines stay with the visitor.** The draft lives in their browser (IndexedDB, per site address); nothing is uploaded. A link with `t=draft` only works in the browser that holds the draft.
+- **Build without the portraits** (see below): deploy from a clean clone, or let the host build from the repository.
 
 ## How a timeline is stored
 
@@ -72,6 +82,7 @@ There is one draft. Starting, importing or editing another timeline asks before 
   "events": [{
     "id": "bank-takeover", "title": "…", "date": "1997-11-17", "category": "politics",
     "summary": "…", "part": 1, "people": ["Full Name"], "links": ["another-event-id"],
+    "motif": "bank",
     "sections": [{ "title": "What happens", "items": ["…"] }]
   }],
   "people": [{ "name": "Full Name", "role": "…", "group": "family", "bio": "…" }],
@@ -87,7 +98,7 @@ There is one draft. Starting, importing or editing another timeline asks before 
 
 - **Dates** are `YYYY`, `YYYY-MM` or `YYYY-MM-DD`; a leading minus is BC. An event without a date is undated.
 - **Colours** are `blue`, `orange`, `green`, `yellow`, `pink`, `indigo`, `teal`, `red`, `brown`, `gray`.
-- **Images** are `data:` or `https:` URLs. Pictures added in the app are resized and stored in the document.
+- **Pictures:** an event names a pictogram (`motif`) and may link a picture (`image`, an `https:` URL); a person's `image` is a `data:` or `https:` URL. See [Pictures](#pictures).
 - The full field reference is `src/model/schema.ts`. The home page offers the demo as a sample file and a prompt that describes the format to an AI model.
 
 ### Spoiler markers
@@ -117,6 +128,40 @@ Markers work in the long texts: sections, roles and bios, thread summaries, lane
 
 A name typed into a form that does not exist yet (a person, a category, a group, a term, a thread) can be created on the spot from a small dialog.
 
+## Pictures
+
+### Events: pictograms
+
+An event's picture is a pictogram. The Picture field of the event form is one row showing the current choice; clicked, it opens a searchable library of 161 pictograms in nine groups, with a live preview, and three ways to paint the one chosen:
+
+| Option | Values | Default |
+|---|---|---|
+| Colour | any of the ten colours | the colour of the event's category |
+| Theme | `gradient`, `night`, `paper`, `solid` | `gradient` |
+| Scene | `petals` (a pale moon and drifting petals), `stars`, `clouds`, `plain` | `petals` |
+
+In a file:
+
+```jsonc
+"motif": "bank",
+"art": { "color": "red", "theme": "night", "scene": "stars" }
+```
+
+A web address in `image` shows that picture in the pictogram's place. It adds nothing to the file but needs a connection; when it cannot be loaded, the pictogram shows.
+
+Events take no uploaded pictures, so a timeline's size does not grow with its events: the whole library adds about 70 KB to the app. A file from an earlier version that stores a picture in an event (a `data:` URL) still shows it, and the form offers to remove it.
+
+**Adding a pictogram:** add an entry to the group file it belongs to in `src/art/library/`. A pictogram is SVG on a 320×160 field, centred on (160, 85), using the shape classes that `.art` styles in `app.css` (`a` main shape, `b` and `c` lighter ones, `d` details, `s`/`sd`/`t` strokes). Colours come from CSS, so one drawing serves every colour and theme. Names are what files refer to: never rename one.
+
+### People: portraits
+
+A portrait is stored or linked (`src/store/images.ts`, `ImageField` in `components/editor/fields.tsx`):
+
+- **Stored.** A chosen file is scaled to 480 px on its longest side and compressed as WebP until it is under 50 KB, stepping the quality down and then the size. It is kept in the document as a `data:` URL, at about a third more than the picture itself (base64).
+- **Linked.** A pasted web address is kept as it is; a portrait that cannot be loaded gives way to the placeholder.
+
+`Export data without pictures` in the Share menu leaves stored portraits out: the text alone is what an AI model can take.
+
 ## Structure
 
 ```
@@ -124,12 +169,12 @@ src/
   App.tsx        shell: home page or one open timeline; draft loading and saving
   Workspace.tsx  the timeline screen: tabs, filters, side panel, editing, shortcuts
   model/       the document: schema, loader, per-reader world, edits, event filter
-  store/       draft (IndexedDB), import and export, image resizing
+  store/       draft (IndexedDB), import and export, picture limits
   data/        the Modern Villainess demo, authored as typed records
     events/      event records, one file per volume
     index.ts     converts the records into a document
     corporate.ts nodes and edges of the corporate map (demo only)
-  art/         pictogram illustrations, and the lookup for the demo's image files
+  art/         the pictogram library (library/, one file per group), the picture generator, and the lookup for the demo's image files
   assets/events/      optional images for demo events
   assets/characters/  demo portraits (kept out of git, see below)
   assets/placeholders/  male.svg and female.svg, shown for people without a portrait

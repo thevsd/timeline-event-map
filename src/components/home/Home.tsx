@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState, type DragEvent, type FormEvent } from 'react';
+import { MOTIF_NAMES } from '../../art/motifs';
 import { demoDoc, sampleDoc } from '../../data';
 import { DocError, type ParseResult } from '../../model/parse';
 import type { TimelineDoc } from '../../model/schema';
@@ -8,6 +9,9 @@ import { AI_PROMPT, excerptOf } from './guide';
 interface HomeProps {
   /** The timeline being edited in this browser, if there is one. */
   draft: TimelineDoc | null;
+  /** The timeline this page was exported with, if it is an exported page. */
+  embedded: TimelineDoc | null;
+  onOpenEmbedded(): void;
   onOpenDemo(): void;
   onOpenDraft(): void;
   onDiscardDraft(): void;
@@ -19,6 +23,7 @@ interface HomeProps {
 
 const FEATURES: { title: string; text: string }[] = [
   { title: 'A timeline that zooms', text: 'From decades down to single days. Cards grow from a title to an illustrated summary as room allows, and fold into “+N more” where it does not.' },
+  { title: 'Pictograms', text: `Every event gets a picture from a library of ${MOTIF_NAMES.length} pictograms, in the colour, theme and scene you choose. A picture from the web can take its place.` },
   { title: 'Connections', text: 'Select an event and lines run to the events it leads to and comes from.' },
   { title: 'Threads', text: 'Follow one storyline: its events joined by a numbered path, everything else out of the way.' },
   { title: 'People', text: 'Everyone gets a page with a portrait and every event they appear in. Narrow the timeline to one person.' },
@@ -26,6 +31,8 @@ const FEATURES: { title: string; text: string }[] = [
   { title: 'A second lane', text: 'A smaller timeline above the main one, for a parallel sequence: real history beside a story, releases beside development.' },
   { title: 'Reading progress', text: 'Split the timeline into parts and readers can hide whatever lies beyond the part they have reached.' },
   { title: 'Search', text: 'One box for events, people, threads and terms. It forgives accents and typos, and ranks titles first.' },
+  { title: 'Edit in place', text: 'Forms in the side panel for events, people, terms and threads, with undo and redo. Your work is saved in the browser as you go.' },
+  { title: 'Links', text: 'The address bar always holds a link to the current view, selection and filters.' },
   { title: 'One file, no server', text: 'Export the finished timeline as a single web page that opens anywhere, or as JSON to keep working on.' },
 ];
 
@@ -40,7 +47,7 @@ function summaryOf(doc: TimelineDoc): string {
  * The home page: what the app does, the demo, and the three ways to start a timeline of one's
  * own (from nothing, from a file, or from JSON an AI model wrote).
  */
-export function Home({ draft, onOpenDemo, onOpenDraft, onDiscardDraft, onCreate, onImport }: HomeProps) {
+export function Home({ draft, embedded, onOpenEmbedded, onOpenDemo, onOpenDraft, onDiscardDraft, onCreate, onImport }: HomeProps) {
   const [title, setTitle] = useState('');
   const [problem, setProblem] = useState('');
   const [dragging, setDragging] = useState(false);
@@ -94,6 +101,17 @@ export function Home({ draft, onOpenDemo, onOpenDraft, onDiscardDraft, onCreate,
       </header>
 
       <section className="starts" aria-label="Start">
+        {embedded && (
+          <article className="start page">
+            <span className="kicker">This page</span>
+            <h2>{embedded.title}</h2>
+            <p>The timeline this page was exported with.</p>
+            <span className="meta">{summaryOf(embedded)}</span>
+            <button type="button" className="textbtn primary" id="open-embedded" onClick={onOpenEmbedded}>
+              Open
+            </button>
+          </article>
+        )}
         <article className="start demo">
           <span className="kicker">Demo</span>
           <h2>{demoDoc.title}</h2>

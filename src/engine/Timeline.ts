@@ -1,4 +1,4 @@
-import { illustrationSvg } from '../art/illustration';
+import { artClass, illustrationSvg } from '../art/illustration';
 import { matchesFilter, type EventFilter } from '../model/filter';
 import type { LaneItem, TimelineEvent, World } from '../model/world';
 import {
@@ -89,6 +89,8 @@ export class Timeline {
   private entries: LaneEntry[] = [];
   private readonly entryById = new Map<string, LaneEntry>();
   private badges: Badge[] = [];
+  /** Pictures that failed to load (a linked address that no longer answers); their cards show the pictogram. */
+  private readonly brokenImages = new Set<string>();
   /** Day numbers at the two ends of the to-scale axis. */
   private domainStart = 0;
   private domainEnd = 1;
@@ -469,13 +471,13 @@ export class Timeline {
     };
   }
 
-  /** Pictures are built lazily, the first time a card grows to the illustrated size. */
+  /** Pictures are built lazily, the first time a card is in view at the illustrated size. */
   private ensureArt(item: Item): void {
     if (item.hasArt) return;
     const { ev } = item;
-    const picture = ev.image
-      ? `<img class="photo" src="${escapeHtml(ev.image)}" alt="" draggable="false">`
-      : `<div class="art">${illustrationSvg(ev.motif, ev.id)}</div>`;
+    const picture = ev.image && !this.brokenImages.has(ev.image)
+      ? `<img class="photo" src="${escapeHtml(ev.image)}" alt="" decoding="async" draggable="false">`
+      : `<div class="${artClass(ev.art)}">${illustrationSvg(ev.motif, ev.id, ev.art?.scene)}</div>`;
     const figure = ev.figure ? `<span class="fig">${escapeHtml(ev.figure)}</span>` : '';
     item.thumb.innerHTML = picture + figure;
     item.hasArt = true;
@@ -601,7 +603,6 @@ export class Timeline {
       if (p.tier !== item.tier) {
         item.card.classList.replace(`tier-${item.tier}`, `tier-${p.tier}`);
         item.tier = p.tier;
-        if (p.tier === 'l') this.ensureArt(item);
       }
       if (p.y !== item.y) {
         item.y = p.y;
@@ -706,6 +707,8 @@ export class Timeline {
         item.el.classList.toggle('off', off);
       }
       if (off) continue;
+      // Only the cards in view get their picture: a timeline full of photos decodes a few at a time.
+      if (item.tier === 'l' && !item.hasArt && item.visible && !item.badge) this.ensureArt(item);
 
       item.el.style.transform = `translate3d(${x.toFixed(2)}px,0,0)`;
 
@@ -1107,6 +1110,15 @@ export class Timeline {
       this.cancelPreview();
       this.requestDraw();
     }, { signal });
+
+    // `error` does not bubble, hence the capture.
+    world.addEventListener('error', (ev) => {
+      const item = ev.target instanceof HTMLImageElement ? itemOf(ev) : undefined;
+      if (!item?.ev.image) return;
+      this.brokenImages.add(item.ev.image);
+      item.hasArt = false;
+      this.ensureArt(item);
+    }, { capture: true, signal });
 
     world.addEventListener('click', (ev) => {
       if (this.moved) return;

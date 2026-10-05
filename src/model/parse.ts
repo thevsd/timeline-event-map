@@ -1,7 +1,8 @@
+import { motifOf } from '../art/motifs';
 import { parseDate } from '../lib/time';
 import {
-  FORMAT, HUES, VERSION,
-  type CategoryDoc, type EventDoc, type GapDoc, type GroupDoc, type Hue, type LabelledItem, type LaneDoc,
+  ART_SCENES, ART_THEMES, FORMAT, HUES, VERSION,
+  type ArtDoc, type ArtScene, type ArtTheme, type CategoryDoc, type EventDoc, type GapDoc, type GroupDoc, type Hue, type LabelledItem, type LaneDoc,
   type LaneItemDoc, type LaneKind, type PersonDoc, type Section, type Tag, type TermDoc, type ThreadDoc, type TimelineDoc,
 } from './schema';
 
@@ -31,6 +32,19 @@ const text = (value: unknown): string => (typeof value === 'string' ? value.trim
 const optional = (value: unknown): string | undefined => text(value) || undefined;
 const strings = (value: unknown): string[] => list(value).map(text).filter(Boolean);
 const hue = (value: unknown): Hue | undefined => (HUES as readonly string[]).includes(text(value)) ? (text(value) as Hue) : undefined;
+
+/** The look of a pictogram. Anything that is not a known colour, theme or scene is left at its default. */
+function parseArt(value: unknown): ArtDoc | undefined {
+  if (!isObject(value)) return undefined;
+  const theme = (ART_THEMES as readonly string[]).includes(text(value.theme)) ? (text(value.theme) as ArtTheme) : undefined;
+  const scene = (ART_SCENES as readonly string[]).includes(text(value.scene)) ? (text(value.scene) as ArtScene) : undefined;
+  const art: ArtDoc = {};
+  const color = hue(value.color);
+  if (color) art.color = color;
+  if (theme && theme !== 'gradient') art.theme = theme;
+  if (scene && scene !== 'petals') art.scene = scene;
+  return Object.keys(art).length ? art : undefined;
+}
 
 /** A key made from a name: lower case, words joined by hyphens. */
 export function slug(name: string): string {
@@ -100,6 +114,15 @@ export function parseDoc(input: unknown): ParseResult {
   const warnings: string[] = [];
   const warn = (message: string) => {
     if (warnings.length < 200) warnings.push(message);
+  };
+  const unknownMotifs = new Set<string>();
+  /** A pictogram name as written; one the library lacks is kept out, and reported once. */
+  const parseMotif = (value: unknown): string | undefined => {
+    const name = text(value).toLowerCase();
+    if (!name || motifOf(name)) return name || undefined;
+    if (!unknownMotifs.has(name)) warn(`There is no pictogram called "${name}"; events that ask for it show the default one.`);
+    unknownMotifs.add(name);
+    return undefined;
   };
   if (raw.format && raw.format !== FORMAT) warn(`Format "${text(raw.format)}" is not "${FORMAT}"; reading it anyway.`);
   if (Number(raw.version) > VERSION) warn(`The file is from a newer version (${text(raw.version)}); some of it may be ignored.`);
@@ -175,7 +198,8 @@ export function parseDoc(input: unknown): ParseResult {
           category: resolveCategory(entry.category),
           summary: text(entry.summary) || text(entry.brief) || text(entry.description),
           image: optional(entry.image),
-          motif: optional(entry.motif),
+          motif: parseMotif(entry.motif),
+          art: parseArt(entry.art),
           figure: optional(entry.figure),
           featured: entry.featured === true,
           tags: parseTags(entry.tags),
@@ -190,7 +214,8 @@ export function parseDoc(input: unknown): ParseResult {
     if (wanted) eventKey.set(wanted, id);
     eventKey.set(id, id);
   });
-  if (!events.length) throw new DocError('None of the entries in "events" could be read. Each event needs at least a "title".');
+  // An empty list is a timeline not yet started; a list where nothing could be read is a wrong file.
+  if (!events.length && raw.events.length) throw new DocError('None of the entries in "events" could be read. Each event needs at least a "title".');
   if (!categories.length) addCategory('General');
 
   /** Keep the references that point at an event, translated to its final id. */

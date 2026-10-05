@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useWorld } from '../../context';
 import { removePerson, saveGroup, savePerson } from '../../model/edit';
 import type { PersonDoc } from '../../model/schema';
-import { PORTRAIT_SIDE } from '../../store/images';
+import { PORTRAIT } from '../../store/images';
 import { Field, ImageField, SectionsField, fromSectionDrafts, toSectionDrafts } from './fields';
 import { FormShell, compact, type FormProps } from './form';
 
@@ -115,7 +115,7 @@ export function PersonForm({ name: original, onCommit, onCancel, onTouch, ask }:
         <textarea rows={5} value={bio} onChange={(e) => edit(setBio)(e.target.value)} />
       </Field>
       <Field label="Portrait" group>
-        <ImageField value={image} onChange={edit(setImage)} maxSide={PORTRAIT_SIDE} shape="portrait" />
+        <ImageField value={image} onChange={edit(setImage)} limit={PORTRAIT} shape="portrait" />
       </Field>
       <div className="frow">
         <Field label="Without a portrait, show">

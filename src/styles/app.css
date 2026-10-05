@@ -121,9 +121,8 @@ button { font: inherit; color: inherit; }
 .moon::after {
   content: ""; position: absolute; inset: -3px -9px 5px 9px; border-radius: 50%; background: var(--bg);
 }
-/* In the toolbar the moon is the way back to the home page. */
-button.moon { border: 0; padding: 0; cursor: pointer; transition: scale 0.2s var(--ease); }
-button.moon:hover { scale: 1.08; }
+/* The way back to the home page, ahead of the title. */
+.textbtn.back { display: inline-flex; align-items: center; gap: 6px; flex: none; }
 .brand h1 {
   margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 20px;
   letter-spacing: -0.01em; line-height: 1.1; text-wrap: balance;
@@ -136,7 +135,7 @@ button.moon:hover { scale: 1.08; }
   font-size: 12.5px; font-weight: 600; color: var(--ink-2); transition: background 0.2s, color 0.2s, box-shadow 0.2s;
 }
 .seg button:hover { color: var(--ink); }
-.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+.seg button[aria-pressed="true"], .seg button[aria-checked="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
 .iconbtn {
   width: 32px; height: 32px; border-radius: 9px; border: 1px solid var(--line); background: var(--surface);
   display: inline-grid; place-items: center; cursor: pointer; color: var(--ink-2); font-size: 17px; line-height: 1;
@@ -145,6 +144,8 @@ button.moon:hover { scale: 1.08; }
 .iconbtn:hover { border-color: var(--line-strong); color: var(--ink); }
 .iconbtn:active { transform: scale(0.94); }
 .zoom { display: flex; align-items: center; gap: 6px; }
+/* On a tab without a time scale the control is hidden but keeps its room, so the tabs after it stay where they are. */
+.zoom.idle { visibility: hidden; }
 .search {
   height: 32px; width: 190px; max-width: 100%; border-radius: 9px; border: 1px solid var(--line);
   background: var(--surface); color: var(--ink); padding: 0 11px; font: inherit; font-size: 13px;
@@ -397,21 +398,41 @@ button.moon:hover { scale: 1.08; }
 .stage.compact .card.tier-l { --w: 232px; }
 
 /* ── Illustrations ──
-   Gradient background in the category colour; art/motifs.ts emits shapes that use these classes. */
+   art/motifs.ts emits shapes that use the classes below. A theme sets the background and three
+   colours: --art-a for the shapes, --art-d for the details drawn on them, --art-g for the ground.
+   The colour itself is --c, from the event's category or the picture's own hue class. */
 .art {
+  --art-a: var(--art-light);
   --art-d: color-mix(in oklab, var(--c) 42%, var(--art-deep));
+  --art-g: var(--art-d);
   position: absolute; inset: 0;
   background: linear-gradient(140deg, color-mix(in oklab, var(--c) 72%, var(--art-light)) 0%, var(--c) 48%, color-mix(in oklab, var(--c) 70%, var(--art-deep)) 100%);
 }
+.art.theme-solid { background: var(--c); }
+.art.theme-night {
+  --art-a: color-mix(in oklab, var(--c) 22%, var(--art-light));
+  --art-d: color-mix(in oklab, var(--c) 34%, var(--art-deep));
+  --art-g: var(--art-deep);
+  background: linear-gradient(165deg, color-mix(in oklab, var(--c) 50%, var(--art-deep)) 0%, color-mix(in oklab, var(--c) 18%, var(--art-deep)) 100%);
+}
+/* Coloured shapes on a tinted sheet: the details are cut out of them. */
+.art.theme-paper {
+  --art-paper: color-mix(in oklab, var(--c) 14%, var(--surface));
+  --art-a: color-mix(in oklab, var(--c) 92%, var(--ink));
+  --art-d: var(--art-paper);
+  --art-g: var(--art-a);
+  background: var(--art-paper);
+}
 .art svg { width: 100%; height: 100%; display: block; }
-.art .a { fill: var(--art-light); opacity: 0.95; }
-.art .b { fill: var(--art-light); opacity: 0.6; }
-.art .c { fill: var(--art-light); opacity: 0.24; }
+.art .a { fill: var(--art-a); opacity: 0.95; }
+.art .b { fill: var(--art-a); opacity: 0.6; }
+.art .c { fill: var(--art-a); opacity: 0.24; }
 .art .d { fill: var(--art-d); }
-.art .g { fill: var(--art-d); opacity: 0.34; }
-.art .s { fill: none; stroke: var(--art-light); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; opacity: 0.95; }
+.art .g { fill: var(--art-g); opacity: 0.34; }
+.art.theme-paper .g { opacity: 0.16; }
+.art .s { fill: none; stroke: var(--art-a); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; opacity: 0.95; }
 .art .sd { fill: none; stroke: var(--art-d); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
-.art .t { fill: none; stroke: var(--art-light); stroke-width: 2.5; stroke-linecap: round; opacity: 0.6; }
+.art .t { fill: none; stroke: var(--art-a); stroke-width: 2.5; stroke-linecap: round; opacity: 0.6; }
 
 /* A real image in place of the pictogram (see art/eventImages.ts). */
 .photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -658,6 +679,8 @@ i.ek-finance, span.ek-finance, i.ek-family, span.ek-family { border-top-style: d
   .app { gap: 8px; padding-block: 10px 10px; }
   .brand p { display: none; }
   .brand h1 { font-size: 17px; }
+  .textbtn.back { padding: 0 10px; }
+  .backlabel { display: none; }
   .search { width: 130px; }
   .aiguide { grid-template-columns: minmax(0, 1fr); }
   .hero-head { flex-direction: column; align-items: flex-start; }
@@ -674,6 +697,10 @@ i.ek-finance, span.ek-finance, i.ek-family, span.ek-family { border-top-style: d
   .rail .scroller { flex: 1 1 100%; }
   .rail .sep { display: none; }
   .zoom .iconbtn { display: none; }
+  /* Here the bar is a stack of rows: the scale goes below the tabs, and gives up its row when idle. */
+  .zoom { order: 1; }
+  .zoom.idle { display: none; }
+  .tools { order: 2; }
   .seg button { padding: 5px 8px; font-size: 12px; }
   .panel { position: fixed; inset: 0; z-index: 30; width: auto; margin: 0; opacity: 0; pointer-events: none; transform: translateX(100%); transition: transform 0.36s var(--ease), opacity 0.2s; padding: 10px 16px; padding-top: calc(10px + env(safe-area-inset-top, 0px)); padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); background: color-mix(in oklab, var(--bg) 70%, transparent); }
   .panel.open { width: auto; margin: 0; opacity: 1; pointer-events: auto; transform: none; }
@@ -716,7 +743,7 @@ i.ek-finance, span.ek-finance, i.ek-family, span.ek-family { border-top-style: d
 .flabel.sub { margin-top: 4px; }
 .fhint { font-size: 11.5px; line-height: 15px; color: var(--ink-3); }
 .fhint.bad, .has-error .fhint { color: var(--danger); }
-.form input[type="text"], .form textarea, .form select, .modal input[type="text"], .modal textarea, .modal select, .newform input {
+.form input[type="text"], .form input[type="url"], .form input[type="search"], .form textarea, .form select, .modal input[type="text"], .modal textarea, .modal select, .newform input {
   width: 100%; min-width: 0; border-radius: 9px; border: 1px solid var(--line-strong); background: var(--surface);
   color: var(--ink); font: inherit; font-size: 13.5px; padding: 7px 10px;
 }
@@ -768,12 +795,54 @@ details.more > * + * { margin-top: 12px; }
 .swatch-btn { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--surface); background: var(--c); cursor: pointer; box-shadow: 0 0 0 1px var(--line-strong); }
 .swatch-btn[aria-checked="true"] { box-shadow: 0 0 0 2px var(--ink); }
 
-/* Picture field. */
+/* Picture field of the event form: preview, pictogram grid, options. */
+.picture { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+/* Closed, the field is this one row: a thumbnail of the picture and what was chosen. */
+.pichead {
+  display: flex; align-items: center; gap: 11px; width: 100%; padding: 7px 12px 7px 7px; border-radius: 11px;
+  border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); text-align: left; cursor: pointer;
+  transition: border-color 0.2s;
+}
+.pichead:hover { border-color: var(--ink-3); }
+.picthumb { position: relative; flex: none; width: 84px; aspect-ratio: 256 / 100; border-radius: 7px; overflow: hidden; }
+.picsummary { display: flex; flex-direction: column; gap: 1px; flex: 1 1 auto; min-width: 0; }
+.picsummary b { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.picsummary small { font-size: 11.5px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.picchange { flex: none; font-size: 12px; font-weight: 600; color: var(--ink-2); }
+.picbody { display: flex; flex-direction: column; gap: 10px; }
+/* The preview has the proportions of the picture on a card. */
+.picpreview { position: relative; width: min(100%, 320px); aspect-ratio: 256 / 100; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); }
+.picrow { display: flex; align-items: center; gap: 10px; }
+.picrow .picsearch { flex: 1 1 0; }
+.picname { flex: none; max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 600; color: var(--ink-2); }
+.motifs {
+  position: relative; display: flex; flex-direction: column; gap: 9px; max-height: 214px; overflow-y: auto; padding: 9px;
+  border-radius: 11px; background: var(--surface-2); border: 1px solid var(--line);
+}
+.motifgroup { display: flex; flex-direction: column; gap: 5px; }
+.motifhead { font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); }
+.motifgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(54px, 1fr)); gap: 5px; }
+.motif {
+  position: relative; aspect-ratio: 240 / 136; padding: 0; border-radius: 8px; border: 0; overflow: hidden;
+  background: none; cursor: pointer; outline: 2px solid transparent; outline-offset: -2px; transition: outline-color 0.15s;
+}
+.motif:hover { outline-color: var(--line-strong); }
+.motif[aria-checked="true"] { outline-color: var(--ink); }
+.picoption { display: flex; align-items: center; gap: 6px 10px; flex-wrap: wrap; }
+.picoption.column { flex-direction: column; align-items: stretch; gap: 5px; }
+.piclabel { min-width: 50px; font-size: 11.5px; font-weight: 600; color: var(--ink-2); }
+.picoption .seg button { padding: 4px 9px; font-size: 12px; }
+.pill.auto { height: 22px; padding: 0 9px; font-size: 11.5px; }
+.pill.auto[aria-checked="true"] { border-color: var(--ink); color: var(--ink); }
+.picstored { display: flex; align-items: center; gap: 10px; }
+
+/* Portrait field. */
 .imagefield { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
 .imagefield img { display: block; border-radius: 10px; object-fit: cover; border: 1px solid var(--line); }
 .imagefield.wide img { width: 100%; max-height: 170px; }
 .imagefield.portrait img { width: 96px; height: 120px; object-position: 50% 12%; }
 .imageactions { display: flex; gap: 6px; }
+.imagefield .imagelink { font-size: 12.5px; }
 
 /* Sections editor and the rows of the settings form. */
 .sections, .rows { display: flex; flex-direction: column; gap: 9px; align-items: flex-start; }
@@ -813,6 +882,7 @@ details.more > * + * { margin-top: 12px; }
 }
 .start.demo { border-color: color-mix(in oklab, var(--accent) 45%, var(--line)); background: linear-gradient(160deg, var(--accent-soft), var(--surface) 62%); }
 .start.draft { border-style: dashed; border-color: var(--line-strong); }
+.start.page { border-color: var(--line-strong); }
 .start h2 { margin: 0; font-family: var(--font-display); font-size: 21px; line-height: 25px; }
 .start p { margin: 0; font-size: 13.5px; line-height: 20px; color: var(--ink-2); flex: 1 1 auto; }
 .start .meta { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); }

@@ -26,7 +26,7 @@ import { DocError } from './model/parse';
 import { matchesFilter, type EventFilter } from './model/filter';
 import type { ThreadDoc, TimelineDoc } from './model/schema';
 import { worldOf, type World } from './model/world';
-import { exportHtml, exportJson } from './store/export';
+import { exportHtml, exportJson, exportText } from './store/export';
 import type { FormTarget, OpenMode, PanelPage, View, ViewPage } from './types';
 
 /** Pause after the last change before the address bar is updated. */
@@ -46,6 +46,11 @@ interface WorkspaceProps {
   /** The document changed: the shell saves it as the draft. */
   onChange(doc: TimelineDoc): void;
   onHome(): void;
+  /**
+   * Set while the workspace is open: asked when the browser's Back button leaves for the home
+   * page. Returns true when a form has unsaved changes; the workspace then asks the reader itself.
+   */
+  leaveGuard: { current: (() => boolean) | null };
 }
 
 /** A thread being put together by clicking cards. */
@@ -108,7 +113,7 @@ function fromUrl(url: UrlState, world: World) {
  * (see model/world.ts). State worth sharing (view, zoom, selection, filters) is mirrored into
  * the URL hash; reading progress is the reader's own setting and stays in the browser.
  */
-export function Workspace({ initial, origin, startEditing, draftTitle, onChange, onHome }: WorkspaceProps) {
+export function Workspace({ initial, origin, startEditing, draftTitle, onChange, onHome, leaveGuard }: WorkspaceProps) {
   const { doc, set: setDoc, undo, redo, canUndo, canRedo } = useDocument(initial);
 
   /** Last part the reader has finished; everything later is hidden. Null reads everything. */
@@ -169,6 +174,8 @@ export function Workspace({ initial, origin, startEditing, draftTitle, onChange,
   const viewTouched = useRef(opening.zoom != null);
   const urlTimer = useRef(0);
   const writeUrlRef = useRef(() => {});
+  /** The hash this workspace last wrote to the address. */
+  const writtenHash = useRef('');
   const scheduleUrlWrite = useCallback(() => {
     window.clearTimeout(urlTimer.current);
     urlTimer.current = window.setTimeout(() => writeUrlRef.current(), URL_WRITE_DELAY);
@@ -229,8 +236,10 @@ export function Workspace({ initial, origin, startEditing, draftTitle, onChange,
         },
         world.domain.start,
       );
+      writtenHash.current = hash;
       try {
-        window.history.replaceState(null, '', hash ? `#${hash}` : window.location.pathname + window.location.search);
+        // The entry's state says how the timeline was reached (see App); keep it.
+        window.history.replaceState(window.history.state, '', hash ? `#${hash}` : window.location.pathname + window.location.search);
       } catch {
         // Sandboxed frames may refuse history changes; sharing then falls back to the opening view.
       }
@@ -614,6 +623,8 @@ export function Workspace({ initial, origin, startEditing, draftTitle, onChange,
     applyUrl(opening);
     const onHashChange = () => {
       if (!window.location.hash) return; // the shell is leaving for the home page
+      // Back at the address this workspace wrote itself (a Back press that was called off): nothing to follow.
+      if (window.location.hash.slice(1) === writtenHash.current) return;
       applyUrl(fromUrl(parseUrlState(window.location.hash, worldRef.current.domain.start), worldRef.current));
     };
     window.addEventListener('hashchange', onHashChange);
@@ -642,6 +653,17 @@ export function Workspace({ initial, origin, startEditing, draftTitle, onChange,
   }, [doc, ask]);
 
   const leave = useCallback(() => leavingForm(onHome), [leavingForm, onHome]);
+  useEffect(() => {
+    leaveGuard.current = () => {
+      const top = stackRef.current[stackRef.current.length - 1];
+      if (top?.kind !== 'form' || !formTouched.current) return false;
+      leave();
+      return true;
+    };
+    return () => {
+      leaveGuard.current = null;
+    };
+  }, [leaveGuard, leave]);
 
   /* ── Keyboard ── */
 
@@ -762,6 +784,7 @@ export function Workspace({ initial, origin, startEditing, draftTitle, onChange,
           onCopyLink={copyLink}
           onExportHtml={saveHtml}
           onExportJson={() => exportJson(doc)}
+          onExportText={() => exportText(doc)}
           status={status}
         />
 

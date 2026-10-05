@@ -13,6 +13,24 @@ export const VERSION = 1;
 export const HUES = ['blue', 'orange', 'green', 'yellow', 'pink', 'indigo', 'teal', 'red', 'brown', 'gray'] as const;
 export type Hue = (typeof HUES)[number];
 
+/** How a pictogram is painted. */
+export const ART_THEMES = ['gradient', 'night', 'paper', 'solid'] as const;
+export type ArtTheme = (typeof ART_THEMES)[number];
+
+/** What is drawn around a pictogram. */
+export const ART_SCENES = ['petals', 'stars', 'clouds', 'plain'] as const;
+export type ArtScene = (typeof ART_SCENES)[number];
+
+/** The look of an event's pictogram. Each part is optional and falls back to the default. */
+export interface ArtDoc {
+  /** Defaults to the colour of the event's category. */
+  color?: Hue;
+  /** Defaults to `gradient`. */
+  theme?: ArtTheme;
+  /** Defaults to `petals`: a pale moon and drifting petals. */
+  scene?: ArtScene;
+}
+
 /** A short label shown as a chip, optionally coloured. */
 export interface Tag {
   label: string;
@@ -70,10 +88,12 @@ export interface EventDoc {
   category: string;
   /** One or two sentences for the card and the hover preview. */
   summary: string;
-  /** Picture: a data: or https: URL. */
+  /** A picture to show instead of the pictogram: an https: URL. (Older files may hold a data: URL.) */
   image?: string;
-  /** Pictogram shown when there is no image (see art/motifs.ts). */
+  /** Name of the pictogram (see art/motifs.ts). Shown when there is no image, or it cannot be loaded. */
   motif?: string;
+  /** How the pictogram is painted. */
+  art?: ArtDoc;
   /** A key figure overlaid on the picture, e.g. "¥800bn". */
   figure?: string;
   /** Placed first by the layout, so it gets an illustrated card when space allows. */

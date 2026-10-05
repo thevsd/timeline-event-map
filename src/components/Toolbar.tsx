@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useWorld } from '../context';
 import { ZOOM_LEVELS, type ZoomLevel } from '../engine/config';
+import { formatSize, weightOf } from '../store/export';
 import type { View, ViewPage } from '../types';
 import { SearchBox } from './SearchBox';
 
@@ -45,6 +46,8 @@ interface ToolbarProps {
   onCopyLink: (() => Promise<boolean>) | null;
   onExportHtml(): void;
   onExportJson(): void;
+  /** Export the data without its stored pictures. */
+  onExportText(): void;
   /** One line on where the timeline is kept, e.g. "Saved in this browser". */
   status: string;
 }
@@ -52,7 +55,7 @@ interface ToolbarProps {
 /** Title, view switch, search box, reading progress, zoom controls, the edit switch and the share menu. */
 export function Toolbar(props: ToolbarProps) {
   const { view, views, onView, onHome, onPick, onFilterText, progress, onProgress, level, levels, onLevel, onZoom } = props;
-  const { editing, onEditing, canUndo, canRedo, onUndo, onRedo, onCopyLink, onExportHtml, onExportJson, status } = props;
+  const { editing, onEditing, canUndo, canRedo, onUndo, onRedo, onCopyLink, onExportHtml, onExportJson, onExportText, status } = props;
   const { doc } = useWorld();
 
   // Outcome of the last copy, shown in the menu for a moment.
@@ -78,6 +81,8 @@ export function Toolbar(props: ToolbarProps) {
       document.removeEventListener('keydown', close);
     };
   }, [menu]);
+  // Sizes are worked out when the menu opens: with pictures the document can run to megabytes.
+  const weight = useMemo(() => (menu ? weightOf(doc) : null), [menu, doc]);
   const choose = (action: () => void) => () => {
     setMenu(false);
     action();
@@ -86,11 +91,31 @@ export function Toolbar(props: ToolbarProps) {
   return (
     <header className="bar">
       <div className="brand">
-        <button type="button" className="moon" id="home" aria-label="Home" title="Back to the home page" onClick={onHome} />
+        <button type="button" className="textbtn back" id="home" title="Back to the home page" onClick={onHome}>
+          <span aria-hidden="true">←</span>
+          <span className="backlabel">Home</span>
+        </button>
         <div>
           <h1>{doc.title}</h1>
           {doc.subtitle && <p>{doc.subtitle}</p>}
         </div>
+      </div>
+
+      {/* Ahead of the tabs, and holding its place on tabs that have no time scale: the tabs then never move. */}
+      <div className={view === 'timeline' ? 'zoom' : 'zoom idle'} aria-hidden={view !== 'timeline'} inert={view !== 'timeline'}>
+        <button className="iconbtn" type="button" aria-label="Zoom out" title="Zoom out" onClick={() => onZoom(1 / 1.7)}>
+          −
+        </button>
+        <div className="seg" id="scale" role="group" aria-label="Time scale">
+          {levels.map((l) => (
+            <button key={l} type="button" data-level={l} aria-pressed={level === l} onClick={() => onLevel(l)}>
+              {LEVEL_LABEL[l]}
+            </button>
+          ))}
+        </div>
+        <button className="iconbtn" type="button" aria-label="Zoom in" title="Zoom in" onClick={() => onZoom(1.7)}>
+          +
+        </button>
       </div>
 
       <div className="seg" id="views" role="group" aria-label="View">
@@ -119,24 +144,6 @@ export function Toolbar(props: ToolbarProps) {
             ))}
           </select>
         </label>
-      )}
-
-      {view === 'timeline' && (
-        <div className="zoom">
-          <button className="iconbtn" type="button" aria-label="Zoom out" title="Zoom out" onClick={() => onZoom(1 / 1.7)}>
-            −
-          </button>
-          <div className="seg" id="scale" role="group" aria-label="Time scale">
-            {levels.map((l) => (
-              <button key={l} type="button" data-level={l} aria-pressed={level === l} onClick={() => onLevel(l)}>
-                {LEVEL_LABEL[l]}
-              </button>
-            ))}
-          </div>
-          <button className="iconbtn" type="button" aria-label="Zoom in" title="Zoom in" onClick={() => onZoom(1.7)}>
-            +
-          </button>
-        </div>
       )}
 
       <div className="tools">
@@ -168,12 +175,24 @@ export function Toolbar(props: ToolbarProps) {
             <div className="menu" role="menu">
               <button type="button" role="menuitem" id="export-html" onClick={choose(onExportHtml)}>
                 Export as a web page (.html)
-                <small>One file that opens straight onto this timeline</small>
+                <small>
+                  One file that opens straight onto this timeline
+                  {weight?.page != null && ` · about ${formatSize(weight.page)}`}
+                </small>
               </button>
               <button type="button" role="menuitem" id="export-json" onClick={choose(onExportJson)}>
                 Export as data (.json)
-                <small>To import again, or to hand to an AI model</small>
+                <small>
+                  {weight?.pictures ? 'To import again, pictures included' : 'To import again, or to hand to an AI model'}
+                  {weight && ` · ${formatSize(weight.data)}`}
+                </small>
               </button>
+              {!!weight?.pictures && (
+                <button type="button" role="menuitem" id="export-text" onClick={choose(onExportText)}>
+                  Export data without pictures (.json)
+                  <small>Small enough to hand to an AI model · {formatSize(weight.text)}</small>
+                </button>
+              )}
               {onCopyLink && (
                 <button type="button" role="menuitem" id="copy-link" onClick={choose(() => void onCopyLink().then(setCopied))}>
                   Copy link

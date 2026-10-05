@@ -1,4 +1,8 @@
-import type { TimelineDoc } from '../../model/schema';
+import { MOTIF_GROUPS } from '../../art/motifs';
+import { ART_SCENES, ART_THEMES, type TimelineDoc } from '../../model/schema';
+
+/** The pictogram names, a line per group, for the prompt. */
+const PICTOGRAMS = MOTIF_GROUPS.map((group) => `  ${group.label}: ${Object.keys(group.motifs).join(', ')}`).join('\n');
 
 /**
  * A prompt to hand to an AI model, with the file format spelled out. The loader forgives a
@@ -31,6 +35,8 @@ FORMAT
       "source": "Ch. 2",                    // optional
       "featured": true,                     // optional: only for the most important events
       "figure": "¥800bn",                   // optional: one key number
+      "motif": "bank",                      // optional: the event's pictogram, a name from PICTOGRAMS below
+      "art": { "color": "red", "theme": "night", "scene": "stars" },   // optional: how the pictogram is painted
       "tags": ["Real history"],             // optional
       "people": ["Full Name"],              // optional: names, spelled the same everywhere
       "links": ["another-event-id"],        // optional: ids of connected events
@@ -56,8 +62,12 @@ RULES
 - Every id in "links", in a thread's "events" and in a lane item's "events" must be the id of an event in the file.
 - Dates: use the precision you actually know. Do not invent days.
 - Keep summaries to one or two sentences; put detail in "sections".
+- Give each event the "motif" that fits it best; leave "motif" out when none fits. Leave "art" out unless a different look means something: its colour defaults to the category's, "theme" is one of ${ART_THEMES.join(', ')} and "scene" one of ${ART_SCENES.join(', ')}.
 - Glossary terms are underlined automatically wherever an event's text mentions them, so define the terms a newcomer would not know.
-- Output valid JSON: double quotes, no comments, no trailing commas.`;
+- Output valid JSON: double quotes, no comments, no trailing commas.
+
+PICTOGRAMS
+${PICTOGRAMS}`;
 
 /** A cut-down copy of a document, small enough to read: a couple of each kind of entry. */
 export function excerptOf(doc: TimelineDoc): string {

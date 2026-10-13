@@ -1,9 +1,11 @@
-import { useMemo, useRef, useState, type DragEvent, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type DragEvent, type FormEvent } from 'react';
 import { MOTIF_NAMES } from '../../art/motifs';
 import { demoDoc, sampleDoc } from '../../data';
 import { DocError, type ParseResult } from '../../model/parse';
 import type { TimelineDoc } from '../../model/schema';
+import { logout, whoAmI, type Account } from '../../store/account';
 import { exportJson, readFile } from '../../store/export';
+import { AccountDialog } from './AccountDialog';
 import { AI_PROMPT, excerptOf } from './guide';
 
 interface HomeProps {
@@ -54,6 +56,12 @@ export function Home({ draft, embedded, onOpenEmbedded, onOpenDemo, onOpenDraft,
   const [copied, setCopied] = useState(false);
   const picker = useRef<HTMLInputElement>(null);
   const excerpt = useMemo(() => excerptOf(demoDoc), []);
+  // 'offline' until the account server answers; a page opened from disk never shows the sign-in.
+  const [account, setAccount] = useState<Account | null | 'offline'>('offline');
+  const [signingIn, setSigningIn] = useState(false);
+  useEffect(() => {
+    void whoAmI().then(setAccount);
+  }, []);
 
   const importFile = async (file: File | undefined) => {
     if (!file) return;
@@ -94,11 +102,30 @@ export function Home({ draft, embedded, onOpenEmbedded, onOpenDemo, onOpenDraft,
         <div>
           <h1>Timeline Event Map</h1>
           <p>
-            Lay out a story, a project or a stretch of history on a timeline you can zoom, filter and follow. There is no account and no server:
+            Lay out a story, a project or a stretch of history on a timeline you can zoom, filter and follow. No account needed:
             a timeline is one file, and it stays yours.
           </p>
         </div>
+        {account !== 'offline' && (
+          <div className="account">
+            {account ? (
+              <>
+                <span>
+                  Signed in as <strong>{account.username}</strong>
+                </span>
+                <button type="button" className="textbtn" id="sign-out" onClick={() => void logout().then(() => setAccount(null), () => {})}>
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <button type="button" className="textbtn primary" id="sign-in" onClick={() => setSigningIn(true)}>
+                Sign in
+              </button>
+            )}
+          </div>
+        )}
       </header>
+      {signingIn && <AccountDialog onClose={() => setSigningIn(false)} onSignedIn={setAccount} />}
 
       <section className="starts" aria-label="Start">
         {embedded && (

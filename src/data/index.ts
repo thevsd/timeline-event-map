@@ -9,6 +9,8 @@ import { volume2 } from './events/volume2';
 import { volume3 } from './events/volume3';
 import { volume4 } from './events/volume4';
 import { volume5 } from './events/volume5';
+import { volume6 } from './events/volume6';
+import { volume7 } from './events/volume7';
 import { glossary } from './glossary';
 import { PERSON_GROUP_LABEL, people, type PersonGroup } from './people';
 import { TREATMENT_LABEL, realHistory, type Treatment } from './realHistory';
@@ -16,7 +18,7 @@ import { threads } from './threads';
 import type { CategoryId, Confidence, EventRecord, HistoryStatus } from './types';
 
 /**
- * The demo: Modern Villainess, English Vols. 1–5.
+ * The demo: Modern Villainess, English Vols. 1–7.
  *
  * Its content is authored as typed records in this folder. This module turns them into the
  * app's document format, the same one an imported JSON file uses, so the demo exercises exactly
@@ -35,17 +37,17 @@ const TREATMENT_HUE: Record<Treatment, Hue> = {
   preserved: 'green', altered: 'brown', prevented: 'indigo', moved: 'brown', ahead: 'gray',
 };
 
-const records: EventRecord[] = [...backstory, ...volume1, ...volume2, ...volume3, ...volume4, ...volume5];
+const records: EventRecord[] = [...backstory, ...volume1, ...volume2, ...volume3, ...volume4, ...volume5, ...volume6, ...volume7];
 
 const source = {
   format: FORMAT,
   version: VERSION,
   title: 'Modern Villainess',
-  subtitle: 'Event map of English Vols. 1–5, counting down to 15 September 2008',
-  parts: ['Vol. 1', 'Vol. 2', 'Vol. 3', 'Vol. 4', 'Vol. 5'],
+  subtitle: 'Event map of English Vols. 1–7, counting down to 15 September 2008',
+  parts: ['Vol. 1', 'Vol. 2', 'Vol. 3', 'Vol. 4', 'Vol. 5', 'Vol. 6', 'Vol. 7'],
   undated: { label: 'Before the story', note: '1944 – 1990 · not to scale' },
   countdown: { event: 'crash2008', label: 'the crash of 15 September 2008', jump: 'The crash, 2008' },
-  gaps: [{ from: '2003-05-20', to: '2008-08-20', label: 'Summer 2003 to summer 2008', note: 'Volumes 6 onward are not mapped yet' }],
+  gaps: [{ from: '2004-09-20', to: '2008-08-20', label: 'Autumn 2004 to summer 2008', note: 'Volumes 8 onward are not mapped yet' }],
   categories: CATEGORIES.map((c) => ({ ...c, color: CATEGORY_HUE[c.id] })),
   groups: (Object.keys(PERSON_GROUP_LABEL) as PersonGroup[]).map((id) => ({ id, name: PERSON_GROUP_LABEL[id], color: GROUP_HUE[id] })),
   events: records.map((r) => ({

@@ -116,7 +116,7 @@ export function Home({ draft, embedded, onOpenEmbedded, onOpenDemo, onOpenDraft,
           <span className="kicker">Demo</span>
           <h2>{demoDoc.title}</h2>
           <p>
-            The light novel’s first five volumes, mapped event by event against the real financial history they rewrite. Every feature below is in
+            The light novel’s first seven volumes, mapped event by event against the real financial history they rewrite. Every feature below is in
             use here.
           </p>
           <span className="meta">{summaryOf(demoDoc)}</span>

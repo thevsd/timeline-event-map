@@ -2,7 +2,7 @@
 
 A timeline event map webapp. Build a timeline in the browser or import one as JSON, then export it as a single web page. There is no server and no account.
 
-It ships with a demo: the storyline of *Modern Villainess* (English Vols. 1–5), mapped against the real financial history it rewrites.
+It ships with a demo: the storyline of *Modern Villainess* (English Vols. 1–7), mapped against the real financial history it rewrites.
 
 ## Features
 

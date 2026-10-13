@@ -1,9 +1,21 @@
-# Modern Villainess Vol. 1 — Complete Event Map (Third Edition)
+# Modern Villainess Vol. 1 — Complete Event Map (Fourth Edition)
 ### With extended analyses of Chapter 2's economics and of Chapters 8–9's cultural, political and financial context
 
 **Scope:** Front matter, all nine chapters, afterword, plus synthesis. Built from a fresh full read of the EPUB (Tofuro Futsukaichi, illus. KEI; Seven Seas English ed. 2022), with external verification noted inline.
 
 **Method note.** This book's technique is unusually explicit: each chapter ends with an author's glossary that frequently names its own real-world referents outright. Where a glossary states a source, I mark it **confirmed by the text itself** — that is textual evidence, not my inference. Where I identify a parallel the book does not name, I label my confidence separately.
+
+**Fourth-edition changes (8 October 2026).** The volume was reread end to end — every chapter, glossary and the afterword — after the complete reads of Volumes 2–5. The third edition's chapter entries are kept; each now ends with a block of **fourth-edition additions** (exact wording that the earlier summary lost, details that later volumes pay off, and corrections). Main points:
+1. **Chapter 1 is not the game's ending.** The narrator is the reincarnated Runa in this world's 2008 — her maid Tachibana Yuka, who does not exist in the game, is waiting outside. The frame is a promise about the series' end.
+2. **Correction — the family tree.** Keikain Ruriko is Kiyomaro's late wife (née Iwazaki), not Hikomaro's daughter; Nakamaro is their son (Ch. 5). Part I is corrected.
+3. **Correction — Chapter 3.** Her debut and the fiftieth-anniversary party are one evening, and the remark about the scandal is made to Teia Shuuichi, with a glance at the branch families.
+4. **Correction — Chapter 4.** Runa's deduction is that the kidnapping began as a *fake* staged by the Public Safety Bureau with her family's coerced consent, and turned real. The structure of the Moonlight Fund (a Swiss account in her name behind same-named shells) is added.
+5. **Correction — Chapter 8.** The library investigation does not resolve mundanely; the librarian's explanation and what the camera shows do not match.
+6. **New identifications (mine):** Teisei = the Seibu–Saison complex; "Sachii" = Mycal; the party RPG = *Final Fantasy VII*; the department-store photographer = plausibly the later Ishikawa Nobumitsu.
+7. **New Part VI** — a ledger of what Volume 1 plants and where Volumes 2–5 pay it off.
+8. **Open questions** are updated with what later volumes answer.
+
+**Coverage:** every chapter, glossary and the afterword has now been read in full twice.
 
 **Revisions from the earlier edition.** Three corrections and one significant new finding:
 1. The "corporate bouncer" thread is not decorative — it maps onto a single real 1997 scandal distributed across three plot threads (detailed under Ch. 2 and Ch. 8).
@@ -19,6 +31,7 @@
 5. **Correction — Carmen.** Runa says Carmen's appeal was "originally to do with her Basque heritage." In Mérimée, *José* is the Basque; Carmen only *performs* Basque identity to win him.
 6. **New identification.** Finance Minister Izumikawa's Volume 1 resignation is the real **Hiroshi Mitsuzuka**'s (Finance Minister through the November 1997 collapses; resigned 28 January 1998 over the MOF bribery scandal). Secretary-General Katou's 1998 fate is the real **Katō Kōichi**'s.
 7. **Refined critique.** The ~¥8 trillion in BOJ special loans: the *channel* is realistic post-Jusen logic (no Diet vote needed); the *scale* is what strains belief.
+8. **Addendum (October 2026) — the Russian layer.** The "previous prime minister" behind the kidnapping — a former Soviet gas-industry minister who ran a huge gas conglomerate — is **Viktor Chernomyrdin** (new identification). The Moscow Declaration is verified as the real November 1998 Obuchi–Yeltsin declaration. Ch. 9's kidnapping line corrected: the former gas minister *is* the previous prime minister, not someone tied to him.
 
 ---
 
@@ -35,12 +48,13 @@ A Japanese corporate employee dies unremarkably after their employer collapses, 
 - Japan retains both an SDF and offensive forces; fought in a "Manchurian War" (narration: "probably equivalent to the Korean War in our world"), Vietnam, and the Gulf War.
 - The House of Peers became the House of Councilors; the House of Representatives holds authority over it.
 - **Japan was partitioned**: the People's Democratic Republic of Northern Japan (Soviet-aligned, holding Sakhalin/Karafuto, with a "Ministry of National Security"). It collapsed after the Berlin Wall fell amid infighting between Party, security ministry, and army — and, unlike Korea, **Japan reunified**, with the South intervening. Hokkaido is now ~80% Japanese, 10% Russian, 10% Chinese (glossary).
+- *Established later (Vol. 4 Ch. 11; added 9 October 2026):* **there was no atomic bombing of Japan.** Runa calls 1945's nuclear "example" "the history that never happened in this world." No nuclear weapon has ever been used on a city in this timeline. That is the necessary context for the series' later focus on weapons of mass destruction (see the Vol. 5 map, Part II §3a).
 - Japan's bubble, its burst, and the "Lost Decades" otherwise proceed on the real schedule.
 
 ## The Keikain family
 - **Keikain Hikomaro** (grandfather, dec.) — illegitimate by birth, adopted into a dormant ducal line whose blood heirs died out during the Great War. Rose through the Ministry of Home Affairs to superintendent of the Special Higher Police; led the failed investigation into a sitting Prime Minister's assassination; resigned to take responsibility — and was then *gifted the dukedom*, which the narration flags as suspicious ("almost as though his failure to find a perpetrator was being rewarded"). Retained blackmail files on political rivals, which became "the cornerstone of the family's growth." Fathered children across roughly seven branch families.
-  - + legal wife (pharmaceutical family → Keika Pharmaceuticals) → **Keikain Ruriko** (m. into Iwazaki Group) and **Keikain Kiyomaro** (current Duke).
-    - Ruriko's line → **Keikain Nakamaro**, next in line to the dukedom.
+  - + legal wife (pharmaceutical family → Keika Pharmaceuticals) → **Keikain Kiyomaro** (current Duke).
+    - Kiyomaro m. **Ruriko**, née Iwazaki, of the family that ran Iwazaki Chemical (deceased; he never remarried) → **Keikain Nakamaro**, their only child and heir to the dukedom. *(Corrected in the fourth edition: earlier editions made Ruriko Hikomaro's daughter. Ch. 5 and Vol. 5 Ch. 1 are explicit.)*
   - + a Russian noblewoman granted asylum in Japan → **Keikain Otsumaro** (illegitimate; the missing "-ichi" in his name marks him as non-heir) — **Runa's father**.
   - + **Saitou Keiko** (maid, formerly a famous Ginza hostess whose own store Hikomaro financed) → strongly implied to be **Tokitou Aki**'s mother. Runa notices the resemblance and "pretended not to notice"; the family-tree chart labels Aki a secret illegitimate child.
   - + via Hikomaro's **younger brother** → **Katsura Naomi** (illegitimate; taken in by the family, married off to a partner of their choosing) → **Katsura Naoyuki**.
@@ -58,7 +72,7 @@ A Japanese corporate employee dies unremarkably after their employer collapses, 
 
 ## Chapter 1 — September 15th, 2008
 
-**Narrative position:** Flash-forward frame. The game's scripted downfall scene, shown first; Ch. 2 rewinds to infancy.
+**Narrative position:** Flash-forward frame: the night of 15 September 2008, in a scene that matches the game's scripted downfall — but narrated by the reincarnated Runa in this world (see the fourth-edition additions below). Ch. 2 rewinds to infancy.
 
 **What happens**
 - Runa, 18, attends a Teia Group celebration at the Teia Tower in Daiba.
@@ -83,6 +97,17 @@ A Japanese corporate employee dies unremarkably after their employer collapses, 
 - *Plausible:* "Brothers" → "Sisters" is a pointed inversion given the book's premise, though unremarked in-text.
 
 **Connections:** Ch. 3 ends with child-Runa recording a message to her future self asking if she is happy — a question this chapter has already answered. Ch. 4 reveals the downfall includes a literal arrest.
+
+**Fourth-edition additions (complete reread; read with Vols. 4–5 in hand)**
+- **Whose scene is this?** The narrator is not the game's Runa. She says so: "Armed with memories of my previous life, I'd worked hard to avoid my ruin, and now… here I was. Despite that, I still ended up at odds with these handsome men." This is the reincarnated Runa at eighteen, in *this* world's 2008, standing in a scene that matches the game's ("her entrance was identical to the game"). Two details confirm it: her maid **Tachibana Yuka** is waiting outside — a person who, Vol. 5 Ch. 9 says, did not exist in the game — and Mizuho cries "I thought we were friends!"
+- **What she has done:** "I'd simply created a shell company in a tax haven and raked together some capital to finance independent fund traders. It was all about knowing the right people." The party gossip is about bankers summoned to Washington and "those subprime loans."
+- **What Eiichi says:** "What exactly are you up to?… Why didn't you come and speak to me?! Mitsuya and Yuujirou have been keeping an eye on you too!" He is angry at being shut out, not at a crime.
+- **"Did you know that I hated you?"** is labelled by the narrator "an obvious lie," told so that she can leave "just like a true villainess." Her own gloss: "It seemed I couldn't fulfill the role of a villain in the end."
+- **The closing lines:** "My downfall had begun… Yet this isn't a story of my conviction. This is a story of my — no, our — revenge on the age in which we were born… 'Very well. Now let the game begin.'"
+- *Strongly supported (new):* **The frame is a promise about the end of the series, not a summary of the game.** After five volumes the engagement to Eiichi exists in 2008, she still keeps secrets from all three boys, she has an offshore vehicle and "the right people," and the crash arrives on schedule. What the series has to explain is how the girl who refused to "pull the trigger" on subprime in 2003 (Vol. 5 Ch. 4) comes to be running a tax-haven fund on the night Lehman fails — and why she calls it "the game" beginning rather than ending.
+- *Strongly supported (new):* **The shell company echoes the original's crime at a safe distance.** The game's Runa fell through a tax-and-law haven scheme in Karafuto (Vol. 5 Ch. 9). The living Runa in 2008 also has a tax-haven shell — but hers finances traders, and she is the one walking out.
+- *Plausible (new):* Eiichi's first line here, "What exactly are you up to?", is the line he uses to her in the junior-high dining room in Vol. 5 Ch. 8. The series has been showing the origin of this scene's dialogue.
+- *Plausible (new):* "Our revenge" — the plural matters. Volume 5's last words are "Poor Keikain Runa." The 2008 Runa speaks for both of them.
 
 ---
 
@@ -144,6 +169,21 @@ A Japanese corporate employee dies unremarkably after their employer collapses, 
 
 **Connections:** The memorandum is exercised in Ch. 9. MOF's divisional rivalry recurs in Ch. 4. The Russian-heritage exposure sets up Ch. 4's kidnapping and Ch. 9's oligarch. The sōkaiya thread continues into Ch. 4 (MOF corruption) and Ch. 8 (DK Bank's paralysis).
 
+**Fourth-edition additions (complete reread; forward links)**
+- **What the game told her about the engagement.** "At the center of this story was the engagement between me and Teia Eiichi: an engagement that was supposed to rescue the Keika zaibatsu." She guesses that Teia absorbed Keika "and its bad debts" after the bubble, that "there wasn't any reason for the Teia Group to want me," and asks: "Was the annulment of our engagement perhaps planned from the very start?" She also notes that in the game "the villainess flaunted her power without hesitation" although, after her father's scandal, she "should have no business being in high society." Vol. 5 Chs. 8–9 answer both puzzles: the game's Runa had outside money and was fronting a scheme.
+- **The love interests as a balance sheet.** Even as a toddler she reads the game's relationship map financially: Izumikawa's family "held power over the Ministry of Finance," Gotou's father would be vice minister, Teia owned banks — "What if it was decided that the Teia Group was too big to fail?" Vol. 5 Ch. 9 confirms the three were chosen for finance, politics and tax.
+- **The staff were not in the game.** "I found it funny that none of the staff ever appeared in the game." The house itself was — "a real version of the same location."
+- **Tachibana's first judgement of her:** "You are much like your father in that regard." Of her father: "He got caught up in the times. That was what made it so tragic when the times abandoned him." (Vol. 2 Ch. 7 reveals that Tachibana himself pushed Otsumaro to his death; the sadness here is a participant's.)
+- **The hundred million yen.** She has ¥100 million in cash delivered and sits looking at it under a security guard's eye: "This is enough to buy some unfortunate soul's entire life." Keiko: "You don't need to force yourself to mature, my lady… take your time growing up into a beautiful woman." The first money she spends is on Aki's university fees. *She keeps that bundle*: in Vol. 5 Ch. 5 it sits in the front room of the Moonlight Fund's vault "so that I'd never forget those times."
+- **Her own warning:** "history liked to lift its victors to more incredible heights than they could achieve on their own — right up until they crashed and burned."
+- **The vow, in full:** "I'd lose to the protagonist, and only the protagonist — not to anyone else. Especially not to the hopelessness of the times!… I could save Japan's economy. I could save all of us: all who suffered during my previous lifetime."
+- **Noble immunity's first use is financial.** "Tachibana and Ichijou used the Keikain family's diplomatic immunity as a bargaining chip" to obtain Ichiyama's internal whistle-blower. This is the privilege Koizumi abolishes in Vols. 4–5 and the one the game's Runa used to build a "law haven."
+- **The Ministry gets a bank.** The new president is "appointed from the Ministry itself"; the merged group is "something the MOF could make an extra arm out of." Vol. 5 Ch. 3 gives the consequence in Kanbe's words: Keika Holdings is "a kind of government-affiliated bank."
+- **How the mergers erased losses** (one sentence here, the whole of Vol. 4 Ch. 1 later): in a merger "the assets of the other company could then be recalculated for their current market value."
+- *Strongly supported (new):* **The whistle-blower is a method she returns to.** In 1997 she finds a real one and uses immunity to protect him. In 2001 she forges one to bring down WCI (Vol. 4 Ch. 2). The first is rescue, the second is a short sale.
+- *Strongly supported (new):* **Keiko's sentence is the first "job for adults."** Before any politician says it, her wet nurse tells her the adults will work "until you're bigger." Runa's answer is "Mm…" — and the next line is Ichijou at the door with the Ministry's warning.
+- *Plausible (new):* The household is the first thing she protects ("I don't want to lose them") and the reason she begins. Vol. 5 Ch. 2's price for power — "be the one to bury the people you love" — is refused in the same spirit: she will not buy power with the people around her.
+
 ---
 
 ## Chapter 3 — A Lady's Everyday Life
@@ -154,10 +194,10 @@ A Japanese corporate employee dies unremarkably after their employer collapses, 
 - Runa insists on kindergarten over the main family's preference for isolation — ostensibly about her conspicuous blonde hair, actually about her father's scandal.
 - She meets **Kasugano Asuka** (Dietman's daughter, Ehime mandarin groves, insists on calling them "oranges") and **Kaihouin Hotaru** (religious noble family; untraceable at hide-and-seek, even on video).
 - The Amane Mio subplot culminates in a kindergarten brawl, the "Incident of the Pine Corridor," after boys mock Mio for needing her doll. Tachibana notes Mio's father's trading company is struggling; Runa considers intervening.
-- At her Keikain debut party she deliberately references her father's scandal in front of Duke Kiyomaro — signaling she knows more than a child should, converting apparent naïveté into leverage.
-- Secretaries from **Minister of Finance Izumikawa Tatsunosuke** and **Secretary-General Katou Kazuhiro** arrive. Katou's district is Sakata; Izumikawa is his superior, and Katou is rumored to be pushing him toward retirement for "generational change." Katou meets Runa personally with visible emotion.
-- She meets **Teia Eiichi**; Nakamaro asks him to befriend her. She teaches him vending machines and cola — a deliberate echo of a game scene.
-- At the Keika Group's fiftieth-anniversary party she overhears gossip about "the girl who dreamt up Keika Bank" and learns the Iwazaki Group is circling Keika Holdings.
+- **Her debut is the Keika Group's fiftieth-anniversary party** at the Keika Hotel in Shinjuku *(one evening — corrected in the fourth edition)*. Beforehand, secretaries from **Minister of Finance Izumikawa Tatsunosuke** and **Secretary-General Katou Kazuhiro** call on Tachibana. Katou's district is Sakata; Izumikawa is his superior, and Katou is rumored to be pushing him toward retirement for "generational change." Katou meets Runa personally with visible emotion.
+- Entering, she overhears gossip about "the girl who dreamt up the Keika Bank" and learns the Iwazaki Group is circling Keika Holdings. Duke Kiyomaro proposes to move Tachibana into Keika Bank.
+- She meets **Teia Shuuichi and his son Eiichi**, and deliberately alludes to her father's scandal in front of them and Kiyomaro ("People have a lot to say about me") — signaling she knows more than a child should, and glancing at the branch families when asked where she heard it.
+- Nakamaro asks Eiichi to befriend her. She teaches him vending machines and cola — a deliberate echo of a game scene.
 - She meets **Izumikawa Yuujirou** at a professional-qualification exam hall, where both are elementary schoolers sitting adult certifications.
 - The group forms — later "the Gakushuukan Quartet" — recruiting **Gotou Mitsuya** at a café over a shared book.
 - The chapter closes on home video of her first school day, and a message recorded to her future self asking if she is happy. The battery dies.
@@ -181,6 +221,26 @@ A Japanese corporate employee dies unremarkably after their employer collapses, 
 - *Speculative:* Mio's father's company is planted for later payoff.
 
 **Connections:** Katou's emotional reaction is explained in Ch. 4. The Iwazaki interest follows from Ch. 2's mergers. Ch. 5 explains the Eiichi engagement's calculation.
+
+**Fourth-edition additions and corrections (complete reread; forward links)**
+- **Correction — one party, not two.** Her "debut" and the Keika Group's fiftieth-anniversary party are the same evening at the Keika Hotel in Shinjuku. The order is: the politicians' secretaries call; Katou visits her in the waiting room; she enters and overhears the gossip about "the girl who dreamt up the Keika Bank" and the Iwazaki guests; she greets Kiyomaro; the Teias arrive; she drops her remark; then the vending machine.
+- **Correction — to whom she says it.** The remark is made to **Teia Shuuichi**, in Kiyomaro's hearing: "Are you sure that's all right? People have a lot to say about me." "Time seemed to freeze." Kiyomaro, "concealing how furious he was": "Where did you hear about such things?" — "I can't remember," she says, *glancing at where the branch families sit*. She does not only show that she knows; she points her uncle at the relatives who gossip. Those are the families who put her on "trial in absentia" in Vol. 5 Ch. 1.
+- **Why she sits the examinations:** "I wanted to get some qualifications under my belt, just in case I couldn't avoid my downfall" — bookkeeping, secretarial skills and English at level three, then computing and a hazardous-materials licence. Vol. 4 Ch. 12 is where an adult finally understands this: "She clearly believes the Keika Group may collapse and is preparing for it to happen."
+- **Kiyomaro's first move** is to detach her butler: he wants "a suitable position" for Tachibana "within Keika Bank" and promises "extra staff to make up for the loss." Her reading: the main family "didn't have anyone directly linked to the main family in the newer parts of the Keika Group." Tachibana does end up running Keika Railway.
+- **The family's economics:** Hikomaro left seven branch families; the group's assets sit in a management company that pays the descendants dividends. "I didn't receive any of those dividends. My money… came from the Far Eastern Bank, or rather, the Moonlight Fund."
+- **The Ministry's plan is stated at the party:** to use her banks "to try and test the waters on lifting the ban on holdings companies. Keika Holdings… it'll really be under the Ministry's control."
+- **The two politicians are a geopolitical pair.** Izumikawa "favored naval power," Katou "the military side" — the glossary says land power and sea power. West-coast politicians, with "a long relationship with the mainland," lean to land power; the American alliance made sea power the mainstream. Katou has the backing of the **Hashizume Faction, "the corps."** This is the map on which Vol. 5 places Runa: Kanbe tells her that her own programme — regions, public works, the continent — is the Hashizume line (Vol. 5 Ch. 2), and the nationalists who court her "believe in… land power" (Vol. 5 Ch. 1).
+- **Katou's words:** "Your father did a great deal for me. Please allow me to apologize for being unable to save him." Runa: "Children cannot choose their parents… I fully intend to properly atone" — by which she means money: she guarantees the Yamagata Shinkansen financing, from the Moonlight Fund if the bank will not.
+- **Hotaru speaks — here, first.** After Runa sings to draw her out, Hotaru appears clapping: "You're a really good singer, Runa-chan!" — "Hotaru-chan spoke!" Asuka had befriended her with a mandarin because "I was scared she'd be left out." Vol. 5 Ch. 7 calls this being "saved by Asuka's mandarins." The "Grand Master Tanuki" of those groves is the spirit Hotaru calls on in Vol. 4 Ch. 7.
+- **"The power of science and money."** Runa's plan to catch Hotaru on video. Asuka: "That's not very mature of you, Runa-chan!" The same friends say the same thing at the kendo final in Vol. 5 Ch. 2, when she films every opponent — and loses.
+- **Why she sings:** "I loved singing in my previous life. I would have loved to do it professionally, but the economic situation meant I didn't get the chance."
+- **Mio and the doll.** Mio calls her "dolly" because she looks like the imported bisque doll Mio cannot sleep without. Runa saves the friendship by becoming a customer: "Tachibana… I want a doll." "Living meant severed connections. It could also mean using money to repair those connections." The doll room this starts is still there in Vol. 5 Ch. 9.
+- **The film, read by class.** Runa: "I'm actually descended from the side who wanted to get that thing's head." Eiichi: the ironworkers "wouldn't be able to work and make a living anymore." Yuujirou: "My family is descended from samurai… all three of us are descended from the protagonists' enemies." Three seven-year-olds place themselves on the side of the court, the factory and the warriors.
+- **Small facts with later weight:** Yuujirou is "the youngest child of four siblings" and already expects an election to "interfere"; Mitsuya's father is the budget examiner "practically guaranteed to become the next vice minister"; Nakamaro asks Eiichi to be her friend because "she has always been somewhat of an outcast"; she taught Eiichi cola because, in the game, he embarrasses himself in front of the heroine by not knowing how money works.
+- **The video, exactly.** Filmed at the academy's open day by the whole household — Aki, Keiko (in a suit, as guardian), Naomi, Tachibana, the two drivers — with Asuka, Hotaru and Eiichi wandering into frame. Her words: "Hello, to the adult Runa. You haven't fallen to ruin or anything yet, have you? You're not breaking your back at some silly job that was forced on you by society, are you?… At present, I'm incredibly happy. Adult Runa, are you happy? Even if you're not, I hope you'll remember the times when you once were… I'm sending you my smile so you'll find your happiness again." Eiichi: "You're such a weirdo." It is played back to her in Vol. 4 Ch. 11, when she has stopped eating.
+- **References, tightened.** Both novels are real 1997 books: Onda Riku's *Hikari no Teikoku*, linked stories about a clan with quiet, unshowy powers who try to live unnoticed — a fair description of Hotaru's family; and Taniyama Yuki's *Tenmu Kōkai*. The three *Minna no Uta* songs the glossary lists as Runa's favourites are among the programme's eeriest. "Incident of the Pine Corridor" borrows the name of the 1701 attack in Edo Castle that begins the story of the Forty-seven Rōnin *(my identification)* — a quarrel over an insult that brings down a house.
+- *Strongly supported (new):* **This chapter plants more long-range pay-offs than any other in the series** — the tape (Vol. 4), the qualifications (Vol. 4), Hotaru's voice and the mandarins (Vols. 3–5), "science and money" (Vol. 5), the doll (Vol. 5), the branch families (Vol. 5), land power and sea power (Vol. 5). The author's claim in Vol. 3's afterword that he does not plan in order should be weighed against that.
+- *Plausible (new):* Her glance at the branch families is her first act of family politics, and it is an act of misdirection.
 
 ---
 
@@ -228,6 +288,29 @@ A Japanese corporate employee dies unremarkably after their employer collapses, 
 
 **Connections:** Drives Ch. 5. Izumikawa's resignation drives Ch. 9's entire election plot. Matsuno becomes Akamatsu in Ch. 9.
 
+**Fourth-edition additions and corrections (complete reread; forward links)**
+- **What the Moonlight Fund is.** "Moonlight Fund isn't a company?!" Among themselves the name means **a bank account in Runa's own name** at a private Swiss bank — "the nucleus and hub." Around it sit same-named shells in Panama, Bermuda, the Isle of Man and the Caymans, and one real office in Silicon Valley. Reasons given: to hide a child-owner behind "a few layers of security," to confuse anyone hunting her money, and "to spread our debt out across several companies. That way we could borrow more." Nothing may move "without the agreement of both Ichijou and myself [Tachibana]." Vol. 5 Ch. 6 shows the same structure from outside: "untraceable private Swiss bank accounts" and no legal relationship with the group.
+- **How the money enters Japan:** "All the money we've used within Japan has been borrowed" — yen loans repaid in dollars through banks' New York branches. Izumikawa and Katou "made a secret agreement" to hold off the tax bureau.
+- **What immunity is for.** Ichijou: "Tax evasion is the crime for which that impunity is most often invoked… you can trust the Keikain Dukedom to stamp it out." In 1997 the privilege is her fund's last line of defence. In Vol. 4 Koizumi moves to abolish it; in Vol. 5 Ch. 9 the game's Runa is shown using it to make a "law haven."
+- **Her first complaint about responsibility:** "I was a little frustrated that it was impossible for me to take any responsibility at all because of my age." This is the fault Kanbe and Koizumi name in Vol. 4 — from the other side.
+- **She was being watched for her protection** by the Cabinet Intelligence and Research Office, and the watch was relaxed after her apology to Katou. Hence the detective, the drivers and the guards.
+- **A political debt she holds without asking for it.** The two long-term credit banks were "the politicians' personal piggybanks"; by merging them she made those loans disappear "before being announced as part of the collective bad debts."
+- **The weekly dinner** begins here, on Saturdays, with three people and Keiko's hamburger steak — because "if Tachibana and Ichijou betrayed me, I was done." By Vol. 5 Ch. 4 it fills a hotel hall.
+- **Why the two men cannot be bought:** Tachibana — "The master asked me to take care of you"; his loyalty to Hikomaro "was greater than his loyalty to me." Ichijou — without her he "would have been dismissed immediately."
+- **"A job for adults," spoken first by a policeman.** Maefuji: "Nothing at all. You are a protected person. That's all you need to know. **You can leave the rest up to the adults.**" And later: "The rest is a job for the diplomats." Koizumi's version comes in Vol. 3.
+- **The escape** is by boat down the Nihonbashi River from behind the old Ichiyama building — her idea. The tailing car is registered to the Russian embassy. The note that arrives is the floating of the Thai baht.
+- **The party.** The cruise ship is the *Actress*, a former bad debt now owned by her hotels. Izumikawa presents her beside him as the face of "Keika Holdings: that name will lead the way." Guests say aloud that they will "butter up a small girl" to get bank holding companies. The children's talk is of "that popular RPG" whose "huge company… has got to be a zaibatsu" — *plausibly Final Fantasy VII (1997) and its Shinra corporation.*
+- **Correction — what Runa deduces is stronger than the earlier edition said.** Her charge is that the Public Safety Bureau *staged a fake kidnapping* — to gain leverage over a Finance Ministry weakened by scandal and to get at the politicians' loans — and that it "twisted… into a real one" because the hired pair "were seriously planning to sell me off." Her last deduction is about her own family: the Bureau "used its knowledge of my late father's scandal with the East to force my family's hand into allowing it to fabricate my kidnapping." Ch. 5 confirms it from inside ("She saw through most of our set up… that had now been settled with the recent farce").
+- **Why the boys could walk in:** "There was no risk of them going after us if they were after Romanov treasure." The female guard had been turned by a honeytrap; the doctor was tied to an indebted branch company — "there were sinister parties even closer to the center of the Keikain family."
+- **The larger frame she proposes:** the Asian Monetary Fund and Keika Holdings were to be the Finance Ministry's answer to the hedge funds; the Foreign Ministry (Katou's old home) and "several conservative dietmen who wanted Japan to be weaker" preferred not to confront America; Izumikawa's circle "had taken the fall to preserve relations between Japan and America." "The Keikain family was chosen specifically for me: a symbol of its former collusion with the East."
+- **The closing lines, exactly:** "Keikain Runa, are you there? You spent so long being afraid of everything and everyone. After all of that, what did you think the protagonist had that made you so jealous of her?"
+- **A glossary line worth keeping:** on the Privy Council — "There is a possibility that dissolution of the zaibatsu and nobility is becoming a problem in the Japan of the game world." The author states in Volume 1 what the game is revealed to be about in Volumes 4–5.
+- **Chronology strain.** The dinner scene treats the two long-term credit banks as already merged, and the bank's head office has moved, before the baht is floated — which happened on 2 July 1997, earlier than the Hokkaido rescue in Ch. 2. The chapter's events are not in calendar order.
+- **Uncertain:** the glossary says "a similar scheme" of same-named funds "played out with a Japanese tour bus company, leading to a change in administration." I have not identified the case. The "sniper from a famous seinen manga" who uses Swiss banks is Golgo 13 — the series Vol. 3 Ch. 3 is framed around.
+- *Strongly supported (new):* **This is the first time the adults stage something around her "for her own good" and the first time she finds out.** Her family lets the security police use her as bait to settle an old obligation. Vol. 4 Ch. 2 repeats the pattern with her guardians and a takeover bid; Vol. 4 Ch. 9 repeats it with the prime minister. Mitsuya's phrase for it comes four volumes later: betrayal from good intentions.
+- *Strongly supported (new):* **The structure she is given for safety is the structure that later condemns her.** A child's private account at the centre of anonymous shells, shielded by immunity, with two adults holding the keys: prudent in 1997, indefensible to a television audience in 2002 (Vol. 4 Ch. 8).
+- *Plausible (new):* Her recording of the boys' encounter with Maefuji — to turn them against the man who arrests her in the game — is the first deliberate edit she makes to the game's ending. In Vol. 5 Ch. 7 the same Maefuji is the official who cleans up after her household's spies.
+
 ---
 
 ## Chapter 5 — The Atonement of Keikain Nakamaro
@@ -251,6 +334,18 @@ A Japanese corporate employee dies unremarkably after their employer collapses, 
 - *Plausible:* Nakamaro's invisible devotion sets up future tragedy; if Runa falls, he fails Natasha.
 
 **Connections:** Explains Ch. 1's engagement and Ch. 3's warmth. The title only resolves once his guilt over Natasha and Otsumaro is known.
+
+**Fourth-edition additions and corrections (complete reread; forward links)**
+- **Correction — who Ruriko is.** Keikain Ruriko is **Kiyomaro's late wife**, born Iwazaki, "from the family who ran Iwazaki Chemical." Nakamaro is their only child. (Part I's family tree, which had her as Hikomaro's daughter, is corrected in this edition.) Kiyomaro never remarried: "It's good. She would've liked it."
+- **Kiyomaro on his half-brother:** "My brother wasn't a bad person… He just wanted our father to accept him and didn't know how to doubt people. That was why all he could do was watch when the internal strife between the Keika Group and the Far Eastern Group broke out. I don't want Runa to meet the same fate." At the height of the bubble the Far Eastern Group came "just to the point before it would have taken over the Keika Group."
+- **The family's weakness, stated plainly:** "We don't have anybody. If we take Keika Bank back from the Ministry, we're stuck with Tachibana and Ichijou." In Vol. 5 Ch. 1 Tachibana wins the family council with exactly this point.
+- **Why they adopt her** (in effect here, in law in Vol. 3): "The only way to protect Runa was to treat her as though she were a daughter of the main family." Kiyomaro's question to his son — "You are essentially her brother" — is "a declaration that he considered Runa to be his own adopted daughter."
+- **The three boys as a shortlist:** "Why not gift her a prince out of one of those three boys?" Teia would bind two zaibatsu ("other families were unlikely to just let it slide"); Izumikawa is a baron, so noble to noble; Gotou "would be the easiest," with a seat at Keika Bank after retirement for a man with "precious knowledge of financial tricks." Vol. 5 Ch. 9 says the game's Runa recruited the same three for finance, politics and tax.
+- **Iwazaki.** Nakamaro's marriage is "necessary to form an even deeper bond with the Iwazaki Group in order to protect her as well" — though "to the most pessimistic, it seemed that the Keika Group had sold itself to the Iwazaki Group." The Iwazaki tie is the lever in Vols. 2–3 and the nationalists' preferred end-state in Vol. 4 Ch. 12.
+- **The Bureau's hold is released:** the family had been "under the thumb of the Public Safety Bureau, but that had now been settled with the recent farce."
+- **Natasha, in Nakamaro's memory:** "I've come to love this view. Where I come from, we didn't have tall buildings like this, and it never got so warm." She hated snow. "Please. Please, Nakamaro-kun. Protect Runa."
+- *Strongly supported (new):* **Nakamaro is the character whose survival most changes the story.** In the original timeline he is dead (Vol. 3 Ch. 6; Vol. 5 Ch. 4), and the Runa of the game is "all alone." Here he lives to marry, to promise that he will "protect Runa, even if nobody else does" — and, in Vol. 5 Ch. 4, to tell her "we'll end up clashing someday."
+- *Plausible (new):* The chapter title has two debts in it: to Natasha, and to an uncle the family let fall.
 
 ---
 
@@ -279,6 +374,15 @@ A Japanese corporate employee dies unremarkably after their employer collapses, 
 - *Plausible:* The explicit North Korea modeling invites reading the whole Karafuto arc as a compressed alternate Korean division — one where reunification actually happened.
 
 **Connections:** Extends Ch. 2's partition revelation; supplies Ch. 9's antagonist network; the combine pays off in Ch. 9's oil arbitrage.
+
+**Fourth-edition additions (complete reread; forward links)**
+- **The ruling party in 1994 is not the Fellowship.** The 1994 item has "the Fellowship of Constitutional Government… criticiz[ing] the ruling party" — this world also had its non-LDP interlude (Vol. 5 Ch. 9's glossary names it: the Hosokawa administration).
+- **Karafuto under martial law.** After the 1995 earthquake and sarin attack the Self-Defense Forces "were dispatched to Karafuto, placing the whole prefecture under martial law." Its police are "as dysfunctional as… when handed over," penetrated by the Russian mafia; there are "rumors of a Russian oligarch."
+- **Super-J** is blamed in the text as "one cause of the bubble's bursting."
+- **The laundering route** deserves quoting in full, because Volume 5 turns on it: Karafuto "has also become a final destination for money laundered via the Asian black market. Funds made from illicit drugs, weapons, gambling, prostitution… are laundered through Hong Kong before the so-called 'dirty money' is sent back to Japan through Karafuto *in the form of natural resources*. This network is controlled by the Hong Kong and Russian mafias."
+- *Strongly supported (new):* **This page is the original downfall's infrastructure.** Vol. 5 Ch. 9: the game's Runa fronted a plan to make Karafuto "a tax haven and law haven" — "money laundering" — with a Chinese faction beside her. The Hong Kong community that arrives here in 1997 is the one that sends Ryuu Suzune into the living Runa's household in Vol. 5 Ch. 7.
+- *Strongly supported (new):* **And it is the shadow of her own business.** Dirty money comes back "in the form of natural resources" through Karafuto. Runa's method for bringing dollars home (Ch. 9) is to turn them into oil and bring the oil through northern ports. The honest scheme and the criminal one use the same pipe.
+- *Plausible (new):* Karafuto's unemployment "likely to surpass 20 percent" (Ch. 4) is still above 20% in Vol. 5 Ch. 6. Six years of Keika investment do not move the number.
 
 ---
 
@@ -317,6 +421,14 @@ A Japanese corporate employee dies unremarkably after their employer collapses, 
 
 **Connections:** Explains Ch. 4's introduction; sets up Ch. 9's promotion. The marriage-politics motif links Toudou's exclusion to Nakamaro's (Ch. 5) and Runa's own (Ch. 1).
 
+**Fourth-edition additions (complete reread; forward links)**
+- **The mentor's words, which open the chapter:** "Don't forget this. Without this, the country is dead. Take it to your hometown across the ocean, refine it, then take it wherever you need to. It is like a fine woman; it must be treated with care." And the narrator's dry correction: "But speculating was not a proper trade."
+- **Where the two men met:** Hong Kong, "during the time Keika Pharmaceuticals was big" — the Keikain connection to Toudou is older than Tachibana's rescue of him.
+- **Why Toudou says yes to Runa:** "The decisiveness behind her smile was captivating. Her smile was identical to the speculator's." He repeats to himself the speculator's line — "It's always more fun to discover this stuff by yourself" — and proposes the trading company "without hesitation."
+- **In-world history added by this chapter:** a "Manchurian War" already over before the oil strike; the Kuomintang in Manchuria as "a capitalist bulwark"; Japanese forces and the United States clearing the Communists out of it. Later volumes build on this: China's capital is Nanjing (Vol. 4 Ch. 2), and the Soviet Union used nuclear weapons to stop the Manchurian War (Vol. 5 Ch. 5).
+- *Strongly supported (new):* **The speculator is a forecast, and later volumes keep it running.** A man with the gift, no structure, "targeted by suspicious groups," dead "with nothing to his name," his daughter attacked at the funeral by people hunting a fortune already spent. Okazaki — "the dealer," a gambler Ichijou compares to Runa (Vol. 4 Ch. 12) — is the speculator's type; Toudou, who chose the foreman's road, is by Vol. 5 the man the press calls "the only person who can take charge of the bloated Keika Group."
+- *Plausible (new):* Toudou turned down an arranged marriage and lost his career; Nakamaro accepts one in Ch. 5 to protect Runa. The two short chapters are placed either side of the documents on purpose.
+
 ---
 
 ## Chapter 8 — Little Queen
@@ -336,7 +448,7 @@ A Japanese corporate employee dies unremarkably after their employer collapses, 
 - Runa buys several expensive antique dolls to prop up Mio's father's trading company, then lends them to a Teisei cultural-affairs exhibition he hosts — quietly resolving the Ch. 3 thread.
 - School essays reveal depth beneath comedy: Asuka has been raised to accept an arranged marriage and an inherited Diet seat; **Hotaru** was originally meant to be ritually sacrificed to become a *zashiki warashi*, spared only by the Grand Master Tanuki legend from Ch. 3.
 - **Shisuka Lydia**, "Vasilisa," is introduced — an upperclassman of mixed Russian/Japanese-noble heritage, ostracized as Runa is. Her father, the former head of Northern Japan's secret police, defected and enabled Karafuto's largely peaceful reunification — leaving the family honored by Japan and resented as traitors by Karafuto natives. A direct mirror of Runa's contested legacy.
-- A library investigation into how librarian **Takamiya-sensei** always finds Hotaru resolves mundanely — decades of familiarity, not magic — pointedly adjacent to Hotaru's still-unexplained ability.
+- A library investigation into how librarian **Takamiya-sensei** always finds Hotaru ends with her *claiming* a mundane answer — decades of familiarity with her "castle" and with the girl's reading — while the camera shows Hotaru appearing "as if out of thin air." *(Reworded in the fourth edition; see the additions below.)*
 
 **Revelations**
 - Hotaru confirms in her own words that she is no ordinary child.
@@ -370,6 +482,30 @@ A Japanese corporate employee dies unremarkably after their employer collapses, 
 
 **Connections:** "Little Queen" recurs in Ch. 9, where a Secretary-General uses it. The Teisei bailout is completed in Ch. 9. Mio's thread resolves here. The concert's "decline" segue opens Ch. 9's election arc. Vol. 3's stolen warhead crosses Europe with an officer disguised as Romani — the series reusing Mérimée's "people of no country" literally.
 
+**Fourth-edition additions and corrections (complete reread; forward links)**
+- **The department-store photographer** is unnamed here, but his manner — "Only that you're going to grow up to be a beautiful woman. That's enough for the time being" — and the note that he "showed up a few times since then to ask me to model" make him, *plausibly*, the Ishikawa Nobumitsu of Vols. 4–5, who calls her "my goddess."
+- **"Your Little Majesty."** The campaign line is "Tell me what you want, Your Little Majesty." Angela uses the phrase to her face in Ch. 9. By Vol. 5 Ch. 2 it is how the president of the United States addresses her.
+- **The watch.** She has it engraved with the family crest "so it can act as a personal ID" — a crest "usually used for pill boxes," moon and mountain-cherry flower (glossary). In Vol. 5 the crest is on oil tankers' funnels and on the identity cards of four prefectures.
+- **The store** is in Ikebukuro, "the scene of a certain in-game encounter."
+- **Identification (new, mine): Teisei is the Seibu–Saison complex.** A postwar railway group split between the founder's heirs; one branch became department stores, supermarkets, convenience stores, hotels, fashion malls and — the telling detail — "beef bowl restaurants"; ruined by bubble-era property and non-bank lending; an Ikebukuro flagship; and a railway side that "put everything it had into the Nagano Olympics" (Ch. 9). That is the Seibu Railway group and the Saison group of the Tsutsumi brothers. Not confirmed by the text.
+- **The Valentine's game, in detail.** Five-yen chocolates for everyone and a cap of three times that for the return gift. Mitsuya: a handwritten "voucher for a favor worth 15 yen" — "now the one who had to consider the value of 15 yen" is her. Yuujirou: a handful of marbles and a question — "Why did you pick those colors?" Eiichi: a signed Art Nouveau portrait of her, later appraised at six figures — "technically, you didn't do anything wrong." The adults refuse the game: "If blessed adults like us do not spend our money, who is going to contribute to the economy?" Her thought as she watches the boys: "I honestly hoped we could get on well together until the day they came to destroy me."
+- **What the game says about the Izumikawas** (her recollection at the party): Taichirou loses; his father loses the leadership vote, does not stand again and retires; the brothers fall out; Yuujirou, eighteen and unable to stand for election until twenty-five, carries the house alone — "his route was all about the responsibility he took on at a young age, and the stress and loneliness." Izumikawa to Runa, half-joking: "When you're old enough to run, do reach out."
+- **Yuujirou under the stars:** Polaris, "sitting there quietly in the sky for tens of thousands of years." Runa: "I do shine so brightly that people avoid me." His parting line: "It's not important to be right about everything."
+- **Mitsuya under the cherry trees** — the exchange the earlier edition summarised too briefly. Runa: "Are you eager to grow up, Mitsuya-kun?" — "Yes. I'd like to become an adult as soon as I can." — "**But that's a waste. Your childhood is precious.**" — "Says the girl whose face is all over Teisei Department Stores." Four volumes later it is Eiichi who asks *her*: "Then why are you rushing to become one?" (Vol. 4 Ch. 11).
+  - On *Toshishun*: read "while I still partly considered this life as something borrowed," it "showed me what it meant to be human." Would she, like its hero, break her vow of silence to call to her suffering mother? "Honestly… I'm not sure." Mitsuya: "The Keikain I know would definitely call out. You'd shout out that the spiritual training was boring." Her private reply: "In some ways, I probably already was enlightened."
+  - On *Gon, the Little Fox* — Mitsuya's choice — "there's no book that better describes how hopeless reality can be." A creature that does good in secret is shot by the man it was helping.
+- **The dollhouse, in her words.** The faceless parents are "the familial warmth that I — no, Keikain Runa — never got to have." She resolves to remember their voices "for the sake of Keikain Runa, **whose life I'd usurped**, and for the sake of her lost parents." The doll-father wonders "what sort of adult you'll grow into"; the doll-mother answers, "once she finds herself a wonderful man like you."
+- **The three essays, first drafts.**
+  - Runa: "my father betrayed his country and was then eradicated as a traitor. The reason I am still here is because of my wealth… you can smack anyone over the head with a wad of bills and they'll bow to you." (In Vol. 4 Ch. 5 she buys a school election with a cheque.) Her submitted title: "**I Want to Earn Some Qualifications and Work in an Office.**"
+  - Asuka: marriage, a husband to inherit the seat, three children, "a regional election committee."
+  - Hotaru: "I wasn't supposed to exist… Because I was saved, I lost my future dream. **What will I become now? What will I be reduced to?**" Submitted title: "I Don't Know. Let Me Think About It." Vol. 5 Ch. 7 answers in almost the same words — "Just what am I going to become…?" — and with a book from the same librarian.
+- **Lydia.** Her father "sold himself to this country… at just the right time" (Vol. 5 Ch. 9: "picked the right time to sell out their country"). Runa's own reckoning: "The reason I was safe from harsh criticism… was because of Shisuka-senpai experiencing it all before me." They are introduced by an ambush — Hotaru blocks the corridor.
+- **Correction — the librarian.** The earlier edition said the investigation "resolves mundanely." It does not quite. Takamiya Haruka *says* it is experience ("This place is my castle… Not even the tiniest of changes escapes my notice"), but what the camera records is Hotaru appearing "as if out of thin air… seriously terrifying." Her appearance "hadn't changed a bit" in two decades; her name is on the borrowing card of every book in the library. In the game she is a guide who helps the heroine "identify what she was lacking." Vol. 5 Ch. 7 lists her among the four people who can perceive Hotaru and calls her "the witch [who] had broken the curse."
+- **Her own history:** a count's only daughter, married off, divorced a family that held "a woman's place was at home," found work when men were scarce. "Maybe she felt like she'd fought back against her time and won." Her blessing over a borrowed book: "I hope this book becomes something irreplaceable to you."
+- *Strongly supported (new):* **"Whose life I'd usurped" is the plainest statement in the series of how she regards the original.** Vol. 5's last line — "Poor Keikain Runa" — is spoken by the usurper about the girl whose parents she is here trying to remember.
+- *Strongly supported (new):* **The essays are the three girls' whole arcs.** Runa's cover story (qualifications) is her real exit plan; Asuka's is the dynastic politics she is working for her father in Vol. 5; Hotaru's question is answered in Vol. 5.
+- *Plausible (new):* Three adult women in her world do not age — Keiko ("frozen in time," Ch. 3), Takamiya, and, by implication, the mother she never saw. The book's supernatural layer is domestic and female.
+
 ---
 
 ## Chapter 9 — Vultures and the 1998 House of Councilors Election
@@ -389,7 +525,7 @@ A Japanese corporate employee dies unremarkably after their employer collapses, 
 - **Fuchigami Keiichi**, the Foreign Minister, becomes Prime Minister. The leadership race was meant to be Izumikawa versus Fuchigami, but the MOF scandal destroyed Izumikawa's support. In a tense phone call, Runa silently directs Dietman Izumikawa via a scribbled note to demand — and win — the party vice presidency.
 - **Koizumi Souichirou**, former Minister of Health, Labor and Welfare, opposed the reshuffle, stood for leader, and lost badly with only his own faction's core. His sworn friend **Katou** used the reshuffle to secure a higher post — "nothing short of a betrayal." Katou later resigns over the election defeat; **Hayashi** becomes Secretary-General and offers Koizumi the faction deputy chairmanship.
 - Hayashi reveals the string-puller behind Izumikawa's vice presidency: "the Keika girl, that Little Queen." Koizumi — who knows the Keika Rules from his own MOF dealings — begins regarding Runa as a political opponent. They will confront each other directly "around two years later."
-- Maefuji, in a conversation Runa engineers and records, all but confirms her kidnapping was ordered by a Russian oligarch — a former Soviet gas-industry minister tied to Russia's outgoing Prime Minister — who wanted her Romanov-linked fortune.
+- Maefuji, in a conversation Runa engineers and records, all but confirms her kidnapping was carried out by the Russian mafia, hired by an oligarch colluding with powerful figures in the Russian government. Behind it was Russia's previous prime minister, "only just clinging onto power," who had "zeroed in on my wealth and Romanov blood" — a former Soviet minister of the gas industry who ran a conglomerate owning a huge natural gas company. Runa's part in the Sakata combine project had drawn his attention.
 - Runa foresees the Russian financial crisis and the American hedge-fund losses to follow, and **chooses not to warn anyone**, accepting the moral cost. She positions the Moonlight Fund as **sole bidder** for the privatized Keika Bank, winning it for **¥800 billion**.
 - PM Fuchigami visits Russia and signs a "**Moscow Declaration on Establishing a Creative Partnership**," extending a syndicated loan repayable in crude oil, funded mainly by the Moonlight Fund — folding Runa's private finance into state diplomacy. The oligarch's refusal to contribute fuels rumors about repayment.
 - The final glossary draws the line from the real 1998 hedge-fund bailout to Lehman Brothers, closing the loop Ch. 1 opened.
@@ -410,7 +546,9 @@ A Japanese corporate employee dies unremarkably after their employer collapses, 
 - **Confirmed by the glossary — the financial Big Bang (1996–2001).** Hashimoto's "Free, Fair, Global" program: FX liberalization (April 1998), abolition of fixed brokerage commissions (1999), cross-entry among banks, brokers and insurers. The lifting of the holding-company ban (1997) reversed the 1947 Antimonopoly Act's central anti-zaibatsu measure. The blanket deposit guarantee (1996) was replaced by a ¥10m-plus-interest cap — for time deposits in April 2002, ordinary deposits in April 2005 — first invoked when Incubator Bank of Japan failed in 2010. *Minor shift:* the novel has the bank holding company bill going to the Diet in fall 1998; the real legislation came in 1997.
 - **Real:** ECHELON; the Boeing 737-700ER; *bubuzuke* as the Kyoto departure signal (the glossary is candid that its origin may be apocryphal but that the convention is now real).
 - **Plausible:** "Akamaru Corporation," Osaka-based, echoes **Marubeni** (Osaka-founded; the names invert the same circle/crimson characters). "Imperial Iwazaki Bank: Newly merged in 1996" echoes the real 1996 creation of Bank of Tokyo-Mitsubishi.
-- **Plausible, not re-verified:** the Moscow Declaration mirrors the real Nov 1998 Obuchi–Yeltsin declaration.
+- **The Moscow Declaration — verified real.** Obuchi and Yeltsin signed the "Moscow Declaration on Establishing a Creative Partnership between Japan and the Russian Federation" in Moscow in November 1998; the novel uses the real title. The Moonlight Fund's $10 billion syndicated loan, repayable in crude oil, is invented — it becomes the "Russian bonds" paid in crude in Vol. 3, and the reason Okazaki says Runa "bet it all on the Russian president."
+- **The "previous prime minister" = Viktor Chernomyrdin. High confidence (new identification).** Soviet Minister of the Gas Industry (1985–89), founder and chairman of Gazprom, Russian prime minister from December 1992 to March 1998. After the August 1998 default Yeltsin renominated him, the Duma rejected him twice, and Yevgeny Primakov became prime minister in September 1998. The novel's newspaper reports rumours that Japan was involved in his withdrawal from the succession race.
+- **The Russian president is never named** — in this or any later volume. In 1998 it was Boris Yeltsin.
 - **Fictional, reviving a real name:** "Imperial Airways" (the real British airline of 1924–39) persisting into 1998 — consistent with the book's pattern of prewar institutions enduring.
 
 **Deeper significance**
@@ -426,6 +564,22 @@ A Japanese corporate employee dies unremarkably after their employer collapses, 
 - *Noted strain:* ~¥10bn on one candidate far exceeds anything Japan's campaign-spending caps and corporate-donation limits allow through legal channels; the book never explains the money's route.
 
 **Connections:** Pays off Chs. 2, 4, 5, 7, and 8, and loops back to Ch. 1. Taichirou's election is set up by Ch. 8's "decline" segue; the vulture theme runs from Runa's own "California-based" disguise in Ch. 2 to the American fund she outbids here.
+
+**Fourth-edition additions (complete reread; forward links)**
+- **What the game called her.** Facing Angela, she thinks: "Perhaps this was how she ended up as a former eastern spy, who used the protagonist to get involved in a takeover of Teia Motor Co." That is the game's public story of the villainess. Vol. 5 Chs. 8–9 give the hidden one (a laundering haven in Karafuto, an engagement to a Teia).
+- **Angela already uses both nicknames** — "Little Queen" and "Your Little Majesty" — and her parting words are a statement of terms: "you will be disadvantaged if you win because we'll continue to keep a keen eye on you." She is hired in Vol. 2 and is still doing so in Vol. 5.
+- **The Choufuu Council** is introduced as a *presidents' council* — the forum through which a group is run once it is too big for its founding company. The name completes "flower, bird, wind, moon": "Keika" supplies moon and flower, leaving bird and wind (*chō-fū*). (Vol. 5 Ch. 4 refers to it as the group's foundation.) Planned alongside it: cross-shareholdings financed by the Moonlight Fund — the structure whose unwinding is the story of Vols. 2–5.
+- **The special loans were repaid in full** before the auction; that is what made the shares saleable.
+- **A voice on television:** an opposition member blames "zaibatsu and their flighty managers" and demands "structural reform." Runa: "Somebody's instigating this… A vulture fund." The reform language Koizumi rides to power is first heard here as a foreign fund's talking point.
+- **Fuchigami's ear.** He identifies her down a telephone line from the sound of a page being torn and a sigh. Izumikawa: "If you ask me, he reminds me of your grandfather. There was something unsettling about him too." He is the prime minister she gets on with best (Vol. 5 Ch. 2: "It made perfect sense that I'd gotten along with former prime minister Fuchigami").
+- **Taichirou's debt.** His seat is won on Hokkaido money she organised; in Vol. 5 Ch. 8 he is said to be in the upper house "thanks to you" and considering a move to Hokkaido.
+- **Her reason for silence about Russia** is more than profit: the kidnappers' fund rated a default at "three in a million"; a warning from her would be read as "the nonsense words of an elementary-schooler, or an attempt at misinformation to interfere with the auction." And then: "I would continue on the path of ruin, just like I always had, and just like I always would, out of reach of any helping hands."
+- **The oil loop is specified here.** The $10 billion loan is repayable in crude; "Japan can then sell off the oil to Europe, with Europe being the only place with an oil pipeline to Russia," and use the proceeds to buy Middle Eastern oil. Russia then announces a pipeline to Manchuria and Vladivostok with Akamatsu. Vol. 5 Ch. 4 shows the same loop five years on, earning $5 billion a quarter — and names it as the root of Koizumi's hostility.
+- **Koizumi's first judgement of her:** "It's scary to think of what that young lady might do in the future."
+- **Identification (new, mine):** the supermarket group "Sachii," wrecked by "internal discord, power struggles, and financial management failures," suggests Mycal (formerly Nichii), which failed in 2001. The mascot who takes her scissors at New Chitose is **ON-chan** (glossary) — the mascot of the Hokkaido station that made the travel show referred to in Vols. 4–5; "mainly sponsored… by the Keika Group — or rather, Runa."
+- **The afterword.** The author began the story online because he could find no villainess tale that showed "how those zaibatsu make their money": "I'll write it myself then… a meal I both cooked and ate." He "set out to write the whole thing and leave the editing to the end." When the book made "Hokkaido Takushoku Bank" trend on Twitter, "I took it as a sign of the times."
+- *Strongly supported (new):* **The first volume's last scene belongs to Koizumi, not to Runa.** After her greatest win the camera moves to the man who will defeat her, at the lowest point of his career, being offered a consolation post — and learning her name.
+- *Strongly supported (new):* **Every instrument of her later trouble is in place by the last page:** a private fund that owns a bank; cross-shareholdings; a political faction that owes her; an American officer assigned to watch her; Russian oil; an offshore structure shielded by immunity; and a reformer who has noticed.
 
 ---
 
@@ -737,6 +891,8 @@ Runa states the method herself, mid-concert: "It's even more interesting when yo
 | DK Bank | Dai-Ichi Kangyo Bank (paralysis = MOF's real five-month lending ban, July 1997) | High |
 | Finance Minister Izumikawa's resignation (Vol. 1) | Hiroshi Mitsuzuka, resigned 28 Jan 1998 over the MOF bribery scandal | High |
 | Secretary-General Katou's post-election fall | Katō Kōichi, who took responsibility for the 1998 defeat | High |
+| Russia's "previous prime minister" behind the kidnapping (ex-Soviet gas minister) | Viktor Chernomyrdin | High |
+| Russia's president (never named) | Boris Yeltsin, in 1998 | Very high (by date) |
 | "MOF clerk" at Far Eastern Bank | The real MOF-tan system | Very high (concept) |
 | Housing Loan Administration lineage of the RCC | Real (merged into the RCC in 1999) | Very high |
 | Keika Bank auction, Sept 1998 | The real 2000 sales of LTCB (to Ripplewood) and NCB (to a SoftBank-led group), moved earlier, with a Japanese winner | Moderate-high (structural) |
@@ -751,6 +907,10 @@ Runa states the method herself, mid-concert: "It's even more interesting when yo
 | The hedge fund bailout | LTCM, 1998 | Confirmed by glossary |
 | Iwazaki / Futaki / Teia | Mitsubishi / Mitsui / Toyota | High / High / Moderate-high |
 | Akamaru Corporation | Marubeni | Moderate-high |
+| Teisei Department Stores / Teisei Rail *(fourth edition)* | The Saison group (Seibu department stores, Seiyu, FamilyMart, Parco, Yoshinoya) / Seibu Railway of the Nagano Olympics | Moderate-high (my identification) |
+| "Sachii" supermarkets *(fourth edition)* | Mycal (formerly Nichii) | Moderate (my identification) |
+| AIRHO; its yellow mascot | Air Do; ON-chan (the mascot is named in the glossary) | High / Confirmed |
+| "That popular RPG" with a zaibatsu-like company *(fourth edition)* | *Final Fantasy VII* (1997) | Moderate (my identification) |
 
 **Unaltered backdrop:** Great Hanshin Earthquake and Aum Shinrikyo (1995); Princess Mononoke (1997); Hong Kong Handover (1997); the Asian Financial Crisis; the Nagano Olympics (1998); the 1998 Upper House election; the 1998 Russian crisis.
 
@@ -771,14 +931,16 @@ Runa states the method herself, mid-concert: "It's even more interesting when yo
 
 | Question | Status |
 |---|---|
-| What became of the original Runa's consciousness? | **Unresolved** — Ch. 2's "was it the weeping of the real Keikain Runa's heart?" and Ch. 4's direct address are the markers |
+| What became of the original Runa's consciousness? | **Unresolved through Vol. 5** — markers: Ch. 2's "was it the weeping of the real Keikain Runa's heart?", Ch. 4's direct address, Ch. 8's "whose life I'd usurped." Later: visions of the original's scenes (Vol. 4 Ch. 9; Vol. 5 Chs. 8–9) and "Poor Keikain Runa" |
 | What was the dollhouse? | **Unresolved** — genuinely supernatural; Hotaru implicated, nothing explained |
-| Hotaru's true nature? | **Partially answered** — the *zashiki warashi* backstory is confirmed; the ability itself is not |
+| Hotaru's true nature? | **Largely answered by Vol. 5 Ch. 7** — a girl "supposed to become a zashiki-warashi," whose blessing is fading and who chooses to be human; cameras and heat sensors really cannot see her (Vol. 4 Ch. 7) |
 | Which Prime Minister's assassination did Hikomaro fail to solve? | **Unresolved** — never specified; real candidates include Hara (1921), Hamaguchi (1930), Inukai (1932) |
 | Why was Hikomaro rewarded for failing? | **Deliberately ambiguous** — the narration flags the suspicion and drops it |
-| What form will the downfall take? | **Partially answered** — an arrest (Ch. 4), possibly tied to a Teia Motor takeover and an "eastern spy" framing (Ch. 9); not resolved |
-| The Asia Monetary Fund's fate? | **Open, flagged by the author** as "a key point in this fictional record of economics" |
-| The Koizumi confrontation, two years on? | **Unresolved**, forward-referenced only |
+| What form will the downfall take? | **Answered for the game by Vol. 5 Chs. 8–9** — the original fronted a tax-and-law haven (money laundering) in Karafuto, shielded by noble immunity, and was broken by the 2008 crisis; the "eastern spy" and Teia-takeover story (Ch. 9) was its public face. **Open for the living Runa** — Ch. 1 shows her in 2008 with a tax-haven shell of her own |
+| The Asia Monetary Fund's fate? | **Still open after Vol. 5**, flagged by the author as "a key point in this fictional record of economics" |
+| The Koizumi confrontation, two years on? | **Answered in Vols. 2–4** — the 2000–01 leadership contests (Vol. 2), his premiership (Vol. 3), and her defeat by him in person in July 2002 (Vol. 4 Ch. 9); Vol. 5 reframes that defeat as a rescue |
+| Was the kidnapping staged with her family's consent? | **Yes, by her own deduction and Ch. 5's confirmation** *(added in the fourth edition)* |
+| Who is the department-store photographer? | **Unnamed here;** plausibly the Ishikawa Nobumitsu of Vols. 4–5 |
 
 ## Interpretive positions
 
@@ -794,8 +956,76 @@ Runa states the method herself, mid-concert: "It's even more interesting when yo
 **Speculative**
 - The series is likely structured to keep tracking real financial and political history — the 2000 dot-com crash, the real Koizumi era, and eventually 2008.
 
+---
+
+# Part VI — Volume 1 Read from Volume 5 (new in the fourth edition)
+
+The reread was done with Volumes 2–5 fully in hand. This part collects what Volume 1 plants and where it comes up again. It is meant as an index: each row can be followed into the later maps.
+
+## The pay-off ledger
+
+| Planted in Volume 1 | Where | Comes back | As what |
+|---|---|---|---|
+| The 2008 frame: a tax-haven shell, "the right people," Yuka at the door, Mizuho as a friend | Ch. 1 | Vol. 5 Ch. 4, 8, 9 | The living Runa's future, not the game's past; the game's version was a laundering haven in Karafuto |
+| "Was the annulment… planned from the very start?" | Ch. 2 | Vol. 5 Ch. 8 | The game's Runa was engaged to a Teia for her family's revival and expected to win |
+| "The villainess flaunted her power" despite a ruined house | Ch. 2 | Vol. 5 Ch. 8–9 | She had outside money: the Kanna "connections," a Chinese faction |
+| The love interests read as finance, politics and tax | Ch. 2, 5 | Vol. 5 Ch. 9 | Exactly why the game's Runa recruited them |
+| The staff "never appeared in the game" | Ch. 2 | Vol. 5 Ch. 9 | The census of who is new in this timeline |
+| The ¥100 million she sits and stares at | Ch. 2 | Vol. 5 Ch. 5 | Kept in the vault "so that I'd never forget" |
+| Keiko: "You don't need to force yourself to mature" | Ch. 2 | Vol. 3 Ch. 2; Vol. 4 Ch. 9 | "A job for adults" |
+| Immunity used to shield a whistle-blower; "tax evasion is the crime for which that impunity is most often invoked" | Ch. 2, 4 | Vol. 4 Ch. 9; Vol. 5 Ch. 9 | Abolished by Koizumi; the game's "law haven" |
+| A real whistle-blower | Ch. 2 | Vol. 4 Ch. 2 | A forged one |
+| "The fund's owner has Russian blood" | Ch. 2 | Ch. 4; Vols. 3–5 | The Romanov question; Russia's creditor; a claimant the foreign press asks about |
+| The Ministry gets "an extra arm" | Ch. 2, 3 | Vol. 5 Ch. 3 | "A kind of government-affiliated bank" that must now be listed |
+| Kindergarten; the mandarins; Hotaru speaks | Ch. 3 | Vol. 3 Ch. 10; Vol. 4 Ch. 7, 11; Vol. 5 Ch. 7 | "Saved by Asuka's mandarins"; the tanuki; Hotaru chooses to be human |
+| "The power of science and money" — "that's not very mature of you" | Ch. 3 | Vol. 5 Ch. 2 | The kendo final she loses |
+| Mio's doll | Ch. 3, 8 | Vol. 5 Ch. 9 | The doll room; a doll given to her body double |
+| The glance at the branch families | Ch. 3 | Vol. 5 Ch. 1, 6 | The "trial in absentia"; relatives briefing the press |
+| Land power and sea power; the Hashizume "corps" | Ch. 3 | Vol. 5 Ch. 1, 2 | The nationalists' doctrine; Kanbe: "those are the same policies you've adopted" |
+| The qualifications; "I Want to Earn Some Qualifications and Work in an Office" | Ch. 3, 8 | Vol. 4 Ch. 12; Vol. 5 Ch. 8 | "She clearly believes the Keika Group may collapse" |
+| The video to her adult self | Ch. 3 | Vol. 4 Ch. 11 | "Yes, I'm happy" |
+| The Saturday dinner for three | Ch. 4 | Vol. 5 Ch. 4 | A hotel hall of subsidiaries |
+| A Swiss account at the centre of same-named shells | Ch. 4 | Vol. 4 Ch. 8; Vol. 5 Ch. 6 | The public case against her; "the Keika Group's inner sanctuary" |
+| "It was impossible for me to take any responsibility at all because of my age" | Ch. 4 | Vol. 4 Ch. 5, 9 | Kanbe and Koizumi's charge |
+| Maefuji: "You can leave the rest up to the adults" | Ch. 4 | Vol. 3 onward | The series' refrain |
+| A staged crisis, agreed between her family and the state | Ch. 4, 5 | Vol. 4 Ch. 2, 9 | The staged takeover; the scolding |
+| "We don't have anybody" | Ch. 5 | Vol. 5 Ch. 1 | Why the family cannot strip her |
+| Nakamaro's promise | Ch. 5 | Vol. 3; Vol. 5 Ch. 4 | He lives; he will "clash" with her |
+| Hong Kong money laundered through Karafuto "in the form of natural resources" | Ch. 6 | Vol. 5 Ch. 7, 9 | Ryuu Suzune's network; the original downfall |
+| The speculator who died with nothing | Ch. 7 | Vol. 4 Ch. 12 | Okazaki and the gambler in Runa |
+| "Your Little Majesty" | Ch. 8, 9 | Vol. 5 Ch. 2 | The president's form of address |
+| The photographer in the department store | Ch. 8 | Vol. 4 Ch. 5; Vol. 5 Ch. 2, 3 | *Plausibly* Ishikawa Nobumitsu |
+| The crest on a pocket watch "as a personal ID" | Ch. 8 | Vol. 5 Ch. 4, 6 | Tankers' funnels; K-Cards |
+| *Carmen* and Micaëla's aria | Ch. 8 | Vol. 5 Ch. 3, 8 | The aria in her film; *Carmen* again in junior high |
+| "But that's a waste. Your childhood is precious" (said *by* her) | Ch. 8 | Vol. 4 Ch. 11 | "Then why are you rushing to become one?" (said *to* her) |
+| *Gon, the Little Fox* | Ch. 8 | Vol. 4 Ch. 9 | Mitsuya's "betrayal from good intentions" |
+| "Whose life I'd usurped" | Ch. 8 | Vol. 5 Ch. 9 | "Poor Keikain Runa" |
+| Hotaru: "What will I become now?" | Ch. 8 | Vol. 5 Ch. 7 | "Just what am I going to become…?" — answered |
+| Lydia, whose father sold his country "at just the right time" | Ch. 8 | Vol. 5 Ch. 2, 9 | The senior faction leader; the North's informants in the opposition |
+| Takamiya, the witch of the library | Ch. 8 | Vol. 5 Ch. 4, 7 | Iwasawa's friend; *The Little Prince* |
+| "A former eastern spy who used the protagonist to get involved in a takeover of Teia Motor Co." | Ch. 9 | Vol. 5 Ch. 8–9 | The game's cover story for a money scheme |
+| Angela: "we'll continue to keep a keen eye on you" | Ch. 9 | Vols. 2–5 | Her secretary, her warden, her heir apparent |
+| Russian crude sold to Europe | Ch. 9 | Vol. 5 Ch. 4 | $5 billion a quarter; "Koizumi sees you as his enemy" |
+| A television voice demanding "structural reform" | Ch. 9 | Vols. 2–5 | Koizumi's programme |
+| Koizumi: "It's scary to think of what that young lady might do" | Ch. 9 | Vol. 4 Ch. 9–10 | The defeat; "we need her to become Cassandra" |
+| Glossary: "dissolution of the zaibatsu and nobility is becoming a problem in the Japan of the game world" | Ch. 4 | Vol. 4 Ch. 9; Vol. 5 | What the game was about |
+
+## What the reread changes in the reading of Volume 1
+
+- **The frame chapter is not the game.** It is this Runa, in this world's 2008, with this world's maid outside the door. The series is telling the story of how she comes to stand there by choice.
+- **The "found family" is the hinge of the whole design.** In Volume 1 the household looks like background. By Volume 5 it is the answer to every question about why this Runa is not the game's: the people who were not in the game are the ones who stop her.
+- **Volume 1's victories are Volume 4's indictment.** The account in her own name, the shells, the immunity, the Ministry's "extra arm," the political debts, the cross-shareholdings — each is introduced here as cleverness and returned later as a charge.
+- **The child is curated from the start.** The Saturday dinner, the detective, the lifted surveillance, the staged kidnapping: Volume 3's map called this "the curated child" and dated it to 2001. It begins in 1997.
+- **She does not think of herself as Keikain Runa.** "The real Keikain Runa" (Ch. 2), "Keikain Runa, are you there?" (Ch. 4), "whose life I'd usurped" (Ch. 8). The running question "What is Runa?" has a first answer in her own vocabulary: a tenant.
+
+---
+
 ## A note on the text itself
 Two inconsistencies appear to be production artifacts rather than authorial intent: the Duke is "Kyomaro" on the character page and "Kiyomaro" throughout the prose, and the trading company is "Matsuno" everywhere except one instance of "Mitsuno." This document follows the prose in both cases.
+
+*Fourth-edition notes.* Chapter 4's events are out of calendar order (the Thai baht is floated — July 1997 — after scenes that assume the autumn 1997 and 1998 mergers). A sentence in Ch. 3 about Hikomaro's descendants is garbled in the English ("My father's known to carry his blood, resulting in about twenty children"); the sense is that there are seven branch families and some twenty descendants. Ch. 9 has one "Ichizumikawa" for Izumikawa and one "AIRCO" for AIRHO. Volume 1 says "impunity to arrest" where later volumes say "diplomatic immunity" for the same noble privilege.
+
+*Verification.* Of the fourth edition's new real-world identifications, two facts were checked afterwards (8 October 2026): Mycal sought court protection in mid-September 2001 with ¥1.74 trillion of group liabilities ([Japan Times, 22 Sept 2001](https://japantimes.co.jp/news/2001/09/22/business/mycal-expects-sponsor)), and *Final Fantasy VII* was released in Japan on 31 January 1997 (the date Japanese game media mark as its anniversary). The Seibu–Saison identification and the two 1997 novels in Ch. 3 still rest on general knowledge. Everything marked "verified" in the third edition was checked when that edition was written. The "¥8 trillion" objection in Part III is answered inside the story by Vol. 4 Ch. 1 (the line was a confidence device, barely drawn).
 
 ---
 

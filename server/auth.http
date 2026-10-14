@@ -1,0 +1,39 @@
+# Try the auth API by hand. VS Code: install the "REST Client" extension (humao.rest-client),
+# start the server (`dotnet run` in server/), then click "Send Request" above each block.
+# Cookies are remembered between requests, like a browser.
+
+@base = http://localhost:5137/api/auth
+@username = alice
+@password = my-long-passphrase
+
+### Who am I? (401 until you sign up or log in)
+GET {{base}}/me
+
+### Sign up: the response shows your recovery code ONCE
+# @name signup
+POST {{base}}/signup
+Content-Type: application/json
+
+{ "username": "{{username}}", "password": "{{password}}" }
+
+### Log out
+POST {{base}}/logout
+
+### Log in
+POST {{base}}/login
+Content-Type: application/json
+
+{ "username": "{{username}}", "password": "{{password}}" }
+
+### Forgot password: reset with the recovery code (gives you a NEW code; the old one stops working)
+# Paste your code over the {{...}} below if you signed up in an earlier session.
+POST {{base}}/recover
+Content-Type: application/json
+
+{ "username": "{{username}}", "recoveryCode": "{{signup.response.body.$.recoveryCode}}", "newPassword": "another-long-passphrase" }
+
+### Things that should fail: a common password
+POST {{base}}/signup
+Content-Type: application/json
+
+{ "username": "bob", "password": "password123" }

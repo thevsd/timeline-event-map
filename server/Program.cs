@@ -1,8 +1,10 @@
 using System.Threading.RateLimiting;
+using Ixnas.AltchaNet;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,6 +44,18 @@ builder.Services.ConfigureApplicationCookie(c =>
 // How quickly a password reset kicks out the other sessions.
 builder.Services.Configure<SecurityStampValidatorOptions>(o => o.ValidationInterval = TimeSpan.FromMinutes(1));
 
+// Captcha on every signup, login and recover: an ALTCHA proof-of-work, issued and checked here (no third party).
+// The key is 64 random bytes, base64, in user-secrets / an env var like the DB password; all replicas need the same one.
+var altchaKey = builder.Configuration["Altcha:Key"] ?? throw new InvalidOperationException(
+    "Missing Altcha:Key. Run in server/: dotnet user-secrets set \"Altcha:Key\" \"<64 random bytes, base64>\"");
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton(sp => Altcha.CreateService(new AltchaSha256Configuration
+{
+    Key = AltchaKey.FromBytes(Convert.FromBase64String(altchaKey)),
+    StoreFactory = () => new UsedChallenges(sp.GetRequiredService<IMemoryCache>()),
+}));
+
+// Signup: 5 per hour per IP. Login and recover have their own growing timeout (LoginThrottle.cs).
 // ponytail: in-memory limiter is per pod; move the limit to the ingress or Redis when running >1 replica.
 // It counts every attempt, not only failures; the limits are loose enough for people sharing one IP.
 builder.Services.AddRateLimiter(o =>
@@ -53,8 +67,6 @@ builder.Services.AddRateLimiter(o =>
             ctx.HttpContext.Response.Headers.RetryAfter = ((int)retry.TotalSeconds).ToString();
         return ValueTask.CompletedTask;
     };
-    o.AddPolicy("login", ctx => RateLimitPartition.GetFixedWindowLimiter(Auth.ClientKey(ctx),
-        _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(15) }));
     o.AddPolicy("signup", ctx => RateLimitPartition.GetFixedWindowLimiter(Auth.ClientKey(ctx),
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 5, Window = TimeSpan.FromHours(1) }));
 });

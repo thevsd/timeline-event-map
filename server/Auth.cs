@@ -3,11 +3,14 @@ using System.Net.Sockets;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using Ixnas.AltchaNet;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Caching.Memory;
 
-public record SignupRequest(string Username, string Password);
-public record LoginRequest(string Username, string Password);
-public record RecoverRequest(string Username, string RecoveryCode, string NewPassword);
+// Altcha is the solved captcha (base64), sent by the ALTCHA widget in the form.
+public record SignupRequest(string Username, string Password, string? Altcha);
+public record LoginRequest(string Username, string Password, string? Altcha);
+public record RecoverRequest(string Username, string RecoveryCode, string NewPassword, string? Altcha);
 
 public static class Auth
 {
@@ -15,8 +18,19 @@ public static class Auth
     {
         var g = app.MapGroup("/api/auth");
 
-        g.MapPost("/signup", async (SignupRequest req, UserManager<AppUser> users, SignInManager<AppUser> signIn) =>
+        // A fresh challenge for each attempt; solving it is the captcha. Each one works once and expires after 2 minutes.
+        // About 75k hashes on average (well under a second), or 20x that for a network timed out in the last day.
+        g.MapGet("/challenge", (AltchaService altcha, HttpContext ctx) =>
         {
+            ctx.Response.Headers.CacheControl = "no-store";
+            return Results.Ok(LoginThrottle.Suspicious(ctx)
+                ? altcha.Generate(c => c with { Complexity = c.Complexity with { Counter = new AltchaComplexityCounterRange(1_000_000, 2_000_000) } })
+                : altcha.Generate());
+        });
+
+        g.MapPost("/signup", async (SignupRequest req, AltchaService altcha, UserManager<AppUser> users, SignInManager<AppUser> signIn) =>
+        {
+            if (!await Solved(altcha, req.Altcha)) return CaptchaFailed;
             if (req.Username is not { Length: >= 3 and <= 32 })
                 return Results.ValidationProblem(new Dictionary<string, string[]>
                     { ["InvalidUserNameLength"] = ["Username must be 3 to 32 characters."] });
@@ -30,8 +44,9 @@ public static class Auth
             return Results.Ok(new { username = user.UserName, recoveryCode = code });
         }).RequireRateLimiting("signup");
 
-        g.MapPost("/login", async (LoginRequest req, UserManager<AppUser> users, SignInManager<AppUser> signIn) =>
+        g.MapPost("/login", async (LoginRequest req, AltchaService altcha, UserManager<AppUser> users, SignInManager<AppUser> signIn) =>
         {
+            if (!await Solved(altcha, req.Altcha)) return CaptchaFailed;
             var user = await users.FindByNameAsync(req.Username ?? "");
             // Same answer for unknown user and wrong password. Signup still reveals taken names; that's accepted without email.
             if (user is null || !await users.CheckPasswordAsync(user, req.Password ?? ""))
@@ -39,7 +54,7 @@ public static class Auth
 
             await signIn.SignInAsync(user, isPersistent: true);
             return Results.Ok(new { username = user.UserName });
-        }).RequireRateLimiting("login");
+        }).AddEndpointFilter(LoginThrottle.Filter);
 
         g.MapPost("/logout", async (SignInManager<AppUser> signIn) =>
         {
@@ -50,9 +65,10 @@ public static class Auth
         g.MapGet("/me", (ClaimsPrincipal me) => Results.Ok(new { username = me.Identity!.Name }))
             .RequireAuthorization();
 
-        // Shares the "login" budget, so an IP can't double its guesses by alternating endpoints.
-        g.MapPost("/recover", async (RecoverRequest req, UserManager<AppUser> users, SignInManager<AppUser> signIn) =>
+        // Shares the login throttle, so an IP can't double its guesses by alternating endpoints.
+        g.MapPost("/recover", async (RecoverRequest req, AltchaService altcha, UserManager<AppUser> users, SignInManager<AppUser> signIn) =>
         {
+            if (!await Solved(altcha, req.Altcha)) return CaptchaFailed;
             var user = await users.FindByNameAsync(req.Username ?? "");
             if (user?.RecoveryCodeHash is null || !CodeMatches(user.RecoveryCodeHash, req.RecoveryCode))
                 return Results.Problem("Wrong username or recovery code.", statusCode: StatusCodes.Status401Unauthorized);
@@ -67,8 +83,18 @@ public static class Auth
 
             await signIn.SignInAsync(user, isPersistent: true);
             return Results.Ok(new { username = user.UserName, recoveryCode = code });
-        }).RequireRateLimiting("login");
+        }).AddEndpointFilter(LoginThrottle.Filter);
     }
+
+    static async Task<bool> Solved(AltchaService altcha, string? payload)
+    {
+        if (string.IsNullOrEmpty(payload)) return false;
+        try { return (await altcha.Validate(payload)).IsValid; }
+        catch (Exception e) when (e is FormatException or System.Text.Json.JsonException) { return false; }
+    }
+
+    static readonly IResult CaptchaFailed = Results.ValidationProblem(new Dictionary<string, string[]>
+        { ["CaptchaFailed"] = ["The robot check failed or expired. Try again."] });
 
     // Identity error codes (DuplicateUserName, PasswordTooShort, CommonPassword, ...) become the keys, for the UI to match on.
     static IResult Problem(IdentityResult r) => Results.ValidationProblem(
@@ -113,4 +139,18 @@ public class CommonPasswordValidator : IPasswordValidator<AppUser>
         Task.FromResult(Common.Contains(password ?? "") || string.Equals(password, user.UserName, StringComparison.OrdinalIgnoreCase)
             ? IdentityResult.Failed(new IdentityError { Code = "CommonPassword", Description = "This password is too common or too easy to guess." })
             : IdentityResult.Success);
+}
+
+// Solved challenges, remembered until they expire so each one is accepted only once.
+// ponytail: per pod, like the rate limiter; a replica that didn't see a solution would accept it again.
+// Move to the database or Redis when running >1 replica.
+public class UsedChallenges(IMemoryCache cache) : IAltchaChallengeStore
+{
+    public Task Store(string challenge, DateTimeOffset expiryUtc)
+    {
+        cache.Set("altcha:" + challenge, true, expiryUtc);
+        return Task.CompletedTask;
+    }
+
+    public Task<bool> Exists(string challenge) => Task.FromResult(cache.TryGetValue("altcha:" + challenge, out _));
 }

@@ -9,5 +9,9 @@ import { viteSingleFile } from 'vite-plugin-singlefile';
 export default defineConfig({
   plugins: [react(), viteSingleFile()],
   build: { target: 'es2022' },
-  server: { proxy: { '/api': 'http://localhost:5137' } },
+  server: {
+    proxy: { '/api': 'http://localhost:5137' },
+    // dotnet rewrites and locks files there while building, which can crash the file watcher.
+    watch: { ignored: ['**/server/**', '**/server.Tests/**'] },
+  },
 });

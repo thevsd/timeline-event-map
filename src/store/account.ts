@@ -56,7 +56,9 @@ export async function whoAmI(): Promise<Account | null | 'offline'> {
   }
 }
 
-export const signup = (username: string, password: string) => post<WithCode>('signup', { username, password });
-export const login = (username: string, password: string) => post<Account>('login', { username, password });
-export const recover = (username: string, recoveryCode: string, newPassword: string) => post<WithCode>('recover', { username, recoveryCode, newPassword });
+// `altcha` is the solved robot check from the ALTCHA widget; the server wants a new one for every attempt.
+export const signup = (username: string, password: string, altcha: string) => post<WithCode>('signup', { username, password, altcha });
+export const login = (username: string, password: string, altcha: string) => post<Account>('login', { username, password, altcha });
+export const recover = (username: string, recoveryCode: string, newPassword: string, altcha: string) =>
+  post<WithCode>('recover', { username, recoveryCode, newPassword, altcha });
 export const logout = () => post<void>('logout');

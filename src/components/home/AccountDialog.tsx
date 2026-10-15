@@ -1,4 +1,7 @@
-import { useState, type FormEvent } from 'react';
+import 'altcha';
+import 'altcha/types/react';
+import type { AltchaWidgetElement } from 'altcha/types/generic';
+import { useRef, useState, type FormEvent } from 'react';
 import { AccountError, login, recover, signup, type Account, type WithCode } from '../../store/account';
 import { Modal } from '../editor/dialogs';
 import { Field } from '../editor/fields';
@@ -21,6 +24,7 @@ export function AccountDialog({ onClose, onSignedIn }: { onClose(): void; onSign
   const [problem, setProblem] = useState('');
   const [busy, setBusy] = useState(false);
   const [issued, setIssued] = useState<WithCode | null>(null);
+  const robotCheck = useRef<AltchaWidgetElement>(null);
 
   if (issued) return <RecoveryCode issued={issued} onDone={onClose} />;
 
@@ -29,16 +33,18 @@ export function AccountDialog({ onClose, onSignedIn }: { onClose(): void; onSign
     setProblem('');
   };
 
-  const send = async (ev: FormEvent) => {
+  const send = async (ev: FormEvent<HTMLFormElement>) => {
     ev.preventDefault();
+    // The robot check has already run: the widget holds the submit until it is solved, then puts the proof in the form.
+    const proof = String(new FormData(ev.currentTarget).get('altcha') ?? '');
     setBusy(true);
     setProblem('');
     try {
       if (step === 'login') {
-        onSignedIn(await login(username, password));
+        onSignedIn(await login(username, password, proof));
         onClose();
       } else {
-        const result = step === 'signup' ? await signup(username, password) : await recover(username, code, password);
+        const result = step === 'signup' ? await signup(username, password, proof) : await recover(username, code, password, proof);
         onSignedIn(result);
         setIssued(result);
       }
@@ -46,6 +52,8 @@ export function AccountDialog({ onClose, onSignedIn }: { onClose(): void; onSign
       setProblem(error instanceof AccountError ? error.message : 'Something went wrong. Try again.');
     } finally {
       setBusy(false);
+      // Each proof works once, so the next attempt solves a new one.
+      robotCheck.current?.reset();
     }
   };
 
@@ -67,6 +75,7 @@ export function AccountDialog({ onClose, onSignedIn }: { onClose(): void; onSign
         <Field label={step === 'recover' ? 'New password' : 'Password'} hint={step === 'login' ? undefined : PASSWORD_HINT}>
           <PasswordInput autoComplete={step === 'login' ? 'current-password' : 'new-password'} value={password} onChange={setPassword} />
         </Field>
+        <altcha-widget ref={robotCheck} challenge="/api/auth/challenge" auto="onsubmit" />
         {problem && (
           <p className="fhint bad" role="alert">
             {problem}

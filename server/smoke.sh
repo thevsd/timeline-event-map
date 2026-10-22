@@ -47,16 +47,16 @@ ID1=$(idof)
 call POST / 200 '{"title":"  ","events":[]}'
 grep -q '"title":"Untitled timeline"' "$T/body"
 ID2=$(idof)
-# New ones go on top.
+# Newest first.
 call GET  / 200
 [[ $(grep -o '"id":"[^"]*"' "$T/body" | head -1) == "\"id\":\"$ID2\"" ]] || { echo "FAIL: newest is not first"; exit 1; }
 call PUT  "/$ID1" 200 '{"title":"First, edited","events":[]}'
 call PATCH "/$ID1" 200 '{"title":"Renamed"}'
 call GET  "/$ID1" 200
 grep -q '"Renamed"' "$T/body"
-call PUT  /order 204 "[\"$ID1\",\"$ID2\"]"
-call GET  / 200
-[[ $(grep -o '"id":"[^"]*"' "$T/body" | head -1) == "\"id\":\"$ID1\"" ]] || { echo "FAIL: order not stored"; exit 1; }
+call PATCH "/$ID1" 200 '{"pinned":true}'
+grep -q '"pinned":true' "$T/body"
+grep -q '"title":"Renamed"' "$T/body" || { echo "FAIL: pinning changed the title"; exit 1; }
 S=$(head -c 10000001 /dev/zero | tr '\0' ' ' | curl -s -o /dev/null -w '%{http_code}' -b "$T/jar" -X POST "$B/" -H 'Content-Type: application/json' --data-binary @-)
 [[ $S == 413 ]] || { echo "FAIL: 10 MB + 1 byte got $S, expected 413"; exit 1; }
 echo "ok   POST / over 10 MB -> 413"
@@ -69,6 +69,7 @@ call POST /signup 200 "{\"username\":\"${U}b\",\"password\":\"$P1\",\"altcha\":\
 B=$BASE/api/timelines
 call GET  "/$ID1" 404
 call PUT  "/$ID1" 404 '{"title":"Taken","events":[]}'
+call PATCH "/$ID1" 404 '{"pinned":false}'
 call DELETE "/$ID1" 404
 call GET  / 200
 grep -qx '\[\]' "$T/body"

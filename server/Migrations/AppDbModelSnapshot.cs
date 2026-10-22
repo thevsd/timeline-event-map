@@ -256,8 +256,8 @@ namespace TimelineApi.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("Position")
-                        .HasColumnType("integer");
+                    b.Property<bool>("Pinned")
+                        .HasColumnType("boolean");
 
                     b.Property<int>("Size")
                         .HasColumnType("integer");

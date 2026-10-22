@@ -25,8 +25,8 @@ public class Timeline
     public AppUser Owner { get; set; } = null!;
     // Copied from the JSON's own title on every save, so the list never has to parse Data.
     public string Title { get; set; } = "";
-    // Order in the owner's list, smallest first.
-    public int Position { get; set; }
+    // Pinned timelines always show on the home page; the rest fold away once there are more than three.
+    public bool Pinned { get; set; }
     // jsonb: Postgres refuses anything that is not JSON.
     [System.ComponentModel.DataAnnotations.Schema.Column(TypeName = "jsonb")]
     public string Data { get; set; } = "";

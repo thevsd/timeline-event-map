@@ -11,6 +11,8 @@ import { AccountError, problemOf } from './account';
 export interface SavedTimeline {
   id: string;
   title: string;
+  /** Always on the home page; the rest fold away once there are more than three. */
+  pinned: boolean;
   /** Bytes of the stored JSON. */
   size: number;
   updatedAt: string;
@@ -40,10 +42,8 @@ export const loadTimeline = async (id: string) => parseJson(await (await call('G
 export const saveTimeline = async (doc: TimelineDoc, id: string | null) =>
   (await (await call(id ? 'PUT' : 'POST', id ? `/${id}` : '/', JSON.stringify(doc))).json()) as SavedTimeline;
 
-export const renameTimeline = async (id: string, title: string) =>
-  (await (await call('PATCH', `/${id}`, JSON.stringify({ title }))).json()) as SavedTimeline;
+/** Rename, pin or unpin from the list. */
+export const changeTimeline = async (id: string, change: { title?: string; pinned?: boolean }) =>
+  (await (await call('PATCH', `/${id}`, JSON.stringify(change))).json()) as SavedTimeline;
 
 export const deleteTimeline = async (id: string) => void (await call('DELETE', `/${id}`));
-
-/** Store the list's order: every id, top first. */
-export const reorderTimelines = async (ids: string[]) => void (await call('PUT', '/order', JSON.stringify(ids)));

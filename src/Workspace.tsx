@@ -650,7 +650,7 @@ export function Workspace({ initial, origin, savedId, startEditing, account, onA
   const [signIn, setSignIn] = useState<{ then(): void } | null>(null);
   const signedIn = useRef(false);
 
-  /** Send the timeline to the account, naming it first if it has never been saved; then run `after`. */
+  /** Send the timeline to the account, naming a copy of the demo or an exported page first; then run `after`. */
   const upload = useCallback(
     (after?: () => void) => {
       if (sending.current) return;
@@ -676,7 +676,8 @@ export function Workspace({ initial, origin, savedId, startEditing, account, onA
             setBusy(false);
           });
       };
-      if (savedId) return send(doc);
+      // A new or imported timeline already has the title it was given; the demo or an exported page becomes a copy of one's own, named here.
+      if (savedId || origin === 'new') return send(doc);
       // The name goes into the timeline itself, so the list, the title and exports agree.
       ask({
         type: 'name',
@@ -691,7 +692,7 @@ export function Workspace({ initial, origin, savedId, startEditing, account, onA
         },
       });
     },
-    [doc, savedId, setDoc, onSaved, onAccount, ask],
+    [doc, origin, savedId, setDoc, onSaved, onAccount, ask],
   );
 
   /** Save, signing in first if no one is. */

@@ -22,7 +22,7 @@ It ships with a demo: the storyline of *Modern Villainess* (English Vols. 1–7)
 - **Corporate map:** who owns, funds or pressures whom. Part of the demo only.
 - **Theme:** light or dark, following the system setting.
 - **Accounts:** sign up with a username and password (no email), with a recovery code shown once in place of a reset email. The home page shows `Sign in` only when the account server answers.
-- **Saving:** `Save` (or `Ctrl+S`) keeps the timeline in the account; the first save asks for its name, which becomes the timeline's title. A line under the title says where it stands: `Saved to your account`, `Unsaved changes` or `Sign in to save`. `My timelines` on the home page opens, renames, deletes and reorders them (drag the handle, or arrow keys on it). Nothing is kept in the browser: leaving with unsaved changes asks first (save, sign in, download a copy, or leave), and closing the tab gets the browser's own warning.
+- **Saving:** `Save` (or `Ctrl+S`) keeps the timeline in the account. Saving the demo or an exported page makes a copy of your own and asks for its name, which becomes the timeline's title. A line under the title says where it stands: `Saved to your account`, `Unsaved changes` or `Sign in to save`. `My timelines` on the home page lists them newest first; each row's `…` menu renames, pins, exports or deletes it. Pinned timelines always show; with more than three, the rest fold into a closed `More timelines` section. Nothing is kept in the browser: leaving with unsaved changes asks first (save, sign in, download a copy, or leave), and closing the tab gets the browser's own warning.
 
 ## Development
 

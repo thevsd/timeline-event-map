@@ -23,8 +23,8 @@ const PinIcon = () => (
 
 /**
  * The signed-in account's timelines, newest first and pinned ones on top. With more than three, the
- * unpinned ones fold into a closed "More timelines" section. Each row has a menu: rename, pin,
- * export, delete.
+ * unpinned ones fold into a closed "More timelines" section, or, with nothing pinned, the whole list
+ * folds under its heading. Each row has a menu: rename, pin, export, delete.
  */
 export function MyTimelines({ onOpen, onSignedOut }: MyTimelinesProps) {
   const [list, setList] = useState<SavedTimeline[] | null>(null);
@@ -150,6 +150,26 @@ export function MyTimelines({ onOpen, onSignedOut }: MyTimelinesProps) {
       )}
     </li>
   );
+
+  if (folds && !pinned.length) {
+    return (
+      <section aria-labelledby="mine-title" className="mine">
+        {problem && (
+          <p className="homeproblem" role="alert">
+            {problem}
+          </p>
+        )}
+        <details className="minetop">
+          <summary>
+            <h2 id="mine-title" className="sectiontitle">
+              My timelines ({list.length})
+            </h2>
+          </summary>
+          <ol className="minelist">{list.map(row)}</ol>
+        </details>
+      </section>
+    );
+  }
 
   return (
     <section aria-labelledby="mine-title" className="mine">

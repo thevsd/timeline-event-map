@@ -48,14 +48,17 @@ interface ToolbarProps {
   onExportJson(): void;
   /** Export the data without its stored pictures. */
   onExportText(): void;
-  /** One line on where the timeline is kept, e.g. "Saved in this browser". */
-  status: string;
+  /** One line next to the title on where the timeline is kept, e.g. "Saved to your account". */
+  status: string | null;
+  /** Save to the account; null where there is no account server. */
+  onSave: (() => void) | null;
+  canSave: boolean;
 }
 
 /** Title, view switch, search box, reading progress, zoom controls, the edit switch and the share menu. */
 export function Toolbar(props: ToolbarProps) {
   const { view, views, onView, onHome, onPick, onFilterText, progress, onProgress, level, levels, onLevel, onZoom } = props;
-  const { editing, onEditing, canUndo, canRedo, onUndo, onRedo, onCopyLink, onExportHtml, onExportJson, onExportText, status } = props;
+  const { editing, onEditing, canUndo, canRedo, onUndo, onRedo, onCopyLink, onExportHtml, onExportJson, onExportText, status, onSave, canSave } = props;
   const { doc } = useWorld();
 
   // Outcome of the last copy, shown in the menu for a moment.
@@ -97,6 +100,11 @@ export function Toolbar(props: ToolbarProps) {
         </button>
         <div>
           <h1>{doc.title}</h1>
+          {status && (
+            <span className="savestatus" role="status">
+              {status}
+            </span>
+          )}
           {doc.subtitle && <p>{doc.subtitle}</p>}
         </div>
       </div>
@@ -167,6 +175,11 @@ export function Toolbar(props: ToolbarProps) {
         >
           {editing ? 'Done editing' : 'Edit'}
         </button>
+        {onSave && (
+          <button id="save" className="textbtn" type="button" title="Save to your account (Ctrl+S)" disabled={!canSave} onClick={onSave}>
+            Save
+          </button>
+        )}
         <div className="menubox" ref={menuBox}>
           <button id="share" className="textbtn" type="button" aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu(!menu)}>
             {copied === null ? 'Share' : copied ? 'Link copied' : 'Link is in the address bar'}
@@ -196,10 +209,9 @@ export function Toolbar(props: ToolbarProps) {
               {onCopyLink && (
                 <button type="button" role="menuitem" id="copy-link" onClick={choose(() => void onCopyLink().then(setCopied))}>
                   Copy link
-                  <small>Reopens this exact view in this browser</small>
+                  <small>Reopens this exact view</small>
                 </button>
               )}
-              <span className="menunote">{status}</span>
             </div>
           )}
         </div>

@@ -12,6 +12,7 @@ import { ThreadBar } from './components/ThreadBar';
 import { Toolbar, levelsFrom } from './components/Toolbar';
 import { DialogHost, type Dialog } from './components/editor/dialogs';
 import type { FormProps } from './components/editor/form';
+import { AccountDialog } from './components/home/AccountDialog';
 import { TermContext, WorldContext, type TermActions } from './context';
 import type { ZoomLevel } from './engine/config';
 import type { Reveal } from './engine/types';
@@ -26,29 +27,36 @@ import { DocError } from './model/parse';
 import { matchesFilter, type EventFilter } from './model/filter';
 import type { ThreadDoc, TimelineDoc } from './model/schema';
 import { worldOf, type World } from './model/world';
+import { AccountError, type Account } from './store/account';
 import { exportHtml, exportJson, exportText } from './store/export';
+import { SignedOut, saveTimeline } from './store/timelines';
 import type { FormTarget, OpenMode, PanelPage, View, ViewPage } from './types';
 
 /** Pause after the last change before the address bar is updated. */
 const URL_WRITE_DELAY = 250;
 
-/** Where the timeline on screen came from. */
-export type Origin = 'demo' | 'draft' | 'embedded';
+/** Where the timeline on screen came from: built in, saved to the account, saved nowhere yet, or an exported page. */
+export type Origin = 'demo' | 'account' | 'new' | 'embedded';
 
 interface WorkspaceProps {
   /** The timeline to open. Later changes are kept here, with their history. */
   initial: TimelineDoc;
   origin: Origin;
+  /** Id of the timeline in the account; null until it is first saved there. */
+  savedId: string | null;
   /** Open with editing switched on, as for a timeline just created. */
   startEditing: boolean;
-  /** Title of a draft that editing this timeline would replace; null if there is none. */
-  draftTitle: string | null;
-  /** The document changed: the shell saves it as the draft. */
-  onChange(doc: TimelineDoc): void;
+  /** Who is signed in; 'offline' where there is no account server (a page opened from disk). */
+  account: Account | null | 'offline';
+  /** Someone signed in, or the server said the session is over. */
+  onAccount(account: Account | null): void;
+  /** The first save to the account gave the timeline this id. */
+  onSaved(savedId: string): void;
   onHome(): void;
   /**
    * Set while the workspace is open: asked when the browser's Back button leaves for the home
-   * page. Returns true when a form has unsaved changes; the workspace then asks the reader itself.
+   * page. Returns true when there is something to lose (unsaved changes, a form with input); the
+   * workspace then asks the reader itself.
    */
   leaveGuard: { current: (() => boolean) | null };
 }
@@ -113,8 +121,11 @@ function fromUrl(url: UrlState, world: World) {
  * (see model/world.ts). State worth sharing (view, zoom, selection, filters) is mirrored into
  * the URL hash; reading progress is the reader's own setting and stays in the browser.
  */
-export function Workspace({ initial, origin, startEditing, draftTitle, onChange, onHome, leaveGuard }: WorkspaceProps) {
+export function Workspace({ initial, origin, savedId, startEditing, account, onAccount, onSaved, onHome, leaveGuard }: WorkspaceProps) {
   const { doc, set: setDoc, undo, redo, canUndo, canRedo } = useDocument(initial);
+  /** The document as last saved, or as opened: leaving it as it is loses nothing. Undo back to it counts too. */
+  const [savedDoc, setSavedDoc] = useState(initial);
+  const dirty = doc !== savedDoc;
 
   /** Last part the reader has finished; everything later is hidden. Null reads everything. */
   const [progress, setProgress] = useState(() => loadProgress(initial.title));
@@ -180,6 +191,8 @@ export function Workspace({ initial, origin, startEditing, draftTitle, onChange,
     window.clearTimeout(urlTimer.current);
     urlTimer.current = window.setTimeout(() => writeUrlRef.current(), URL_WRITE_DELAY);
   }, []);
+  // A write still pending when the workspace closes would land on the home page's address.
+  useEffect(() => () => window.clearTimeout(urlTimer.current), []);
 
   // Read by callbacks that outlive the render they were made in.
   const worldRef = useRef(world);
@@ -222,7 +235,7 @@ export function Workspace({ initial, origin, startEditing, draftTitle, onChange,
     writeUrlRef.current = () => {
       const hash = formatUrlState(
         {
-          timeline: origin === 'embedded' ? null : origin,
+          timeline: origin === 'embedded' ? null : origin === 'account' ? savedId : origin,
           view,
           zoom: viewTouched.current ? (engine.current?.getView() ?? null) : null,
           event: selectedId,
@@ -249,7 +262,7 @@ export function Workspace({ initial, origin, startEditing, draftTitle, onChange,
   // Write on every change, the first render included: a link should name its timeline from the start.
   useEffect(() => {
     scheduleUrlWrite();
-  }, [origin, view, hidden, search, person, thread, lane, selectedId, stack, mapStep, scheduleUrlWrite]);
+  }, [origin, savedId, view, hidden, search, person, thread, lane, selectedId, stack, mapStep, scheduleUrlWrite]);
 
   /* ── Pop-ups ── */
 
@@ -454,40 +467,17 @@ export function Workspace({ initial, origin, startEditing, draftTitle, onChange,
     // Only a new world needs this; the rest is read as it stands at that moment.
   }, [world]);
 
-  // Tell the shell about every change, so it can keep the draft.
-  const firstDoc = useRef(doc);
-  const changed = useRef(false);
   useEffect(() => {
-    // Undo can lead back to the opening document; that too is a change to save.
-    if (doc !== firstDoc.current) changed.current = true;
-    if (changed.current) onChange(doc);
     document.title = doc.title;
-  }, [doc, onChange]);
+  }, [doc]);
 
   /* ── Editing ── */
 
-  /** Switch editing on, then run `then`. Editing the demo or an exported page makes it the draft, which may replace one. */
-  const withEditing = useCallback(
-    (then: () => void) => {
-      if (editing) return then();
-      const start = () => {
-        setEditing(true);
-        then();
-      };
-      if (origin !== 'draft' && draftTitle) {
-        return ask({
-          type: 'confirm',
-          title: 'Edit this as your draft?',
-          message: `Your changes are kept as the draft in this browser, replacing the draft “${draftTitle}”. Export that one first if you still need it.`,
-          confirm: 'Replace my draft',
-          danger: true,
-          onConfirm: start,
-        });
-      }
-      start();
-    },
-    [editing, origin, draftTitle, ask],
-  );
+  /** Switch editing on, then run `then`. */
+  const withEditing = useCallback((then: () => void) => {
+    setEditing(true);
+    then();
+  }, []);
 
   const toggleEditing = useCallback(
     (on: boolean) => {
@@ -652,18 +642,132 @@ export function Workspace({ initial, origin, startEditing, draftTitle, onChange,
     });
   }, [doc, ask]);
 
-  const leave = useCallback(() => leavingForm(onHome), [leavingForm, onHome]);
+  /* ── Saving ── */
+
+  const [busy, setBusy] = useState(false);
+  const sending = useRef(false);
+  /** Signing in from here: what to do once someone is. */
+  const [signIn, setSignIn] = useState<{ then(): void } | null>(null);
+  const signedIn = useRef(false);
+
+  /** Send the timeline to the account, naming a copy of the demo or an exported page first; then run `after`. */
+  const upload = useCallback(
+    (after?: () => void) => {
+      if (sending.current) return;
+      const send = (next: TimelineDoc) => {
+        sending.current = true;
+        setBusy(true);
+        saveTimeline(next, savedId)
+          .then((saved) => {
+            setSavedDoc(next);
+            if (!savedId) onSaved(saved.id);
+            after?.();
+          })
+          .catch((error: unknown) => {
+            if (error instanceof SignedOut) onAccount(null);
+            ask({
+              type: 'message',
+              title: 'Not saved',
+              lines: [error instanceof AccountError ? error.message : 'Something went wrong while saving. Try again.'],
+            });
+          })
+          .finally(() => {
+            sending.current = false;
+            setBusy(false);
+          });
+      };
+      // A new or imported timeline already has the title it was given; the demo or an exported page becomes a copy of one's own, named here.
+      if (savedId || origin === 'new') return send(doc);
+      // The name goes into the timeline itself, so the list, the title and exports agree.
+      ask({
+        type: 'name',
+        title: 'Save to your account',
+        label: 'Name',
+        name: doc.title,
+        confirm: 'Save',
+        onDone: (name) => {
+          const next = name === doc.title ? doc : { ...doc, title: name };
+          setDoc(next);
+          send(next);
+        },
+      });
+    },
+    [doc, origin, savedId, setDoc, onSaved, onAccount, ask],
+  );
+
+  /** Save, signing in first if no one is. */
+  const save = useCallback(
+    (after?: () => void) => {
+      if (account === 'offline') return;
+      if (account) return upload(after);
+      signedIn.current = false;
+      setSignIn({ then: () => upload(after) });
+    },
+    [account, upload],
+  );
+
+  /** Set once the reader has chosen to go, so the Back button does not ask again on the way out. */
+  const leaving = useRef(false);
+  const leave = useCallback(
+    () =>
+      leavingForm(() => {
+        const go = () => {
+          leaving.current = true;
+          onHome();
+        };
+        if (!dirty) return go();
+        const download = {
+          label: 'Download a copy',
+          run: () => {
+            exportJson(doc);
+            go();
+          },
+        };
+        const lose = { label: 'Leave without saving', danger: true, run: go };
+        if (account && account !== 'offline') {
+          return ask({
+            type: 'choice',
+            title: 'Save your changes?',
+            message: 'This timeline has changes that are not saved to your account. Leaving now loses them.',
+            choices: [{ label: 'Save and leave', run: () => save(go) }, lose],
+          });
+        }
+        ask({
+          type: 'choice',
+          title: 'Your changes will be lost',
+          message:
+            account === 'offline'
+              ? 'Nothing is kept in this browser. Download a copy to import it again later.'
+              : 'Nothing is kept in this browser. Sign in to save it to your account, or download a copy to import later.',
+          choices: account === 'offline' ? [download, lose] : [{ label: 'Sign in to save', run: () => save(go) }, download, lose],
+        });
+      }),
+    [leavingForm, onHome, dirty, doc, account, ask, save],
+  );
   useEffect(() => {
     leaveGuard.current = () => {
+      if (leaving.current) return false;
       const top = stackRef.current[stackRef.current.length - 1];
-      if (top?.kind !== 'form' || !formTouched.current) return false;
+      if (!dirty && (top?.kind !== 'form' || !formTouched.current)) return false;
       leave();
       return true;
     };
     return () => {
       leaveGuard.current = null;
     };
-  }, [leaveGuard, leave]);
+  }, [leaveGuard, leave, dirty]);
+
+  // Closing or reloading the tab can only get the browser's own warning; its text cannot be changed.
+  // Listening only while there is something to lose keeps the page eligible for the back-forward cache.
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (ev: BeforeUnloadEvent) => {
+      ev.preventDefault();
+      ev.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [dirty]);
 
   /* ── Keyboard ── */
 
@@ -672,6 +776,11 @@ export function Workspace({ initial, origin, startEditing, draftTitle, onChange,
   useEffect(() => {
     const onKeyDown = (ev: KeyboardEvent) => {
       const command = ev.ctrlKey || ev.metaKey;
+      // Ctrl+S saves to the account, wherever the focus is. Without an account server it stays the browser's.
+      if (command && ev.key.toLowerCase() === 's' && account !== 'offline') {
+        ev.preventDefault();
+        return dialog || signIn ? undefined : save();
+      }
       if (command && ev.key === 'Insert') {
         ev.preventDefault();
         return dialog ? undefined : addHere();
@@ -740,18 +849,25 @@ export function Workspace({ initial, origin, startEditing, draftTitle, onChange,
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [engine, addHere, close, dialog, editing, lastStep, page, redo, saveThreadDraft, startThreadMode, step, threadDraft, undo, view]);
+  }, [engine, account, save, signIn, addHere, close, dialog, editing, lastStep, page, redo, saveThreadDraft, startThreadMode, step, threadDraft, undo, view]);
 
   const position = page?.kind === 'event' ? visibleEvents.findIndex((ev) => ev.id === page.id) + 1 : 0;
   const dismissHint = () => setHintVisible(false);
   const views: View[] = ['timeline', 'cast', 'glossary', ...(hasMap ? (['map'] as const) : [])];
   const floating = view === 'cast' || view === 'glossary';
+  /** One line next to the title on where the timeline is kept. None for the demo or an exported page as opened. */
   const status =
-    origin === 'demo'
-      ? 'The demo is built in. Editing it makes a copy as your draft.'
-      : origin === 'draft'
-        ? 'Kept as a draft in this browser. Export it to have a file.'
-        : 'Opened from an exported page. Editing it makes a copy as your draft.';
+    account === 'offline'
+      ? null
+      : origin === 'account' && !dirty
+        ? 'Saved to your account'
+        : !dirty && origin !== 'new'
+          ? null
+          : !account
+            ? 'Sign in to save'
+            : dirty
+              ? 'Unsaved changes (Kept temporarily in this browser)'
+              : 'Not saved yet';
 
   return (
     <WorldContext.Provider value={world}>
@@ -786,6 +902,8 @@ export function Workspace({ initial, origin, startEditing, draftTitle, onChange,
           onExportJson={() => exportJson(doc)}
           onExportText={() => exportText(doc)}
           status={status}
+          onSave={account === 'offline' ? null : () => save()}
+          canSave={!busy && (dirty || origin !== 'account')}
         />
 
         {threadDraft ? (
@@ -945,6 +1063,19 @@ export function Workspace({ initial, origin, startEditing, draftTitle, onChange,
 
       <HoverPreview preview={preview} />
       <DialogHost dialog={dialog} onClose={() => setDialog(null)} />
+      {signIn && (
+        <AccountDialog
+          onSignedIn={(who) => {
+            signedIn.current = true;
+            onAccount(who);
+          }}
+          // Closes after a sign-in, or after the recovery code of a new account has been saved.
+          onClose={() => {
+            setSignIn(null);
+            if (signedIn.current) signIn.then();
+          }}
+        />
+      )}
     </WorldContext.Provider>
   );
 }

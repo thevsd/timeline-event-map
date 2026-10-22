@@ -1,22 +1,24 @@
-import { useEffect, useMemo, useRef, useState, type DragEvent, type FormEvent } from 'react';
+import { useMemo, useRef, useState, type DragEvent, type FormEvent } from 'react';
 import { MOTIF_NAMES } from '../../art/motifs';
 import { demoDoc, sampleDoc } from '../../data';
 import { DocError, type ParseResult } from '../../model/parse';
 import type { TimelineDoc } from '../../model/schema';
-import { logout, whoAmI, type Account } from '../../store/account';
+import { logout, type Account } from '../../store/account';
 import { exportJson, readFile } from '../../store/export';
 import { AccountDialog } from './AccountDialog';
 import { AI_PROMPT, excerptOf } from './guide';
+import { MyTimelines } from './MyTimelines';
 
 interface HomeProps {
-  /** The timeline being edited in this browser, if there is one. */
-  draft: TimelineDoc | null;
+  /** Who is signed in; 'offline' where there is no account server (a page opened from disk). */
+  account: Account | null | 'offline';
+  onAccount(account: Account | null): void;
   /** The timeline this page was exported with, if it is an exported page. */
   embedded: TimelineDoc | null;
   onOpenEmbedded(): void;
   onOpenDemo(): void;
-  onOpenDraft(): void;
-  onDiscardDraft(): void;
+  /** Open a timeline saved to the account. */
+  onOpenSaved(id: string): void;
   /** Start an empty timeline with this title. */
   onCreate(title: string): void;
   /** Open an imported file. `warnings` lists what the loader repaired. */
@@ -33,7 +35,7 @@ const FEATURES: { title: string; text: string }[] = [
   { title: 'A second lane', text: 'A smaller timeline above the main one, for a parallel sequence: real history beside a story, releases beside development.' },
   { title: 'Reading progress', text: 'Split the timeline into parts and readers can hide whatever lies beyond the part they have reached.' },
   { title: 'Search', text: 'One box for events, people, threads and terms. It forgives accents and typos, and ranks titles first.' },
-  { title: 'Edit in place', text: 'Forms in the side panel for events, people, terms and threads, with undo and redo. Your work is saved in the browser as you go.' },
+  { title: 'Edit in place', text: 'Forms in the side panel for events, people, terms and threads, with undo and redo. Save it to your account, or export it as a file.' },
   { title: 'Links', text: 'The address bar always holds a link to the current view, selection and filters.' },
   { title: 'One file, no server', text: 'Export the finished timeline as a single web page that opens anywhere, or as JSON to keep working on.' },
 ];
@@ -49,19 +51,14 @@ function summaryOf(doc: TimelineDoc): string {
  * The home page: what the app does, the demo, and the three ways to start a timeline of one's
  * own (from nothing, from a file, or from JSON an AI model wrote).
  */
-export function Home({ draft, embedded, onOpenEmbedded, onOpenDemo, onOpenDraft, onDiscardDraft, onCreate, onImport }: HomeProps) {
+export function Home({ account, onAccount, embedded, onOpenEmbedded, onOpenDemo, onOpenSaved, onCreate, onImport }: HomeProps) {
   const [title, setTitle] = useState('');
   const [problem, setProblem] = useState('');
   const [dragging, setDragging] = useState(false);
   const [copied, setCopied] = useState(false);
   const picker = useRef<HTMLInputElement>(null);
   const excerpt = useMemo(() => excerptOf(demoDoc), []);
-  // 'offline' until the account server answers; a page opened from disk never shows the sign-in.
-  const [account, setAccount] = useState<Account | null | 'offline'>('offline');
   const [signingIn, setSigningIn] = useState(false);
-  useEffect(() => {
-    void whoAmI().then(setAccount);
-  }, []);
 
   const importFile = async (file: File | undefined) => {
     if (!file) return;
@@ -113,7 +110,7 @@ export function Home({ draft, embedded, onOpenEmbedded, onOpenDemo, onOpenDraft,
                 <span>
                   Signed in as <strong>{account.username}</strong>
                 </span>
-                <button type="button" className="textbtn" id="sign-out" onClick={() => void logout().then(() => setAccount(null), () => {})}>
+                <button type="button" className="textbtn" id="sign-out" onClick={() => void logout().then(() => onAccount(null), () => {})}>
                   Sign out
                 </button>
               </>
@@ -125,7 +122,9 @@ export function Home({ draft, embedded, onOpenEmbedded, onOpenDemo, onOpenDraft,
           </div>
         )}
       </header>
-      {signingIn && <AccountDialog onClose={() => setSigningIn(false)} onSignedIn={setAccount} />}
+      {signingIn && <AccountDialog onClose={() => setSigningIn(false)} onSignedIn={onAccount} />}
+
+      {account && account !== 'offline' && <MyTimelines key={account.username} onOpen={onOpenSaved} onSignedOut={() => onAccount(null)} />}
 
       <section className="starts" aria-label="Start">
         {embedded && (
@@ -155,7 +154,7 @@ export function Home({ draft, embedded, onOpenEmbedded, onOpenDemo, onOpenDraft,
         <article className="start">
           <span className="kicker">Start from nothing</span>
           <h2>New timeline</h2>
-          <p>Name it, then add events, people and terms as you go. Your work is kept in this browser until you export it.</p>
+          <p>Name it, then add events, people and terms as you go. Save it to your account, or export it as a file to keep it.</p>
           <form
             className="newform"
             onSubmit={(ev: FormEvent) => {
@@ -190,22 +189,6 @@ export function Home({ draft, embedded, onOpenEmbedded, onOpenDemo, onOpenDraft,
           />
         </article>
 
-        {draft && (
-          <article className="start draft">
-            <span className="kicker">Your draft</span>
-            <h2>{draft.title}</h2>
-            <p>Kept in this browser. Export it from the Share menu to have a file.</p>
-            <span className="meta">{summaryOf(draft)}</span>
-            <div className="startactions">
-              <button type="button" className="textbtn primary" id="open-draft" onClick={onOpenDraft}>
-                Continue
-              </button>
-              <button type="button" className="textbtn danger" id="discard-draft" onClick={onDiscardDraft}>
-                Discard
-              </button>
-            </div>
-          </article>
-        )}
       </section>
       {problem && (
         <p className="homeproblem" role="alert">

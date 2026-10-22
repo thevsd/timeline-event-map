@@ -36,6 +36,48 @@ call POST /recover 401 "{\"username\":\"$U\",\"recoveryCode\":\"$CODE\",\"newPas
 call POST /login 401 "{\"username\":\"$U\",\"password\":\"$P1\",\"altcha\":\"$(cap)\"}"
 call POST /login 200 "{\"username\":\"$U\",\"password\":\"$P2\",\"altcha\":\"$(cap)\"}"
 
+# Timelines, signed in as $U.
+B=$BASE/api/timelines
+idof() { sed -E 's/.*"id":"([^"]+)".*/\1/' "$T/body"; }
+call GET  / 200
+grep -qx '\[\]' "$T/body"
+call POST / 400 '{"title":"no events list"}'
+call POST / 200 '{"title":"First","events":[]}'
+ID1=$(idof)
+call POST / 200 '{"title":"  ","events":[]}'
+grep -q '"title":"Untitled timeline"' "$T/body"
+ID2=$(idof)
+# New ones go on top.
+call GET  / 200
+[[ $(grep -o '"id":"[^"]*"' "$T/body" | head -1) == "\"id\":\"$ID2\"" ]] || { echo "FAIL: newest is not first"; exit 1; }
+call PUT  "/$ID1" 200 '{"title":"First, edited","events":[]}'
+call PATCH "/$ID1" 200 '{"title":"Renamed"}'
+call GET  "/$ID1" 200
+grep -q '"Renamed"' "$T/body"
+call PUT  /order 204 "[\"$ID1\",\"$ID2\"]"
+call GET  / 200
+[[ $(grep -o '"id":"[^"]*"' "$T/body" | head -1) == "\"id\":\"$ID1\"" ]] || { echo "FAIL: order not stored"; exit 1; }
+S=$(head -c 10000001 /dev/zero | tr '\0' ' ' | curl -s -o /dev/null -w '%{http_code}' -b "$T/jar" -X POST "$B/" -H 'Content-Type: application/json' --data-binary @-)
+[[ $S == 413 ]] || { echo "FAIL: 10 MB + 1 byte got $S, expected 413"; exit 1; }
+echo "ok   POST / over 10 MB -> 413"
+call DELETE "/$ID2" 204
+call GET  "/$ID2" 404
+# Someone else sees none of them, and cannot touch them.
+B=$BASE/api/auth
+call POST /logout 204
+call POST /signup 200 "{\"username\":\"${U}b\",\"password\":\"$P1\",\"altcha\":\"$(cap)\"}"
+B=$BASE/api/timelines
+call GET  "/$ID1" 404
+call PUT  "/$ID1" 404 '{"title":"Taken","events":[]}'
+call DELETE "/$ID1" 404
+call GET  / 200
+grep -qx '\[\]' "$T/body"
+B=$BASE/api/auth
+call POST /logout 204
+B=$BASE/api/timelines
+call GET  / 401
+B=$BASE/api/auth
+
 # Captcha: missing, garbage and replayed ones are refused before anything else is looked at.
 call POST /signup 400 "{\"username\":\"$U\",\"password\":\"$P2\"}"
 grep -q CaptchaFailed "$T/body"

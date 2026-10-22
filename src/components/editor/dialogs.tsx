@@ -81,7 +81,11 @@ export type Dialog =
   | { type: 'group'; name: string; onDone(group: GroupDoc): void }
   | { type: 'kind'; name: string; onDone(kind: LaneKind): void }
   | { type: 'thread'; name: string; summary: string; count: number; onDone(name: string, summary: string): void }
-  | { type: 'message'; title: string; lines: string[] };
+  | { type: 'message'; title: string; lines: string[] }
+  /** Name something before it is kept, e.g. a timeline on its first save. */
+  | { type: 'name'; title: string; label: string; name: string; confirm: string; onDone(name: string): void }
+  /** Several ways on, besides Cancel; the first is the default. */
+  | { type: 'choice'; title: string; message: string; choices: { label: string; danger?: boolean; run(): void }[] };
 
 /** Renders whichever pop-up is open. */
 export function DialogHost({ dialog, onClose }: { dialog: Dialog | null; onClose(): void }) {
@@ -121,6 +125,33 @@ export function DialogHost({ dialog, onClose }: { dialog: Dialog | null; onClose
     case 'person': return <QuickPerson dialog={dialog} onClose={onClose} />;
     case 'term': return <QuickTerm dialog={dialog} onClose={onClose} />;
     case 'thread': return <ThreadName dialog={dialog} onClose={onClose} />;
+    case 'name': return <NameIt dialog={dialog} onClose={onClose} />;
+    case 'choice':
+      return (
+        <Modal title={dialog.title} onClose={onClose}>
+          <form onSubmit={submit(() => {})}>
+            <p className="mtext">{dialog.message}</p>
+            <div className="mactions">
+              <button type="button" className="textbtn" onClick={onClose}>
+                Cancel
+              </button>
+              {[...dialog.choices].reverse().map((choice, i, all) => (
+                <button
+                  key={choice.label}
+                  type="button"
+                  className={`textbtn${i === all.length - 1 ? ' primary' : ''}${choice.danger ? ' danger' : ''}`}
+                  onClick={() => {
+                    onClose();
+                    choice.run();
+                  }}
+                >
+                  {choice.label}
+                </button>
+              ))}
+            </div>
+          </form>
+        </Modal>
+      );
     case 'category':
     case 'group':
     case 'kind': return <QuickColoured dialog={dialog} onClose={onClose} />;
@@ -272,6 +303,25 @@ function ThreadName({ dialog, onClose }: { dialog: Of<'thread'>; onClose(): void
           <textarea rows={3} value={summary} onChange={(e) => setSummary(e.target.value)} />
         </Field>
         <Actions confirm="Save thread" onCancel={onClose} />
+      </form>
+    </Modal>
+  );
+}
+
+function NameIt({ dialog, onClose }: { dialog: Of<'name'>; onClose(): void }) {
+  const [name, setName] = useState(dialog.name);
+  const save = () => {
+    if (!name.trim()) return;
+    onClose();
+    dialog.onDone(name.trim());
+  };
+  return (
+    <Modal title={dialog.title} onClose={onClose}>
+      <form onSubmit={submit(save)}>
+        <Field label={dialog.label}>
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} />
+        </Field>
+        <Actions confirm={dialog.confirm} onCancel={onClose} />
       </form>
     </Modal>
   );

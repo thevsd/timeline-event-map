@@ -16,7 +16,7 @@ export interface WithCode extends Account {
 export class AccountError extends Error {}
 
 /** What the server said, in a sentence. */
-async function problemOf(res: Response): Promise<string> {
+export async function problemOf(res: Response): Promise<string> {
   if (res.status === 429) {
     const minutes = Math.max(1, Math.ceil(Number(res.headers.get('Retry-After') ?? 60) / 60));
     return `Too many attempts from your network. Try again in ${minutes} minute${minutes === 1 ? '' : 's'}.`;

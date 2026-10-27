@@ -88,5 +88,6 @@ app.UseAuthorization();
 app.UseRateLimiter();
 
 app.MapAuth();
+app.MapTimelines();
 
 app.Run();

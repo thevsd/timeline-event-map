@@ -7,28 +7,37 @@ import { timelineOf } from './lib/urlState';
 import { emptyDoc } from './model/edit';
 import type { ParseResult } from './model/parse';
 import type { TimelineDoc } from './model/schema';
-import { clearDraft, loadDraft, saveDraft } from './store/draft';
+import { AccountError, whoAmI, type Account } from './store/account';
 import { readEmbedded } from './store/export';
+import { loadTimeline } from './store/timelines';
 
 /** The timeline that is open. A new `id` makes the workspace start afresh. */
 interface Session {
   id: number;
   doc: TimelineDoc;
   origin: Origin;
+  /** Id of the timeline in the account, once it is saved there. */
+  savedId: string | null;
   /** Open ready to edit: a timeline just created or imported. */
   editing: boolean;
 }
-
-/** Pause after the last edit before the draft is written. */
-const SAVE_DELAY = 400;
 
 // An exported page carries its timeline; it opens straight onto it.
 const EMBEDDED = readEmbedded();
 /** What the address asks for when the page loads. */
 const WANTED = EMBEDDED ? null : timelineOf(window.location.hash);
 
+/** Saved timelines are named by their id in links; any other name but `demo` has nothing to reopen. */
+const isSavedId = (token: string | null): token is string => !!token && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token);
+
 let lastSessionId = 0;
-const session = (doc: TimelineDoc, origin: Origin, editing = false): Session => ({ id: ++lastSessionId, doc, origin, editing });
+const session = (doc: TimelineDoc, origin: Origin, savedId: string | null = null, editing = false): Session => ({
+  id: ++lastSessionId,
+  doc,
+  origin,
+  savedId,
+  editing,
+});
 
 /**
  * History state of an entry made by opening a timeline from the home page. The browser's Back
@@ -36,7 +45,8 @@ const session = (doc: TimelineDoc, origin: Origin, editing = false): Session => 
  */
 interface EntryState {
   fromHome: true;
-  origin: Origin;
+  /** The timeline, as a link names it: `demo`, `embedded`, `new` or a saved id. */
+  token: string;
 }
 
 const entryState = (): EntryState | null => {
@@ -48,35 +58,35 @@ const entryState = (): EntryState | null => {
 const homeUrl = () => window.location.pathname + window.location.search;
 
 /** Which timeline the current history entry stands for; null for the home page. */
-function wantedNow(): Origin | null {
+function wantedNow(): string | null {
   // An exported page keeps no timeline name in its address; the entry's state tells.
-  if (EMBEDDED) return entryState()?.origin ?? null;
+  if (EMBEDDED) return entryState()?.token ?? null;
   return timelineOf(window.location.hash);
 }
 
 /**
  * The shell: the home page, or one timeline in a workspace.
  *
- * It decides which timeline is open (the demo, the draft kept in this browser, an imported
- * file, or the one embedded in an exported page) and keeps the draft saved.
+ * It decides which timeline is open (the demo, one saved to the account, a new or imported one,
+ * or the one embedded in an exported page) and who is signed in. Nothing is kept in the browser:
+ * a timeline is saved to the account or exported as a file.
  */
 export default function App() {
   const [current, setCurrent] = useState<Session | null>(() =>
     EMBEDDED ? session(EMBEDDED.doc, 'embedded') : WANTED === 'demo' ? session(demoDoc, 'demo') : null,
   );
-  /** The draft in storage: offered on the home page, and replaced when another timeline is edited. */
-  const [draft, setDraft] = useState<TimelineDoc | null>(null);
-  /** Still reading storage for a link that asks for the draft. */
-  const [waiting, setWaiting] = useState(WANTED === 'draft');
+  /** 'offline' until the account server answers; a page opened from disk never offers accounts. */
+  const [account, setAccount] = useState<Account | null | 'offline'>('offline');
+  /** Still asking the server for a saved timeline the link names. */
+  const [waiting, setWaiting] = useState(isSavedId(WANTED));
   const [dialog, setDialog] = useState<Dialog | null>(null);
-  const draftRef = useRef(draft);
-  draftRef.current = draft;
   const leaveGuard = useRef<(() => boolean) | null>(null);
 
   /** Open a timeline from the home page, as a history entry of its own. */
   const enter = useCallback((next: Session) => {
+    const token = next.origin === 'account' && next.savedId ? next.savedId : next.origin;
     try {
-      window.history.pushState({ fromHome: true, origin: next.origin } satisfies EntryState, '', homeUrl());
+      window.history.pushState({ fromHome: true, token } satisfies EntryState, '', homeUrl());
     } catch {
       // Sandboxed frames may refuse history changes; Back then leaves the page as before.
     }
@@ -88,34 +98,53 @@ export default function App() {
     document.title = 'Timeline Event Map';
   }, []);
 
+  // Who is signed in, and the saved timeline a link asks for. Older versions kept a draft in this
+  // browser; nothing is kept between visits now, so it is cleared.
+  useEffect(() => {
+    try {
+      indexedDB.deleteDatabase('timeline-event-map');
+    } catch {
+      // No storage here: nothing to clear.
+    }
+    void whoAmI().then(async (who) => {
+      setAccount(who);
+      if (!isSavedId(WANTED)) return;
+      try {
+        if (who && who !== 'offline') return setCurrent(session(await loadTimeline(WANTED), 'account', WANTED));
+      } catch {
+        // Deleted, someone else's, or the server is away: the home page instead.
+      }
+      window.history.replaceState(null, '', homeUrl());
+    }).finally(() => setWaiting(false));
+  }, []);
+
   // Back and Forward move between the home page and the timeline.
   useEffect(() => {
     const onPopState = () => {
       const wanted = wantedNow();
       if (!wanted) {
-        // A form with unsaved changes: stay, and let the workspace ask.
+        // Unsaved changes or a form with input: stay, and let the workspace ask.
         if (leaveGuard.current?.()) return window.history.forward();
         return showHome();
       }
+      if (isSavedId(wanted)) {
+        void loadTimeline(wanted).then(
+          (doc) => setCurrent((open) => open ?? session(doc, 'account', wanted)),
+          () => {},
+        );
+        return;
+      }
+      // A new timeline that was left unsaved is gone; the home page stays.
       setCurrent((open) => {
         if (open) return open;
         if (wanted === 'demo') return session(demoDoc, 'demo');
-        if (wanted === 'embedded') return EMBEDDED ? session(EMBEDDED.doc, 'embedded') : null;
-        return draftRef.current ? session(draftRef.current, 'draft', true) : null;
+        if (wanted === 'embedded' && EMBEDDED) return session(EMBEDDED.doc, 'embedded');
+        return null;
       });
     };
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, [showHome]);
-
-  // Find the draft once. A link to it opens it; otherwise it waits on the home page.
-  useEffect(() => {
-    void loadDraft().then((saved) => {
-      setDraft(saved);
-      if (WANTED === 'draft' && saved) setCurrent(session(saved, 'draft', true));
-      setWaiting(false);
-    });
-  }, []);
 
   /** Leave the timeline for the home page. */
   const goHome = useCallback(() => {
@@ -129,66 +158,38 @@ export default function App() {
     }
   }, [showHome]);
 
-  // Keep the draft saved while it is edited. An edited demo or exported page becomes the draft; the
-  // workspace keeps its id, so it carries on without starting afresh.
-  const saveTimer = useRef(0);
-  const onChange = useCallback((doc: TimelineDoc) => {
-    setDraft(doc);
-    setCurrent((open) => (open && open.origin !== 'draft' ? { ...open, origin: 'draft' } : open));
-    window.clearTimeout(saveTimer.current);
-    saveTimer.current = window.setTimeout(() => void saveDraft(doc), SAVE_DELAY);
+  // The first save gives the timeline an id; the workspace keeps its session, so it carries on.
+  const onSaved = useCallback((savedId: string) => {
+    setCurrent((open) => (open ? { ...open, origin: 'account', savedId } : open));
   }, []);
 
-  /** Open `doc` as the draft, asking first if that replaces a different one. */
-  const openAsDraft = useCallback(
-    (doc: TimelineDoc, after?: () => void) => {
-      const start = () => {
-        setDraft(doc);
-        void saveDraft(doc);
-        enter(session(doc, 'draft', true));
-        after?.();
-      };
-      if (!draft) return start();
-      setDialog({
-        type: 'confirm',
-        title: 'Replace your draft?',
-        message: `“${draft.title}” is kept in this browser as your draft. Starting another timeline replaces it. Export it first if you still need it.`,
-        confirm: 'Replace my draft',
-        danger: true,
-        onConfirm: start,
-      });
+  const openSaved = useCallback(
+    (id: string) => {
+      loadTimeline(id).then(
+        (doc) => enter(session(doc, 'account', id)),
+        (error: unknown) =>
+          setDialog({
+            type: 'message',
+            title: 'This timeline could not be opened',
+            lines: [error instanceof AccountError ? error.message : 'Something went wrong while loading it. Try again.'],
+          }),
+      );
     },
-    [draft, enter],
+    [enter],
   );
 
   const onImport = useCallback(
     ({ doc, warnings }: ParseResult) => {
-      openAsDraft(doc, () => {
-        if (!warnings.length) return;
-        setDialog({
-          type: 'message',
-          title: `Imported, with ${warnings.length} thing${warnings.length === 1 ? '' : 's'} to check`,
-          lines: warnings.slice(0, 40).concat(warnings.length > 40 ? [`…and ${warnings.length - 40} more.`] : []),
-        });
+      enter(session(doc, 'new', null, true));
+      if (!warnings.length) return;
+      setDialog({
+        type: 'message',
+        title: `Imported, with ${warnings.length} thing${warnings.length === 1 ? '' : 's'} to check`,
+        lines: warnings.slice(0, 40).concat(warnings.length > 40 ? [`…and ${warnings.length - 40} more.`] : []),
       });
     },
-    [openAsDraft],
+    [enter],
   );
-
-  const discardDraft = useCallback(() => {
-    if (!draft) return;
-    setDialog({
-      type: 'confirm',
-      title: 'Discard your draft?',
-      message: `“${draft.title}” will be removed from this browser. This cannot be undone.`,
-      confirm: 'Discard draft',
-      danger: true,
-      onConfirm: () => {
-        setDraft(null);
-        void clearDraft();
-      },
-    });
-  }, [draft]);
 
   if (waiting) return null;
 
@@ -200,25 +201,27 @@ export default function App() {
           key={current.id}
           initial={current.doc}
           origin={current.origin}
+          savedId={current.savedId}
           startEditing={current.editing}
-          draftTitle={current.origin === 'draft' ? null : (draft?.title ?? null)}
-          onChange={onChange}
+          account={account}
+          onAccount={setAccount}
+          onSaved={onSaved}
           onHome={goHome}
           leaveGuard={leaveGuard}
         />
       ) : (
         <Home
-          draft={draft}
+          account={account}
+          onAccount={setAccount}
           embedded={EMBEDDED?.doc ?? null}
           onOpenEmbedded={() => EMBEDDED && enter(session(EMBEDDED.doc, 'embedded'))}
           onOpenDemo={() => enter(session(demoDoc, 'demo'))}
-          onOpenDraft={() => draft && enter(session(draft, 'draft', true))}
-          onDiscardDraft={discardDraft}
-          onCreate={(title) => openAsDraft(emptyDoc(title))}
+          onOpenSaved={openSaved}
+          onCreate={(title) => enter(session(emptyDoc(title), 'new', null, true))}
           onImport={onImport}
         />
       )}
-      {dialog && (dialog.type === 'confirm' || dialog.type === 'message') && <DialogHost dialog={dialog} onClose={() => setDialog(null)} />}
+      {dialog && dialog.type === 'message' && <DialogHost dialog={dialog} onClose={() => setDialog(null)} />}
     </>
   );
 }

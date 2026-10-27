@@ -10,8 +10,11 @@ import { parseDate, toIso } from './time';
  * Fields at their default are left out. A bare `#kaitaku` (the oldest form) still opens that event.
  */
 export interface UrlState {
-  /** Which timeline the link is for: the demo, or the draft kept in this browser. Null in an exported page. */
-  timeline: 'demo' | 'draft' | null;
+  /**
+   * Which timeline the link is for: `demo`, the id of one saved to the account, or `new` for one saved
+   * nowhere (a reload has nothing to reopen). Null in an exported page.
+   */
+  timeline: string | null;
   view: View;
   /** Timeline zoom and centre; null leaves the opening view alone. */
   zoom: ViewState | null;
@@ -77,11 +80,10 @@ function parseZoom(zoom: string | null, centre: string | null, domainStart: numb
 }
 
 /** Which timeline a hash asks for, without reading the rest. Links older than the home page are for the demo. */
-export function timelineOf(hash: string): 'demo' | 'draft' | null {
+export function timelineOf(hash: string): string | null {
   const text = hash.replace(/^#/, '');
   if (!text) return null;
-  const wanted = new URLSearchParams(text.includes('=') ? text : '').get('t');
-  return wanted === 'draft' ? 'draft' : 'demo';
+  return new URLSearchParams(text.includes('=') ? text : '').get('t') ?? 'demo';
 }
 
 /**

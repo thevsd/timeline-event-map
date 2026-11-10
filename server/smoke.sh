@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 # End-to-end check of the auth flow against a running server: ./smoke.sh [base-url]
-# Uses up the login budget for this IP at the end (by design): that times it out for 1 minute, longer if run
-# again within a day (2, 15, then 30 minutes). Restart the server to reset it.
+# Uses up the login budget for this IP at the end (by design): that times it out, longer if run again soon after
+# (the Throttle section of appsettings.json). Restart the server to reset it.
 set -euo pipefail
 BASE=${1:-http://localhost:5137}; B=$BASE/api/auth
+# How hard a captcha is before this run times the network out; checked against the one after at the end.
+maxnumber() { curl -s "$BASE/api/auth/challenge" | sed -E 's/.*"maxnumber":([0-9]+).*/\1/'; }
+EASY=$(maxnumber)
 T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
 U="smoke$RANDOM$RANDOM"; P1="smoke-pass-$RANDOM-one"; P2="smoke-pass-$RANDOM-two"
 
@@ -89,9 +92,17 @@ call POST /login 200 "{\"username\":\"$U\",\"password\":\"$P2\",\"altcha\":\"$US
 call POST /login 400 "{\"username\":\"$U\",\"password\":\"$P2\",\"altcha\":\"$USED\"}"
 grep -q CaptchaFailed "$T/body"
 
-# 10 login-budget calls so far (login + recover share it; refused captchas count too), so the 11th is throttled.
-call POST /login 429 "{\"username\":\"$U\",\"password\":\"$P2\",\"altcha\":\"$(cap)\"}"
-# Now that this network has been timed out, its captchas are 20x harder.
-curl -s "$B/challenge" | grep -q '"maxnumber":2000000' || { echo "FAIL: challenge did not get harder"; exit 1; }
-echo "ok   GET /challenge -> harder"
+# Sign in until this network is timed out. How many it takes is the server's Throttle setting, which the unit
+# tests check; here only that it happens. The cap of 100 only stops a broken throttle from looping forever.
+for ((n = 1; ; n++)); do
+  s=$(curl -s -o "$T/body" -w '%{http_code}' -b "$T/jar" -c "$T/jar" -X POST "$B/login" -H 'Content-Type: application/json' \
+    -d "{\"username\":\"$U\",\"password\":\"$P2\",\"altcha\":\"$(cap)\"}")
+  [[ $s == 429 ]] && break
+  [[ $s == 200 && $n -lt 100 ]] || { echo "FAIL POST /login: expected 200 until 429, got $s on try $n: $(cat "$T/body")"; exit 1; }
+done
+echo "ok   POST /login -> 429 on try $n"
+# Now that this network has been timed out, its captchas come from the harder range.
+HARD=$(maxnumber)
+(( HARD > EASY )) || { echo "FAIL: challenge did not get harder ($EASY, then $HARD)"; exit 1; }
+echo "ok   GET /challenge -> harder ($EASY, then $HARD)"
 echo "all good"

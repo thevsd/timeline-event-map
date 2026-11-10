@@ -55,7 +55,13 @@ builder.Services.AddSingleton(sp => Altcha.CreateService(new AltchaSha256Configu
     StoreFactory = () => new UsedChallenges(sp.GetRequiredService<IMemoryCache>()),
 }));
 
-// Signup: 5 per hour per IP. Login and recover have their own growing timeout (LoginThrottle.cs).
+// Throttling numbers live in the "Throttle" section of appsettings.json (ThrottleOptions in LoginThrottle.cs).
+// Checked on start: a missing or broken section would otherwise lock everyone out.
+builder.Services.AddOptions<ThrottleOptions>().Bind(builder.Configuration.GetSection("Throttle"))
+    .Validate(o => o.Valid, "Throttle in appsettings.json needs every value above zero, and HarderCaptchaMin <= HarderCaptchaMax.")
+    .ValidateOnStart();
+
+// Signup: SignupLimit per SignupWindow per IP. Login and recover have their own growing timeout (LoginThrottle.cs).
 // ponytail: in-memory limiter is per pod; move the limit to the ingress or Redis when running >1 replica.
 // It counts every attempt, not only failures; the limits are loose enough for people sharing one IP.
 builder.Services.AddRateLimiter(o =>
@@ -67,8 +73,12 @@ builder.Services.AddRateLimiter(o =>
             ctx.HttpContext.Response.Headers.RetryAfter = ((int)retry.TotalSeconds).ToString();
         return ValueTask.CompletedTask;
     };
-    o.AddPolicy("signup", ctx => RateLimitPartition.GetFixedWindowLimiter(Auth.ClientKey(ctx),
-        _ => new FixedWindowRateLimiterOptions { PermitLimit = 5, Window = TimeSpan.FromHours(1) }));
+    o.AddPolicy("signup", ctx =>
+    {
+        var t = LoginThrottle.Options(ctx);
+        return RateLimitPartition.GetFixedWindowLimiter(Auth.ClientKey(ctx),
+            _ => new FixedWindowRateLimiterOptions { PermitLimit = t.SignupLimit, Window = t.SignupWindow });
+    });
 });
 
 // ponytail: only loopback proxies are trusted. Behind the k8s ingress, add its network to KnownNetworks,

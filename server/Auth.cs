@@ -19,12 +19,14 @@ public static class Auth
         var g = app.MapGroup("/api/auth");
 
         // A fresh challenge for each attempt; solving it is the captcha. Each one works once and expires after 2 minutes.
-        // About 75k hashes on average (well under a second), or 20x that for a network timed out in the last day.
+        // About 75k hashes on average (well under a second), or the HarderCaptcha range (Throttle in appsettings.json)
+        // for a network timed out recently.
         g.MapGet("/challenge", (AltchaService altcha, HttpContext ctx) =>
         {
             ctx.Response.Headers.CacheControl = "no-store";
+            var t = LoginThrottle.Options(ctx);
             return Results.Ok(LoginThrottle.Suspicious(ctx)
-                ? altcha.Generate(c => c with { Complexity = c.Complexity with { Counter = new AltchaComplexityCounterRange(1_000_000, 2_000_000) } })
+                ? altcha.Generate(c => c with { Complexity = c.Complexity with { Counter = new AltchaComplexityCounterRange(t.HarderCaptchaMin, t.HarderCaptchaMax) } })
                 : altcha.Generate());
         });
 

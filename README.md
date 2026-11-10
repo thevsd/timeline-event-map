@@ -54,9 +54,10 @@ dotnet run         # http://localhost:5137; applies migrations on start
 `npm run dev` forwards `/api` to it, so the page and the API share one address and the session cookie works.
 
 - **Captcha:** sign-up, sign-in and reset each need a solved [ALTCHA](https://altcha.org) proof of work, issued and checked by the server itself. `Altcha:Key` signs the challenges; every replica needs the same one.
-- **Throttling:** per IP, never per account, so no one can lock someone else out. Sign-up allows 5 an hour; sign-in and reset share 10 attempts per 15 minutes, then a timeout that grows (1, 2, 15, 30 minutes). The numbers are constants in `server/LoginThrottle.cs`. The counters live in memory: a restart resets them.
+- **Throttling:** per IP, never per account, so no one can lock someone else out. Sign-up allows 5 an hour; sign-in and reset share 10 attempts per 15 minutes, then a timeout that grows (1, 2, 15, 30 minutes). A network timed out in the last day gets harder captchas. All these numbers are the `Throttle` section of `server/appsettings.json`; the server refuses to start if it is missing or broken. The counters live in memory: a restart resets them.
 - **Passwords:** 10 characters or more, refused if on `server/common-passwords.txt`. No composition rules.
 - **Trying it:** `bash server/smoke.sh` runs the whole flow against a running server (and uses up this IP's sign-in budget). `server/auth.http` sends requests by hand; `server/solve-altcha.sh` prints a solved captcha for it.
+- **Tests:** `dotnet test` in `server.Tests/` checks the throttle against the numbers in `server/appsettings.json`; it needs no database.
 - **Schema changes:** `dotnet tool restore`, then `dotnet ef migrations add <Name>` in `server/`.
 
 ## Hosting
@@ -210,6 +211,7 @@ src/
   lib/         dates, URL state, text matching, search, glossary matching, spoiler markers
   styles/      app.css (colour tokens, light and dark themes)
 server/        the account server (ASP.NET Core): Program.cs setup, Auth.cs and Timelines.cs endpoints, LoginThrottle.cs, AppDb.cs and Migrations/
+server.Tests/  tests for the account server (xUnit)
 ```
 
 ## Editing the demo
